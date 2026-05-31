@@ -134,7 +134,97 @@ export default function Configuracion() {
       </div>
       </fieldset>
 
+      <FormConsulta />
+      {esAdmin && <AdminConsultas />}
       {esAdmin && <AdminAvisos />}
+    </div>
+  );
+}
+
+// Form para que el dueño le proponga cambios/mejoras al desarrollador.
+function FormConsulta() {
+  const [mensaje, setMensaje] = useState("");
+  const [enviando, setEnviando] = useState(false);
+  const [enviado, setEnviado] = useState(false);
+
+  async function enviar() {
+    if (!mensaje.trim()) return;
+    setEnviando(true);
+    try {
+      const { data: u } = await supabase.auth.getUser();
+      const { error } = await supabase.from("consultas").insert({ email: u.user?.email ?? "", mensaje: mensaje.trim() });
+      if (!error) { setEnviado(true); setMensaje(""); }
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  return (
+    <div className="card p-4 mt-6">
+      <div className="text-sm font-medium text-slate-700 dark:text-slate-200">¿Una idea o algo para mejorar?</div>
+      <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">Contanos qué te gustaría que tampu tenga o cambie. Lo lee el equipo de desarrollo.</p>
+      {enviado ? (
+        <div className="text-sm text-emerald-600 dark:text-emerald-400">¡Gracias! Recibimos tu sugerencia. 🙌
+          <button onClick={() => setEnviado(false)} className="ml-2 text-teal-600 dark:text-teal-400 hover:underline text-xs">Enviar otra</button>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <textarea value={mensaje} onChange={(e) => setMensaje(e.target.value)} className="input min-h-20" placeholder="Tu sugerencia, problema o pedido…" />
+          <div className="flex justify-end">
+            <button onClick={enviar} disabled={enviando || !mensaje.trim()} className="rounded-lg bg-teal-600 text-white px-4 py-2 text-sm font-medium hover:bg-teal-700 transition disabled:opacity-50">
+              {enviando ? "Enviando…" : "Enviar"}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Panel del admin: consultas recibidas de los dueños.
+function AdminConsultas() {
+  const [items, setItems] = useState<{ id: string; email: string; mensaje: string; leida: boolean; created_at: string }[]>([]);
+
+  const recargar = useCallback(async () => {
+    const { data } = await supabase.from("consultas").select("*").order("created_at", { ascending: false });
+    setItems((data as typeof items) ?? []);
+  }, []);
+  useEffect(() => { recargar(); }, [recargar]);
+
+  async function marcar(id: string, leida: boolean) {
+    await supabase.from("consultas").update({ leida }).eq("id", id);
+    recargar();
+  }
+  async function borrar(id: string) {
+    if (!confirm("¿Borrar esta consulta?")) return;
+    await supabase.from("consultas").delete().eq("id", id);
+    recargar();
+  }
+
+  const sinLeer = items.filter((i) => !i.leida).length;
+
+  return (
+    <div className="card p-4 mt-6">
+      <div className="text-sm font-medium text-slate-700 dark:text-slate-200 mb-3">
+        Consultas recibidas <span className="text-xs font-normal text-violet-500">(admin)</span>
+        {sinLeer > 0 && <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full bg-rose-500 text-white font-bold">{sinLeer} sin leer</span>}
+      </div>
+      {items.length === 0 ? (
+        <p className="text-xs text-slate-400 dark:text-slate-500">Todavía no hay consultas.</p>
+      ) : (
+        <div className="space-y-2">
+          {items.map((c) => (
+            <div key={c.id} className={`rounded-lg border p-2.5 ${c.leida ? "border-slate-200 dark:border-slate-700" : "border-teal-300 dark:border-teal-500/40 bg-teal-50/50 dark:bg-teal-500/5"}`}>
+              <div className="text-sm text-slate-700 dark:text-slate-200 whitespace-pre-line">{c.mensaje}</div>
+              <div className="flex items-center gap-2 mt-1.5 text-xs text-slate-400 dark:text-slate-500">
+                <span className="truncate flex-1">{c.email || "sin email"} · {new Date(c.created_at).toLocaleDateString("es-AR")}</span>
+                <button onClick={() => marcar(c.id, !c.leida)} className="text-teal-600 dark:text-teal-400 hover:underline">{c.leida ? "Marcar sin leer" : "Marcar leída"}</button>
+                <button onClick={() => borrar(c.id)} className="text-slate-400 hover:text-rose-600">×</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
