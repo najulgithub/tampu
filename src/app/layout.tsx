@@ -16,7 +16,7 @@ const sans = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: "Tampu — Gestión de alquileres",
+  title: "tampu — gestión de alquileres",
   description: "Gestioná tus propiedades todo el año: temporal y largo plazo, con portal para inquilinos.",
 };
 

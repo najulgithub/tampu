@@ -142,7 +142,7 @@ export default function PortalCliente({ session }: { session: Session }) {
         <div className="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2 font-display text-lg font-semibold text-slate-800 dark:text-slate-100">
             <LogoTampu size={28} />
-            Tampu
+            tampu
           </div>
           <div className="flex items-center gap-3 text-sm">
             <CampanaInquilino />

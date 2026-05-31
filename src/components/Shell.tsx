@@ -132,7 +132,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-2 font-display text-lg font-semibold text-slate-800 dark:text-slate-100">
               <LogoTampu size={28} />
-              Tampu
+              tampu
             </Link>
             <nav className="hidden sm:flex items-center gap-5">
               {navVisible.map((n) => <NavLink key={n.href} href={n.href}>{n.label}</NavLink>)}
@@ -241,7 +241,7 @@ function Login() {
       <div className="w-full max-w-sm animate-in">
         <div className="flex flex-col items-center text-center mb-6">
           <LogoTampu size={64} className="rounded-2xl shadow-lg shadow-teal-500/25" />
-          <h1 className="mt-4 font-display text-3xl font-semibold text-slate-800 dark:text-slate-100">Tampu</h1>
+          <h1 className="mt-4 font-display text-3xl font-semibold text-slate-800 dark:text-slate-100">tampu</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1.5">
             {negocioInvita ? `Reservá tu estadía en ${negocioInvita}.` : "Gestioná tus propiedades, todo el año."}
           </p>

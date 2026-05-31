@@ -3,9 +3,9 @@
 export function LogoTampu({ size = 28, className = "" }: { size?: number; className?: string }) {
   return (
     <span
-      className={`grid place-items-center rounded-lg bg-gradient-to-br from-teal-500 to-emerald-500 text-white shadow-sm shrink-0 ${className}`}
-      style={{ width: size, height: size }}
-      aria-label="Tampu"
+      className={`grid place-items-center rounded-lg text-white shadow-sm shrink-0 ${className}`}
+      style={{ width: size, height: size, background: "linear-gradient(135deg, #2f807a, #1f6f6b)" }}
+      aria-label="tampu"
     >
       <svg
         width={Math.round(size * 0.6)}
