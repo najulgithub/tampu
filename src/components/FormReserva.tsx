@@ -8,7 +8,7 @@ import { noches, formatearFecha, hoyISO, nombreMes } from "@/lib/fechas";
 import { mesesContrato, vencimientosMensuales } from "@/lib/ajustes";
 import { cuentaCorriente } from "@/lib/cuentaCorriente";
 import type { Cuota, EstadoCuota } from "@/lib/cuentaCorriente";
-import { archivoADataUrl } from "@/lib/imagen";
+import { subirArchivo } from "@/lib/storage";
 import { Overlay, Campo } from "@/components/ui";
 import InputMonto from "@/components/InputMonto";
 import SelectMedio from "@/components/SelectMedio";
@@ -389,7 +389,7 @@ function ServiciosTablero({ reserva, servicios, simbolo }: { reserva: Reserva; s
   const compDe = (periodo: string, servicio: string) => comps.find((c) => c.periodo === periodo && c.servicio === servicio);
 
   async function subir(periodo: string, servicio: string, file: File) {
-    const img = await archivoADataUrl(file, 1000);
+    const img = await subirArchivo(file, "comprobantes");
     guardarServicioComprobante({ reservaId: reserva.id, periodo, servicio, comprobante: img, monto: 0, fecha: hoyISO() });
   }
 
@@ -646,7 +646,7 @@ function SeccionPagos({ reserva, simbolo, total, sena }: { reserva: Reserva; sim
               {comprobante ? "Comprobante ✓" : "Adjuntar comprobante"}
               <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
                 const f = e.target.files?.[0];
-                if (f) setComprobante(await archivoADataUrl(f, 1000));
+                if (f) setComprobante(await subirArchivo(f, "comprobantes"));
                 e.target.value = "";
               }} />
             </label>

@@ -5,7 +5,7 @@ import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import { IconoUnidad } from "@/components/iconos";
 import { Overlay, Campo } from "@/components/ui";
-import { archivoADataUrl } from "@/lib/imagen";
+import { subirArchivo } from "@/lib/storage";
 import { aumentoVigente, cuentaCorriente } from "@/lib/cuentaCorriente";
 import { ChatWidgetInquilino } from "@/components/ChatWidget";
 import { CampanaInquilino } from "@/components/Campana";
@@ -320,7 +320,7 @@ function ContratoServicios({ contrato }: { contrato: Contrato }) {
   async function subir(periodo: string, servicio: string, file: File) {
     setSubiendo(`${periodo}|${servicio}`);
     try {
-      const img = await archivoADataUrl(file, 1000);
+      const img = await subirArchivo(file, "comprobantes");
       const { error } = await supabase.rpc("portal_cargar_servicio", {
         p_reserva: contrato.id, p_periodo: periodo, p_servicio: servicio, p_comprobante: img, p_monto: 0,
       });
@@ -476,7 +476,7 @@ function ContratoCuenta({ contrato }: { contrato: Contrato }) {
                 <div className="flex items-center gap-2">
                   <label className="text-[11px] px-2 py-1 rounded-md bg-teal-50 text-teal-700 dark:bg-teal-500/15 dark:text-teal-400 cursor-pointer">
                     {comprobante ? "Comprobante ✓" : "Adjuntar comprobante"}
-                    <input type="file" accept="image/*" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; if (f) setComprobante(await archivoADataUrl(f, 1000)); e.target.value = ""; }} />
+                    <input type="file" accept="image/*" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; if (f) setComprobante(await subirArchivo(f, "comprobantes")); e.target.value = ""; }} />
                   </label>
                   <button type="button" onClick={() => setPagarPeriodo("")} className="ml-auto text-[11px] text-slate-400 hover:text-slate-600">Cancelar</button>
                   <button type="button" disabled={enviando || monto <= 0} className="text-[11px] px-3 py-1 rounded-md bg-teal-600 text-white disabled:opacity-50" onClick={registrar}>
@@ -609,7 +609,7 @@ function FormReservaCliente({
     const f = e.target.files?.[0];
     if (!f) return;
     try {
-      setComprobante(await archivoADataUrl(f, 1000));
+      setComprobante(await subirArchivo(f, "comprobantes"));
     } catch {
       setError("No pudimos procesar la imagen.");
     }

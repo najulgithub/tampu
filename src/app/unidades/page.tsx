@@ -10,7 +10,7 @@ import { Overlay, Campo } from "@/components/ui";
 import SelectGrupo from "@/components/SelectGrupo";
 import AvatarUnidad from "@/components/AvatarUnidad";
 import AvatarGrupo from "@/components/AvatarGrupo";
-import { archivoADataUrl } from "@/lib/imagen";
+import { subirArchivo } from "@/lib/storage";
 
 export default function Unidades() {
   const { unidades, reservas, grupos, addUnidad, getGrupo, vacio, seedCuenta, puedeEditar } = useStore();
@@ -129,7 +129,7 @@ function ModalEditarGrupo({ grupoId, onCerrar }: { grupoId: string; onCerrar: ()
                 type="file" accept="image/*" className="hidden"
                 onChange={async (e) => {
                   const file = e.target.files?.[0];
-                  if (file) updateGrupo(grupo.id, { foto: await archivoADataUrl(file) });
+                  if (file) updateGrupo(grupo.id, { foto: await subirArchivo(file, "fotos") });
                   e.target.value = "";
                 }}
               />

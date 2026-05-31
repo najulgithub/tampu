@@ -8,7 +8,7 @@ import type { AmbitoGasto, CategoriaGasto, Gasto, RepartoItem, GastoProgramado, 
 import { Overlay, Campo } from "@/components/ui";
 import InputMonto from "@/components/InputMonto";
 import { Monto } from "@/components/Monto";
-import { archivoADataUrl } from "@/lib/imagen";
+import { subirArchivo } from "@/lib/storage";
 
 type TabGasto = "mov" | "prog" | "prov" | "pres";
 
@@ -522,7 +522,7 @@ function FormGasto({ gasto, onCerrar, presupuesto }: { gasto?: Gasto; onCerrar: 
               {comprobante ? "Cambiar" : "Adjuntar imagen"}
               <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
                 const f = e.target.files?.[0];
-                if (f) setComprobante(await archivoADataUrl(f, 1000));
+                if (f) setComprobante(await subirArchivo(f, "comprobantes"));
                 e.target.value = "";
               }} />
             </label>
@@ -917,7 +917,7 @@ function FormPresupuesto({ presupuesto, onCerrar }: { presupuesto?: Presupuesto;
           <div className="flex items-center gap-2">
             <label className="btn-secundario cursor-pointer text-xs">
               {comprobante ? "Cambiar" : "Adjuntar"}
-              <input type="file" accept="image/*" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; if (f) setComprobante(await archivoADataUrl(f, 1000)); e.target.value = ""; }} />
+              <input type="file" accept="image/*" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; if (f) setComprobante(await subirArchivo(f, "comprobantes")); e.target.value = ""; }} />
             </label>
             {comprobante && <>
               <a href={comprobante} target="_blank" rel="noreferrer" className="text-xs text-teal-600 dark:text-teal-400 hover:underline">ver</a>

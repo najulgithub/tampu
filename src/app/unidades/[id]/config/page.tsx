@@ -9,7 +9,7 @@ import { TIPOS_UNIDAD, COLORES_UNIDAD } from "@/lib/types";
 import { Campo } from "@/components/ui";
 import SelectGrupo from "@/components/SelectGrupo";
 import AvatarUnidad from "@/components/AvatarUnidad";
-import { archivoADataUrl } from "@/lib/imagen";
+import { subirArchivo } from "@/lib/storage";
 
 export default function ConfigUnidad() {
   const params = useParams<{ id: string }>();
@@ -50,7 +50,7 @@ export default function ConfigUnidad() {
                 className="hidden"
                 onChange={async (e) => {
                   const file = e.target.files?.[0];
-                  if (file) updateUnidad(uni.id, { foto: await archivoADataUrl(file) });
+                  if (file) updateUnidad(uni.id, { foto: await subirArchivo(file, "fotos") });
                   e.target.value = "";
                 }}
               />
