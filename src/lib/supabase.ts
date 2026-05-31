@@ -10,4 +10,9 @@ if (!url || !key) {
   console.warn("Falta NEXT_PUBLIC_SUPABASE_URL o NEXT_PUBLIC_SUPABASE_KEY en .env.local");
 }
 
-export const supabase = createClient(url ?? "", key ?? "");
+// Fallback con formato válido para que el build (prerender) no se caiga si faltan
+// las variables. En producción (Vercel) las variables están seteadas y se usan las reales.
+export const supabase = createClient(
+  url || "https://placeholder.supabase.co",
+  key || "placeholder-anon-key"
+);
