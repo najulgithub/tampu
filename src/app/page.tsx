@@ -11,6 +11,7 @@ import type { Tarea } from "@/lib/tareas";
 import CalculoAjuste from "@/components/CalculoAjuste";
 import CalendarioTareas from "@/components/CalendarioTareas";
 import { Overlay } from "@/components/ui";
+import { Monto } from "@/components/Monto";
 
 export default function Agenda() {
   const { unidades, reservas, saldoDe, config, pagos, gastos } = useStore();
@@ -71,7 +72,7 @@ export default function Agenda() {
         return (
           <div>
             <div className="text-slate-600 dark:text-slate-300">{r.horaCheckIn}h</div>
-            {saldo > 0 && <div className="text-amber-600 dark:text-amber-400">Debe {sim}{saldo.toLocaleString("es-AR")}</div>}
+            {saldo > 0 && <div className="text-amber-600 dark:text-amber-400">Debe <Monto valor={saldo} simbolo={sim} /></div>}
           </div>
         );
       }
@@ -79,7 +80,7 @@ export default function Agenda() {
         return <span className="text-slate-600 dark:text-slate-300">{r.horaCheckOut}h</span>;
       case "cobro": {
         const monto = r.montoMensual > 0 ? r.montoMensual : saldoDe(r);
-        return <span className="text-rose-600 dark:text-rose-400">{sim}{monto.toLocaleString("es-AR")}</span>;
+        return <span className="text-rose-600 dark:text-rose-400"><Monto valor={monto} simbolo={sim} /></span>;
       }
       case "ajuste":
         return <span className="text-violet-600 dark:text-violet-400">{r.indice === "Manual" ? `Manual ${r.porcentajeManual}%` : r.indice}</span>;
@@ -281,7 +282,7 @@ function BandejaAprobacion() {
                       )}
                       <div className="min-w-0 flex-1 text-xs">
                         <div className="font-medium text-slate-700 dark:text-slate-200">
-                          Seña {SIMBOLO_MONEDA[r.moneda]}{p.monto.toLocaleString("es-AR")}
+                          Seña <Monto valor={p.monto} simbolo={SIMBOLO_MONEDA[r.moneda]} />
                         </div>
                         <div className="text-slate-400 dark:text-slate-500">{p.medio} · {formatearFecha(p.fecha)}</div>
                       </div>

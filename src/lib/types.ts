@@ -76,6 +76,7 @@ export interface Colaborador {
 
 // Módulos sobre los que se puede dar permiso de edición a un colaborador.
 export const MODULOS_PERMISO: { clave: string; label: string; desc: string }[] = [
+  { clave: "montos", label: "Ver montos ($)", desc: "Si está apagado, los importes se ocultan (estilo banco)." },
   { clave: "reportes", label: "Ver reportes (datos de plata)", desc: "Panel económico, cobranzas y cronograma. Información sensible." },
   { clave: "unidades", label: "Unidades y grupos", desc: "Crear/editar unidades y grupos." },
   { clave: "reservas", label: "Reservas, pagos y mensajes", desc: "Cargar reservas, registrar pagos, chatear." },
@@ -88,8 +89,8 @@ export const MODULOS_PERMISO: { clave: string; label: string; desc: string }[] =
 export function permisosDeRol(rol: Rol): string[] {
   switch (rol) {
     case "Propietario":
-    case "Administrador": return ["reportes", "unidades", "reservas", "gastos", "config", "equipo"];
-    case "Encargado": return ["unidades", "reservas", "gastos"]; // sin reportes (la plata es opt-in)
+    case "Administrador": return ["montos", "reportes", "unidades", "reservas", "gastos", "config", "equipo"];
+    case "Encargado": return ["unidades", "reservas", "gastos"]; // sin montos ni reportes (la plata es opt-in)
     default: return []; // Lectura
   }
 }

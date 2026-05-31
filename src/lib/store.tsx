@@ -208,6 +208,7 @@ interface StoreCtx {
   rol: "dueno" | "colaborador" | "cliente" | "nuevo" | null;
   permisosColab: string[];
   puedeEditar: (modulo: string) => boolean;
+  puedeVerMontos: boolean;
   notificaciones: Notificacion[];
   notifNoLeidas: number;
   marcarNotifLeidas: () => void;
@@ -745,6 +746,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     config, updateConfig,
     rol, permisosColab,
     puedeEditar: (modulo: string) => rol === "dueno" || permisosColab.includes(modulo),
+    puedeVerMontos: rol === "dueno" || permisosColab.includes("montos"),
     notificaciones,
     notifNoLeidas: notificaciones.filter((n) => !n.leida).length,
     marcarNotifLeidas,

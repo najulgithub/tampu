@@ -7,6 +7,7 @@ import { CATEGORIAS_GASTO, FRECUENCIAS, COLOR_CATEGORIA, COLOR_FRECUENCIA, PAGAD
 import type { AmbitoGasto, CategoriaGasto, Gasto, RepartoItem, GastoProgramado, Frecuencia, PagadoPor, Proveedor, Presupuesto, EstadoPresupuesto } from "@/lib/types";
 import { Overlay, Campo } from "@/components/ui";
 import InputMonto from "@/components/InputMonto";
+import { Monto } from "@/components/Monto";
 import { archivoADataUrl } from "@/lib/imagen";
 
 type TabGasto = "mov" | "prog" | "prov" | "pres";
@@ -103,7 +104,7 @@ function Movimientos() {
         <p className="text-sm text-slate-500 dark:text-slate-400">
           {lista.length} {lista.length === 1 ? "gasto" : "gastos"} · Total{" "}
           <span className="font-medium text-slate-700 dark:text-slate-200">
-            ${total.toLocaleString("es-AR")}
+            <Monto valor={total} />
           </span>
         </p>
         {puedeEdit && (
@@ -168,11 +169,11 @@ function Movimientos() {
               </div>
               <div className="shrink-0 text-right">
                 <div className="text-sm font-medium text-slate-700 dark:text-slate-200">
-                  ${montoVisible(g).toLocaleString("es-AR")}
+                  <Monto valor={montoVisible(g)} />
                 </div>
                 {filtraUnidad && g.ambito === "grupo" && (
                   <div className="text-xs text-slate-400 dark:text-slate-500">
-                    de ${g.monto.toLocaleString("es-AR")}
+                    de <Monto valor={g.monto} />
                   </div>
                 )}
               </div>
