@@ -16,8 +16,8 @@ const sans = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: "Alquileres — Gestión de propiedades",
-  description: "Gestión de alquileres temporales y estudiantiles con calendario unificado.",
+  title: "Tampu — Gestión de alquileres",
+  description: "Gestioná tus propiedades todo el año: temporal y largo plazo, con portal para inquilinos.",
 };
 
 export default function RootLayout({
