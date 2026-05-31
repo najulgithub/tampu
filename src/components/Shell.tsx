@@ -1,0 +1,290 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import type { Session } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabase";
+import PortalCliente from "@/components/PortalCliente";
+import { ChatWidgetDueno } from "@/components/ChatWidget";
+import { CampanaDueno } from "@/components/Campana";
+import { useStore } from "@/lib/store";
+
+const NAV = [
+  { href: "/", label: "Inicio", icon: "home" },
+  { href: "/unidades", label: "Unidades", icon: "building" },
+  { href: "/gastos", label: "Gastos", icon: "wallet" },
+  { href: "/reportes", label: "Reportes", icon: "chart" },
+  { href: "/equipo", label: "Equipo", icon: "users" },
+] as const;
+
+function NavIcon({ name, size = 22 }: { name: string; size?: number }) {
+  const p: Record<string, React.ReactNode> = {
+    home: <><path d="M3 10.5 12 3l9 7.5" /><path d="M5 9.5V21h14V9.5" /></>,
+    building: <><rect x="5" y="3" width="14" height="18" rx="1.5" /><path d="M9 7h.01M15 7h.01M9 11h.01M15 11h.01M10 21v-3h4v3" /></>,
+    wallet: <><rect x="3" y="6" width="18" height="13" rx="2.5" /><path d="M3 10h18" /><path d="M16.5 14h.5" /></>,
+    chart: <><path d="M4 20V4M4 20h16" /><rect x="7.5" y="12" width="2.5" height="5" /><rect x="12" y="8" width="2.5" height="9" /><rect x="16.5" y="5" width="2.5" height="12" /></>,
+    users: <><circle cx="9" cy="8" r="3" /><path d="M3.5 20c0-3 2.5-5 5.5-5s5.5 2 5.5 5" /><path d="M16 6.2a3 3 0 0 1 0 5.6" /><path d="M15.5 15.2c2.6.3 4.5 2.2 4.5 4.8" /></>,
+    gear: <><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" /></>,
+    doc: <><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5M9 13h6M9 17h6" /></>,
+    chat: <><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" /></>,
+  };
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      {p[name]}
+    </svg>
+  );
+}
+
+function esActivo(href: string, pathname: string) {
+  return href === "/" ? pathname === "/" : pathname.startsWith(href);
+}
+
+function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
+  const pathname = usePathname();
+  const activo = esActivo(href, pathname);
+  return (
+    <Link
+      href={href}
+      className={
+        activo
+          ? "text-sm font-semibold text-teal-600 dark:text-teal-400"
+          : "text-sm text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 transition"
+      }
+    >
+      {children}
+    </Link>
+  );
+}
+
+function useTema(): [boolean, () => void] {
+  const [oscuro, setOscuro] = useState(false);
+  useEffect(() => {
+    setOscuro(document.documentElement.classList.contains("dark"));
+  }, []);
+  const alternar = () => {
+    const nuevo = !document.documentElement.classList.contains("dark");
+    document.documentElement.classList.toggle("dark", nuevo);
+    try {
+      localStorage.setItem("alquileres.tema", nuevo ? "dark" : "light");
+    } catch {}
+    setOscuro(nuevo);
+  };
+  return [oscuro, alternar];
+}
+
+function BotonTema() {
+  const [oscuro, alternar] = useTema();
+  return (
+    <button
+      onClick={alternar}
+      className="text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 transition text-base leading-none"
+      aria-label={oscuro ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+      title={oscuro ? "Modo claro" : "Modo oscuro"}
+    >
+      {oscuro ? "☀" : "☾"}
+    </button>
+  );
+}
+
+export default function Shell({ children }: { children: React.ReactNode }) {
+  const [session, setSession] = useState<Session | null>(null);
+  const [authListo, setAuthListo] = useState(false);
+  const { rol, puedeEditar, avisos } = useStore(); // dueno | colaborador | cliente | nuevo | null (lo resuelve el store)
+  const mantenimiento = avisos.filter((a) => a.tipo === "mantenimiento");
+  const pathname = usePathname();
+  const navVisible = NAV.filter((n) => n.href !== "/reportes" || puedeEditar("reportes"));
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      setAuthListo(true);
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
+  // Si la URL trae un link de cliente (?r=slug), lo guardamos para usarlo al registrarse.
+  useEffect(() => {
+    try {
+      const r = new URLSearchParams(window.location.search).get("r");
+      if (r) localStorage.setItem("alquileres.ref", r);
+    } catch {}
+  }, []);
+
+  if (!authListo) {
+    return <div className="min-h-screen grid place-items-center text-slate-400 dark:text-slate-500">Cargando…</div>;
+  }
+
+  if (!session) return <Login />;
+
+  if (rol === null) {
+    return <div className="min-h-screen grid place-items-center text-slate-400 dark:text-slate-500">Cargando…</div>;
+  }
+
+  if (rol === "cliente") return <PortalCliente session={session} />;
+
+  return (
+    <div className="min-h-screen text-slate-900 dark:text-slate-100">
+      <header className="bg-white/80 dark:bg-slate-900/70 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-700/60 sticky top-0 z-20">
+        <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-6">
+            <Link href="/" className="flex items-center gap-2 font-display text-lg font-semibold text-slate-800 dark:text-slate-100">
+              <span className="grid place-items-center w-7 h-7 rounded-lg bg-gradient-to-br from-teal-500 to-emerald-500 text-white text-sm font-bold shadow-sm">A</span>
+              Alquileres
+            </Link>
+            <nav className="hidden sm:flex items-center gap-5">
+              {navVisible.map((n) => <NavLink key={n.href} href={n.href}>{n.label}</NavLink>)}
+            </nav>
+          </div>
+          <div className="flex items-center gap-3 text-sm">
+            <BotonTema />
+            <CampanaDueno />
+            <Link
+              href="/documentos"
+              aria-label="Documentos"
+              title="Documentos"
+              className={`transition ${esActivo("/documentos", pathname) ? "text-teal-600 dark:text-teal-400" : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100"}`}
+            >
+              <NavIcon name="doc" size={20} />
+            </Link>
+            <Link
+              href="/configuracion"
+              aria-label="Configuración"
+              title="Configuración"
+              className={`transition ${esActivo("/configuracion", pathname) ? "text-teal-600 dark:text-teal-400" : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100"}`}
+            >
+              <NavIcon name="gear" size={20} />
+            </Link>
+            <span className="text-slate-500 dark:text-slate-400 hidden md:inline max-w-[160px] truncate">{session.user.email}</span>
+            <button onClick={() => supabase.auth.signOut()} className="text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 transition">
+              Salir
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {mantenimiento.map((a) => (
+        <div key={a.id} className="bg-amber-100 dark:bg-amber-500/15 border-b border-amber-200 dark:border-amber-500/20 text-amber-800 dark:text-amber-300 text-sm px-4 py-2 text-center">
+          🛠 <b>{a.titulo}</b>{a.cuerpo ? ` — ${a.cuerpo}` : ""}
+        </div>
+      ))}
+
+      <main key={pathname} className="max-w-5xl mx-auto px-4 py-6 pb-24 sm:pb-8 animate-in">{children}</main>
+
+      {/* Barra inferior tipo app (solo mobile) */}
+      <nav className="sm:hidden fixed bottom-0 inset-x-0 z-20 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-t border-slate-200 dark:border-slate-700/60">
+        <div className="grid max-w-md mx-auto" style={{ gridTemplateColumns: `repeat(${navVisible.length}, minmax(0, 1fr))` }}>
+          {navVisible.map((n) => {
+            const activo = esActivo(n.href, pathname);
+            return (
+              <Link
+                key={n.href}
+                href={n.href}
+                className={`flex flex-col items-center gap-0.5 py-2 transition ${activo ? "text-teal-600 dark:text-teal-400" : "text-slate-400 dark:text-slate-500"}`}
+              >
+                <NavIcon name={n.icon} size={22} />
+                <span className="text-[10px] font-medium">{n.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
+
+      <ChatWidgetDueno />
+    </div>
+  );
+}
+
+function Login() {
+  const [modo, setModo] = useState<"ingresar" | "crear">("ingresar");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [aviso, setAviso] = useState("");
+  const [cargando, setCargando] = useState(false);
+  // Si llegó por un link de cliente (?r=slug), saludamos con el nombre del negocio.
+  const [negocioInvita, setNegocioInvita] = useState<string | null>(null);
+
+  useEffect(() => {
+    let ref: string | null = null;
+    try { ref = new URLSearchParams(window.location.search).get("r") ?? localStorage.getItem("alquileres.ref"); } catch {}
+    if (!ref) return;
+    setModo("crear"); // viene a reservar → registro por defecto
+    supabase.rpc("negocio_por_slug", { p_slug: ref }).then(({ data }) => {
+      if (typeof data === "string" && data) setNegocioInvita(data);
+    });
+  }, []);
+
+  async function enviar(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setAviso("");
+    setCargando(true);
+    try {
+      if (modo === "ingresar") {
+        const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+        if (error) setError(traducir(error.message));
+      } else {
+        const { data, error } = await supabase.auth.signUp({ email: email.trim(), password });
+        if (error) setError(traducir(error.message));
+        else if (!data.session) setAviso("Te enviamos un email para confirmar la cuenta. Confirmalo y volvé a ingresar.");
+      }
+    } finally {
+      setCargando(false);
+    }
+  }
+
+  return (
+    <div className="min-h-screen grid place-items-center px-4 bg-gradient-to-br from-teal-50 via-stone-50 to-emerald-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+      <div className="w-full max-w-sm animate-in">
+        <div className="flex flex-col items-center text-center mb-6">
+          <span className="grid place-items-center w-16 h-16 rounded-2xl bg-gradient-to-br from-teal-500 to-emerald-500 text-white text-3xl font-bold shadow-lg shadow-teal-500/25">A</span>
+          <h1 className="mt-4 font-display text-3xl font-semibold text-slate-800 dark:text-slate-100">Alquileres</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1.5">
+            {negocioInvita ? `Reservá tu estadía en ${negocioInvita}.` : "Gestioná tus propiedades, todo el año."}
+          </p>
+        </div>
+
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700/70 shadow-xl p-7">
+          <p className="text-sm font-medium text-slate-700 dark:text-slate-200 mb-4">
+            {modo === "ingresar" ? "Ingresá a tu cuenta" : "Creá tu cuenta"}
+          </p>
+
+          <form onSubmit={enviar} className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">Email</label>
+              <input type="email" autoFocus value={email} onChange={(e) => setEmail(e.target.value)} required className="input" placeholder="email@ejemplo.com" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">Contraseña</label>
+              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} className="input" placeholder="••••••••" />
+            </div>
+
+            {error && <p className="text-sm text-rose-600 dark:text-rose-400">{error}</p>}
+            {aviso && <p className="text-sm text-emerald-600 dark:text-emerald-400">{aviso}</p>}
+
+            <button type="submit" disabled={cargando} className="w-full rounded-lg bg-teal-600 text-white py-2.5 text-sm font-semibold shadow-sm hover:bg-teal-700 active:scale-[.98] transition disabled:opacity-50">
+              {cargando ? "..." : modo === "ingresar" ? "Ingresar" : "Crear cuenta"}
+            </button>
+          </form>
+
+          <button
+            onClick={() => { setModo(modo === "ingresar" ? "crear" : "ingresar"); setError(""); setAviso(""); }}
+            className="mt-4 text-sm text-teal-600 dark:text-teal-400 hover:underline"
+          >
+            {modo === "ingresar" ? "¿No tenés cuenta? Crear una" : "¿Ya tenés cuenta? Ingresar"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function traducir(msg: string): string {
+  if (/invalid login credentials/i.test(msg)) return "Email o contraseña incorrectos.";
+  if (/already registered/i.test(msg)) return "Ese email ya tiene cuenta.";
+  if (/password should be at least/i.test(msg)) return "La contraseña debe tener al menos 6 caracteres.";
+  if (/email not confirmed/i.test(msg)) return "Tenés que confirmar tu email antes de ingresar.";
+  return msg;
+}
