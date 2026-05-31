@@ -63,17 +63,17 @@ export default function CalendarioTareas({
             <button
               key={c.iso}
               onClick={() => onSel(c.iso)}
-              className={`aspect-square rounded-lg flex flex-col items-center justify-center gap-1 text-sm transition ${
+              className={`aspect-square rounded-lg flex flex-col items-center justify-center gap-1 text-sm ring-1 ring-inset transition ${
                 sel
-                  ? "bg-teal-600 text-white shadow-sm"
+                  ? "bg-teal-600 text-white ring-teal-600 shadow-md shadow-teal-600/20 font-semibold"
                   : esHoy
-                  ? "bg-teal-50 dark:bg-teal-500/10 text-teal-700 dark:text-teal-300 font-semibold"
+                  ? "bg-teal-50 dark:bg-teal-500/15 text-teal-700 dark:text-teal-300 ring-teal-300 dark:ring-teal-500/50 font-semibold"
                   : c.delMes
-                  ? "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/40"
-                  : "text-slate-300 dark:text-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800/40"
+                  ? "bg-slate-50 dark:bg-slate-700/40 text-slate-700 dark:text-slate-100 ring-slate-200/80 dark:ring-slate-600/50 hover:bg-slate-100 dark:hover:bg-slate-700/70 hover:ring-slate-300 dark:hover:ring-slate-500"
+                  : "bg-transparent text-slate-300 dark:text-slate-600 ring-transparent hover:bg-slate-50 dark:hover:bg-slate-800/40"
               }`}
             >
-              <span className="leading-none">{c.dia}</span>
+              <span className="leading-none tabular-nums">{c.dia}</span>
               <span className="flex gap-0.5 h-1.5">
                 {tipos.slice(0, 4).map((tp) => (
                   <span key={tp} className={`w-1.5 h-1.5 rounded-full ${sel ? "bg-white/90" : META_TAREA[tp].dot}`} />
