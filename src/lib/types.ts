@@ -401,6 +401,16 @@ export interface Presupuesto {
 export type Frecuencia = "Quincenal" | "Mensual" | "Bimestral" | "Trimestral" | "Anual" | "Por check-out";
 export const FRECUENCIAS: Frecuencia[] = ["Quincenal", "Mensual", "Bimestral", "Trimestral", "Anual", "Por check-out"];
 
+// Color por frecuencia (chip): cada una con su tono para identificarlas de un vistazo.
+export const COLOR_FRECUENCIA: Record<Frecuencia, { bg: string; texto: string }> = {
+  Quincenal: { bg: "bg-sky-100 dark:bg-sky-500/15", texto: "text-sky-700 dark:text-sky-300" },
+  Mensual: { bg: "bg-teal-100 dark:bg-teal-500/15", texto: "text-teal-700 dark:text-teal-300" },
+  Bimestral: { bg: "bg-blue-100 dark:bg-blue-500/15", texto: "text-blue-700 dark:text-blue-300" },
+  Trimestral: { bg: "bg-violet-100 dark:bg-violet-500/15", texto: "text-violet-700 dark:text-violet-300" },
+  Anual: { bg: "bg-amber-100 dark:bg-amber-500/15", texto: "text-amber-700 dark:text-amber-300" },
+  "Por check-out": { bg: "bg-rose-100 dark:bg-rose-500/15", texto: "text-rose-700 dark:text-rose-300" },
+};
+
 export interface GastoProgramado {
   id: string;
   ambito: AmbitoGasto;

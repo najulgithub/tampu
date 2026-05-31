@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useStore } from "@/lib/store";
 import { hoyISO, formatearFecha } from "@/lib/fechas";
-import { CATEGORIAS_GASTO, FRECUENCIAS, COLOR_CATEGORIA, PAGADO_POR, RUBROS_PROVEEDOR } from "@/lib/types";
+import { CATEGORIAS_GASTO, FRECUENCIAS, COLOR_CATEGORIA, COLOR_FRECUENCIA, PAGADO_POR, RUBROS_PROVEEDOR } from "@/lib/types";
 import type { AmbitoGasto, CategoriaGasto, Gasto, RepartoItem, GastoProgramado, Frecuencia, PagadoPor, Proveedor, Presupuesto, EstadoPresupuesto } from "@/lib/types";
 import { Overlay, Campo } from "@/components/ui";
 import InputMonto from "@/components/InputMonto";
@@ -222,7 +222,7 @@ function Programados() {
               onClick={() => setEditando(p)}
               className="w-full text-left flex items-center gap-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/70 shadow-sm p-3 hover:border-teal-400 dark:hover:border-teal-500 transition"
             >
-              <span className="shrink-0 text-xs px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+              <span className={`shrink-0 text-xs px-2 py-1 rounded-full ${COLOR_FRECUENCIA[p.frecuencia].bg} ${COLOR_FRECUENCIA[p.frecuencia].texto}`}>
                 {p.frecuencia}
               </span>
               <div className="min-w-0 flex-1">
