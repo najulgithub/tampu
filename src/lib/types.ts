@@ -1,4 +1,4 @@
-// Tipos centrales del dominio de Alquileres
+// Tipos centrales del dominio de Tampu
 
 export type Canal = "Airbnb" | "Booking" | "Vrbo" | "WhatsApp" | "Directo" | "Otro";
 

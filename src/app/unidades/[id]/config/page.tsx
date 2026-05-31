@@ -123,7 +123,7 @@ export default function ConfigUnidad() {
         <h2 className="font-semibold text-slate-800 dark:text-slate-100 mb-1">Sincronización de calendarios (iCal)</h2>
         <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
           Pegá los links iCal de tus plataformas para importar sus reservas. Y copiá el link de
-          exportación de Alquileres en cada plataforma para que vean tu calendario.
+          exportación de Tampu en cada plataforma para que vean tu calendario.
         </p>
 
         <ListaICals

@@ -140,8 +140,8 @@ export default function PortalCliente({ session }: { session: Session }) {
       <header className="bg-white/80 dark:bg-slate-900/70 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-700/60 sticky top-0 z-20">
         <div className="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2 font-display text-lg font-semibold text-slate-800 dark:text-slate-100">
-            <span className="grid place-items-center w-7 h-7 rounded-lg bg-gradient-to-br from-teal-500 to-emerald-500 text-white text-sm font-bold shadow-sm">A</span>
-            Reservá tu estadía
+            <span className="grid place-items-center w-7 h-7 rounded-lg bg-gradient-to-br from-teal-500 to-emerald-500 text-white text-sm font-bold shadow-sm">T</span>
+            Tampu
           </div>
           <div className="flex items-center gap-3 text-sm">
             <CampanaInquilino />

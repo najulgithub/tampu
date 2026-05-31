@@ -130,8 +130,8 @@ export default function Shell({ children }: { children: React.ReactNode }) {
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-2 font-display text-lg font-semibold text-slate-800 dark:text-slate-100">
-              <span className="grid place-items-center w-7 h-7 rounded-lg bg-gradient-to-br from-teal-500 to-emerald-500 text-white text-sm font-bold shadow-sm">A</span>
-              Alquileres
+              <span className="grid place-items-center w-7 h-7 rounded-lg bg-gradient-to-br from-teal-500 to-emerald-500 text-white text-sm font-bold shadow-sm">T</span>
+              Tampu
             </Link>
             <nav className="hidden sm:flex items-center gap-5">
               {navVisible.map((n) => <NavLink key={n.href} href={n.href}>{n.label}</NavLink>)}
@@ -239,8 +239,8 @@ function Login() {
     <div className="min-h-screen grid place-items-center px-4 bg-gradient-to-br from-teal-50 via-stone-50 to-emerald-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
       <div className="w-full max-w-sm animate-in">
         <div className="flex flex-col items-center text-center mb-6">
-          <span className="grid place-items-center w-16 h-16 rounded-2xl bg-gradient-to-br from-teal-500 to-emerald-500 text-white text-3xl font-bold shadow-lg shadow-teal-500/25">A</span>
-          <h1 className="mt-4 font-display text-3xl font-semibold text-slate-800 dark:text-slate-100">Alquileres</h1>
+          <span className="grid place-items-center w-16 h-16 rounded-2xl bg-gradient-to-br from-teal-500 to-emerald-500 text-white text-3xl font-bold shadow-lg shadow-teal-500/25">T</span>
+          <h1 className="mt-4 font-display text-3xl font-semibold text-slate-800 dark:text-slate-100">Tampu</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1.5">
             {negocioInvita ? `Reservá tu estadía en ${negocioInvita}.` : "Gestioná tus propiedades, todo el año."}
           </p>
