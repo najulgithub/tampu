@@ -122,6 +122,13 @@ export const PAISES: Pais[] = [
   { codigo: "Otro", nombre: "Otro", moneda: "USD", ajusteInflacion: false },
 ];
 
+// Estado de suscripción del negocio (prueba gratis → pago).
+export interface Suscripcion {
+  estado: "trial" | "activa" | "vencida" | "cancelada";
+  trialFin: string;       // ISO
+  periodoFin?: string;    // ISO (fin del período pago vigente)
+}
+
 // Configuración regional del negocio (una por dueño).
 export interface Configuracion {
   pais: string;

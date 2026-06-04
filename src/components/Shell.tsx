@@ -91,7 +91,7 @@ function BotonTema() {
 export default function Shell({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [authListo, setAuthListo] = useState(false);
-  const { rol, puedeEditar, avisos } = useStore(); // dueno | colaborador | cliente | nuevo | null (lo resuelve el store)
+  const { rol, puedeEditar, avisos, accesoActivo, diasTrial, suscripcion } = useStore();
   const mantenimiento = avisos.filter((a) => a.tipo === "mantenimiento");
   const pathname = usePathname();
   const navVisible = NAV.filter((n) => n.href !== "/reportes" || puedeEditar("reportes"));
@@ -124,6 +124,10 @@ export default function Shell({ children }: { children: React.ReactNode }) {
   }
 
   if (rol === "cliente") return <PortalCliente session={session} />;
+
+  if ((rol === "dueno" || rol === "colaborador") && !accesoActivo) {
+    return <Paywall esDueno={rol === "dueno"} email={session.user.email ?? ""} />;
+  }
 
   return (
     <div className="min-h-screen text-slate-900 dark:text-slate-100">
@@ -171,6 +175,13 @@ export default function Shell({ children }: { children: React.ReactNode }) {
         </div>
       ))}
 
+      {rol === "dueno" && suscripcion?.estado === "trial" && (
+        <div className="bg-teal-600 text-white text-sm px-4 py-2 text-center">
+          Prueba gratis: te quedan <b>{diasTrial} {diasTrial === 1 ? "día" : "días"}</b>.{" "}
+          <button onClick={iniciarSuscripcion} className="underline font-medium hover:opacity-90">Suscribite ahora →</button>
+        </div>
+      )}
+
       <main key={pathname} className="max-w-5xl mx-auto px-4 py-6 pb-24 sm:pb-8 animate-in">{children}</main>
 
       {/* Barra inferior tipo app (solo mobile) */}
@@ -193,6 +204,54 @@ export default function Shell({ children }: { children: React.ReactNode }) {
       </nav>
 
       <ChatWidgetDueno />
+    </div>
+  );
+}
+
+// Inicia el flujo de suscripción: pide el link de pago al backend y redirige a Mercado Pago.
+async function iniciarSuscripcion() {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return;
+  try {
+    const res = await fetch("/api/suscribir", { method: "POST", headers: { Authorization: `Bearer ${session.access_token}` } });
+    const j = await res.json().catch(() => ({}));
+    if (j.init_point) window.location.href = j.init_point;
+    else alert("No se pudo iniciar la suscripción. Probá de nuevo en un momento.");
+  } catch {
+    alert("No se pudo iniciar la suscripción. Probá de nuevo en un momento.");
+  }
+}
+
+function Paywall({ esDueno, email }: { esDueno: boolean; email: string }) {
+  const [cargando, setCargando] = useState(false);
+  async function suscribir() { setCargando(true); await iniciarSuscripcion(); setCargando(false); }
+
+  return (
+    <div className="min-h-screen grid place-items-center px-4 bg-gradient-to-br from-teal-50 via-stone-50 to-emerald-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+      <div className="w-full max-w-sm text-center animate-in">
+        <LogoTampu size={64} className="rounded-2xl shadow-lg shadow-teal-500/25 mx-auto" />
+        <h1 className="mt-4 font-display text-2xl font-semibold text-slate-800 dark:text-slate-100">Tu prueba terminó</h1>
+        {esDueno ? (
+          <>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
+              Suscribite para seguir gestionando tus alquileres con tampu. Tus datos están guardados y vuelven apenas reactivás.
+            </p>
+            <button
+              onClick={suscribir}
+              disabled={cargando}
+              className="mt-5 w-full rounded-lg bg-teal-600 text-white py-3 text-sm font-semibold shadow-sm hover:bg-teal-700 active:scale-[.98] transition disabled:opacity-50"
+            >
+              {cargando ? "Redirigiendo…" : "Suscribirme con Mercado Pago"}
+            </button>
+            <button onClick={() => location.reload()} className="mt-3 text-xs text-teal-600 dark:text-teal-400 hover:underline">Ya pagué — actualizar</button>
+          </>
+        ) : (
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
+            El acceso del negocio está suspendido. Avisale al propietario para que renueve la suscripción.
+          </p>
+        )}
+        <button onClick={() => supabase.auth.signOut()} className="mt-6 block mx-auto text-sm text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">Salir ({email})</button>
+      </div>
     </div>
   );
 }

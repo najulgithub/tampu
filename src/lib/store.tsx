@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
-import type { Grupo, Unidad, Reserva, Gasto, GastoProgramado, Colaborador, Pago, MedioPago, Configuracion, ServicioComprobante, Proveedor, Presupuesto, Mensaje, Notificacion, AvisoSistema } from "./types";
+import type { Grupo, Unidad, Reserva, Gasto, GastoProgramado, Colaborador, Pago, MedioPago, Configuracion, ServicioComprobante, Proveedor, Presupuesto, Mensaje, Notificacion, AvisoSistema, Suscripcion } from "./types";
 import { COLORES_UNIDAD, MEDIOS_PAGO_DEFAULT, CONFIG_DEFAULT } from "./types";
 import { solapan, hoyISO } from "./fechas";
 import { generarGastos } from "./programados";
@@ -98,6 +98,10 @@ const gastoDb = (g: Gasto) => ({
 const notifDe = (r: any): Notificacion => ({
   id: r.id, tipo: r.tipo, titulo: r.titulo, cuerpo: r.cuerpo ?? "", reservaId: r.reserva_id ?? undefined, leida: r.leida ?? false, createdAt: r.created_at,
 });
+const suscDe = (r: any): Suscripcion => ({
+  estado: r.estado ?? "trial", trialFin: r.trial_fin, periodoFin: r.periodo_fin ?? undefined,
+});
+
 const avisoDe = (r: any): AvisoSistema => ({
   id: r.id, tipo: r.tipo, titulo: r.titulo, cuerpo: r.cuerpo ?? "", activo: r.activo ?? true, createdAt: r.created_at,
 });
@@ -209,6 +213,9 @@ interface StoreCtx {
   permisosColab: string[];
   puedeEditar: (modulo: string) => boolean;
   puedeVerMontos: boolean;
+  suscripcion: Suscripcion | null;
+  accesoActivo: boolean;
+  diasTrial: number;
   notificaciones: Notificacion[];
   notifNoLeidas: number;
   marcarNotifLeidas: () => void;
@@ -242,6 +249,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [notificaciones, setNotificaciones] = useState<Notificacion[]>([]);
   const [avisos, setAvisos] = useState<AvisoSistema[]>([]);
   const [esAdmin, setEsAdmin] = useState(false);
+  const [suscripcion, setSuscripcion] = useState<Suscripcion | null>(null);
 
   // Refs con el último estado, para materializar sin closures viejos.
   const refs = useRef({ gastos, gastosProgramados, reservas, unidades });
@@ -287,7 +295,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const cargarTodo = useCallback(async () => {
     setCargado(false);
-    const [g, u, r, ga, pr, co, pa, me, cf, sc, pv, ps, mn, nt, av, ad] = await Promise.all([
+    const [g, u, r, ga, pr, co, pa, me, cf, sc, pv, ps, mn, nt, av, ad, su] = await Promise.all([
       supabase.from("grupos").select("*"),
       supabase.from("unidades").select("*"),
       supabase.from("reservas").select("*"),
@@ -304,6 +312,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       supabase.from("notificaciones").select("*").eq("para", "dueno").order("created_at", { ascending: false }).limit(100),
       supabase.from("avisos_sistema").select("*").eq("activo", true).order("created_at", { ascending: false }),
       supabase.rpc("es_admin_sistema"),
+      supabase.from("suscripciones").select("*").maybeSingle(),
     ]);
     const gr = (g.data ?? []).map(grupoDe);
     const un = (u.data ?? []).map(unidadDe);
@@ -336,6 +345,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setNotificaciones((nt.data ?? []).map(notifDe));
     setAvisos((av.data ?? []).map(avisoDe));
     setEsAdmin(ad.data === true);
+    setSuscripcion(su.data ? suscDe(su.data) : null);
     setConfig(cf.data ? configDe(cf.data) : CONFIG_DEFAULT);
     setCargado(true);
   }, []);
@@ -345,7 +355,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       cargadoPara.current = null;
       setGrupos([]); setUnidades([]); setReservas([]); setGastos([]); setGastosProgramados([]); setColaboradores([]); setPagos([]); setMediosPago([]);
       setServiciosComprobantes([]); setProveedores([]); setPresupuestos([]); setMensajes([]);
-      setNotificaciones([]); setAvisos([]); setEsAdmin(false);
+      setNotificaciones([]); setAvisos([]); setEsAdmin(false); setSuscripcion(null);
       setConfig(CONFIG_DEFAULT);
       setCargado(false);
       return;
@@ -751,6 +761,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     notifNoLeidas: notificaciones.filter((n) => !n.leida).length,
     marcarNotifLeidas,
     avisos, esAdmin, crearAviso, toggleAviso, eliminarAviso,
+    suscripcion,
+    accesoActivo: (() => {
+      if (esAdmin || rol === "cliente" || rol === "nuevo" || rol === null) return true;
+      if (!suscripcion) return true; // sin fila (migración no corrida) → no bloquear
+      const ahora = Date.now();
+      if (suscripcion.estado === "activa") return suscripcion.periodoFin ? Date.parse(suscripcion.periodoFin) > ahora : true;
+      if (suscripcion.estado === "trial") return Date.parse(suscripcion.trialFin) > ahora;
+      return false; // vencida | cancelada
+    })(),
+    diasTrial: suscripcion && suscripcion.estado === "trial"
+      ? Math.max(0, Math.ceil((Date.parse(suscripcion.trialFin) - Date.now()) / 86400000))
+      : 0,
   };
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
