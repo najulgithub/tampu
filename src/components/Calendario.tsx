@@ -69,7 +69,7 @@ export default function Calendario({
           const corte = noche && salida && noche.id !== salida.id;
 
           let style: React.CSSProperties | undefined;
-          let clases = "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700/50";
+          let clases = "bg-slate-50 dark:bg-slate-700/40 ring-1 ring-inset ring-slate-200/80 dark:ring-slate-600/50 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/70";
           let title = "Libre";
 
           if (corte) {
