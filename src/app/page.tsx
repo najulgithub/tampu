@@ -150,7 +150,7 @@ export default function Agenda() {
                       <span className={meta.texto}>{meta.label}</span> · {nombreUnidad(r.unidadId)}
                     </div>
                   </div>
-                  <div className="shrink-0 text-right text-xs">{detalleTarea(t)}</div>
+                  <div className="shrink-0 text-right text-xs whitespace-nowrap">{detalleTarea(t)}</div>
                 </div>
               );
               return (
@@ -167,9 +167,9 @@ export default function Agenda() {
                   </div>
                   {/* Contenido */}
                   {t.tipo === "ajuste" ? (
-                    <button onClick={() => setCalcular(r)} className="flex-1 text-left pb-4 hover:opacity-75 transition">{cuerpo}</button>
+                    <button onClick={() => setCalcular(r)} className="flex-1 min-w-0 text-left pb-4 hover:opacity-75 transition">{cuerpo}</button>
                   ) : (
-                    <Link href={`/unidades/${r.unidadId}`} className="flex-1 pb-4 hover:opacity-75 transition">{cuerpo}</Link>
+                    <Link href={`/unidades/${r.unidadId}`} className="flex-1 min-w-0 pb-4 hover:opacity-75 transition">{cuerpo}</Link>
                   )}
                 </div>
               );

@@ -199,8 +199,8 @@ export default function Reportes() {
       </div>
 
       {/* Tabs + toggle de vista */}
-      <div className="flex items-center justify-between mb-5 border-b border-slate-200 dark:border-slate-700">
-        <div className="flex gap-1">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-5 border-b border-slate-200 dark:border-slate-700">
+        <div className="flex gap-1 overflow-x-auto -mb-px">
           <TabBtn activo={tab === "economico"} onClick={() => setTab("economico")}>Económico</TabBtn>
           <TabBtn activo={tab === "ocupacion"} onClick={() => setTab("ocupacion")}>Ocupación</TabBtn>
           <TabBtn activo={tab === "cobranzas"} onClick={() => setTab("cobranzas")}>Por cobrar</TabBtn>
@@ -328,11 +328,11 @@ function Cobranzas({
       <div className="grid grid-cols-2 gap-3 mb-5">
         <div className="card p-4">
           <div className="text-xs text-slate-500 dark:text-slate-400">Por cobrar (pesos)</div>
-          <div className="text-2xl font-semibold text-amber-600 dark:text-amber-400 mt-1 tabular-nums">{pesos(totalARS)}</div>
+          <div className="text-xl sm:text-2xl font-semibold text-amber-600 dark:text-amber-400 mt-1 tabular-nums">{pesos(totalARS)}</div>
         </div>
         <div className="card p-4">
           <div className="text-xs text-slate-500 dark:text-slate-400">Por cobrar (dólares)</div>
-          <div className="text-2xl font-semibold text-amber-600 dark:text-amber-400 mt-1 tabular-nums">US${Math.round(totalUSD).toLocaleString("es-AR")}</div>
+          <div className="text-xl sm:text-2xl font-semibold text-amber-600 dark:text-amber-400 mt-1 tabular-nums">US${Math.round(totalUSD).toLocaleString("es-AR")}</div>
         </div>
       </div>
 
@@ -422,16 +422,16 @@ function Cronograma({
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
         <div className="card p-4">
           <div className="text-xs text-slate-500 dark:text-slate-400">A cobrar ({meses} meses)</div>
-          <div className="text-2xl font-semibold text-slate-800 dark:text-slate-100 mt-1 tabular-nums">{pesos(totalARS)}</div>
+          <div className="text-xl sm:text-2xl font-semibold text-slate-800 dark:text-slate-100 mt-1 tabular-nums">{pesos(totalARS)}</div>
         </div>
         <div className="card p-4">
           <div className="text-xs text-slate-500 dark:text-slate-400">Vencido a hoy</div>
-          <div className={`text-2xl font-semibold mt-1 tabular-nums ${vencidoARS > 0 ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"}`}>{pesos(vencidoARS)}</div>
+          <div className={`text-xl sm:text-2xl font-semibold mt-1 tabular-nums ${vencidoARS > 0 ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"}`}>{pesos(vencidoARS)}</div>
         </div>
         {totalUSD > 0 && (
           <div className="card p-4">
             <div className="text-xs text-slate-500 dark:text-slate-400">A cobrar (dólares)</div>
-            <div className="text-2xl font-semibold text-slate-800 dark:text-slate-100 mt-1 tabular-nums">US${Math.round(totalUSD).toLocaleString("es-AR")}</div>
+            <div className="text-xl sm:text-2xl font-semibold text-slate-800 dark:text-slate-100 mt-1 tabular-nums">US${Math.round(totalUSD).toLocaleString("es-AR")}</div>
           </div>
         )}
       </div>
@@ -549,8 +549,8 @@ function TabBtn({ activo, onClick, children }: { activo: boolean; onClick: () =>
       onClick={onClick}
       className={
         activo
-          ? "px-4 py-2 text-sm font-medium text-teal-600 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-400 -mb-px"
-          : "px-4 py-2 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+          ? "px-4 py-2 text-sm font-medium whitespace-nowrap shrink-0 text-teal-600 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-400 -mb-px"
+          : "px-4 py-2 text-sm whitespace-nowrap shrink-0 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
       }
     >
       {children}
@@ -573,7 +573,7 @@ function ResumenNegocios({ unidades, metricas, negocio, tipo, onGastosClick, onI
     const maxIng = Math.max(temp, largo, 1);
     return (
       <div className="mb-6 space-y-4">
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <Tarjeta titulo="Ingresos" valor={pesos(totalIng)} sub="ver por medio →" onClick={onIngresosClick} />
           <Tarjeta titulo="Gastos" valor={pesos(gastos)} sub="ver por tipo →" tono="amber" onClick={onGastosClick} />
           <Tarjeta titulo="Resultado" valor={pesos(totalIng - gastos)} sub="ingresos − gastos" tono={totalIng - gastos >= 0 ? "emerald" : "rose"} />
