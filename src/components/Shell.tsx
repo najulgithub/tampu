@@ -10,7 +10,7 @@ import { ChatWidgetDueno } from "@/components/ChatWidget";
 import { CampanaDueno } from "@/components/Campana";
 import { LogoTampu } from "@/components/Logo";
 import { useStore } from "@/lib/store";
-import { planPorUnidades, CONTACTO_EMPRESAS } from "@/lib/types";
+import { planPorUnidades, CONTACTO_EMPRESAS, PLANES } from "@/lib/types";
 
 const NAV = [
   { href: "/", label: "Inicio", icon: "home" },
@@ -324,6 +324,63 @@ function Paywall({ esDueno, email }: { esDueno: boolean; email: string }) {
   );
 }
 
+// Landing pública de planes (accesible desde el login, sin estar logueado).
+function LandingPlanes({ onCerrar }: { onCerrar: () => void }) {
+  const rango = (i: number) => {
+    const p = PLANES[i];
+    const desde = i === 0 ? 1 : PLANES[i - 1].hasta + 1;
+    if (p.hasta === Infinity) return `${desde} o más unidades`;
+    if (i === 0) return `hasta ${p.hasta} unidades`;
+    return `${desde} a ${p.hasta} unidades`;
+  };
+  return (
+    <div className="min-h-screen px-4 py-10 bg-gradient-to-br from-teal-50 via-stone-50 to-emerald-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+      <div className="max-w-3xl mx-auto animate-in">
+        <div className="flex flex-col items-center text-center mb-8">
+          <LogoTampu size={56} className="rounded-2xl shadow-lg shadow-teal-500/25" />
+          <h1 className="mt-4 font-display text-3xl font-semibold text-slate-800 dark:text-slate-100">Planes</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1.5 max-w-md">
+            Empezá con <b>30 días gratis</b>. El precio depende de cuántas unidades gestiones — todas las funciones incluidas.
+          </p>
+        </div>
+
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {PLANES.map((p, i) => (
+            <div
+              key={p.nombre}
+              className={`rounded-2xl border bg-white dark:bg-slate-800 shadow-sm p-5 ${p.nombre === "Pro" ? "border-teal-400 dark:border-teal-500/50 ring-1 ring-teal-400/40" : "border-slate-200 dark:border-slate-700/70"}`}
+            >
+              {p.nombre === "Pro" && <div className="text-[10px] font-bold uppercase tracking-wider text-teal-600 dark:text-teal-400 mb-1">Más elegido</div>}
+              <div className="font-display text-lg font-semibold text-slate-800 dark:text-slate-100">{p.nombre}</div>
+              <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{rango(i)}</div>
+              <div className="mt-3">
+                {p.contacto ? (
+                  <div className="text-2xl font-semibold text-slate-800 dark:text-slate-100">A convenir</div>
+                ) : (
+                  <div className="text-3xl font-semibold text-slate-800 dark:text-slate-100 tabular-nums">
+                    ${p.precio.toLocaleString("es-AR")}<span className="text-sm font-normal text-slate-500 dark:text-slate-400">/mes</span>
+                  </div>
+                )}
+              </div>
+              {p.contacto && (
+                <a href={`mailto:${CONTACTO_EMPRESAS}?subject=Plan%20Empresas%20tampu`} className="mt-3 inline-block text-sm text-teal-600 dark:text-teal-400 hover:underline">Escribinos →</a>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <p className="text-xs text-center text-slate-400 dark:text-slate-500 mt-6 max-w-lg mx-auto">
+          Cambiás de plan automáticamente al sumar unidades. Precios en pesos, podés cancelar cuando quieras.
+        </p>
+
+        <button onClick={onCerrar} className="mt-8 mx-auto block rounded-lg bg-teal-600 text-white px-6 py-2.5 text-sm font-semibold shadow-sm hover:bg-teal-700 active:scale-[.98] transition">
+          ← Volver a ingresar
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function Login() {
   const [modo, setModo] = useState<"ingresar" | "crear">("ingresar");
   const [email, setEmail] = useState("");
@@ -331,6 +388,7 @@ function Login() {
   const [error, setError] = useState("");
   const [aviso, setAviso] = useState("");
   const [cargando, setCargando] = useState(false);
+  const [verPlanes, setVerPlanes] = useState(false);
   // Si llegó por un link de cliente (?r=slug), saludamos con el nombre del negocio.
   const [negocioInvita, setNegocioInvita] = useState<string | null>(null);
 
@@ -362,6 +420,8 @@ function Login() {
       setCargando(false);
     }
   }
+
+  if (verPlanes) return <LandingPlanes onCerrar={() => setVerPlanes(false)} />;
 
   return (
     <div className="min-h-screen grid place-items-center px-4 bg-gradient-to-br from-teal-50 via-stone-50 to-emerald-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
@@ -424,6 +484,13 @@ function Login() {
             {modo === "ingresar" ? "¿No tenés cuenta? Crear una" : "¿Ya tenés cuenta? Ingresar"}
           </button>
         </div>
+
+        <button
+          onClick={() => setVerPlanes(true)}
+          className="mt-5 mx-auto block text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 transition"
+        >
+          Ver planes y precios →
+        </button>
       </div>
     </div>
   );
