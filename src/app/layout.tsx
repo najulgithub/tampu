@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Fraunces, Manrope } from "next/font/google";
 import "./globals.css";
 import { StoreProvider } from "@/lib/store";
@@ -18,6 +18,17 @@ const sans = Manrope({
 export const metadata: Metadata = {
   title: "tampu — gestión de alquileres",
   description: "Gestioná tus propiedades todo el año: temporal y largo plazo, con portal para inquilinos.",
+  applicationName: "tampu",
+  appleWebApp: { capable: true, title: "tampu", statusBarStyle: "default" },
+  icons: { apple: "/apple-touch-icon.png" },
+};
+
+// El color de la barra del sistema cuando la app está instalada (claro/oscuro).
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#1f6f6b" },
+    { media: "(prefers-color-scheme: dark)", color: "#0f172a" },
+  ],
 };
 
 export default function RootLayout({
