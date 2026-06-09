@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useStore } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
 
@@ -40,14 +40,29 @@ export default function AdminPanel() {
   const { esAdmin } = useStore();
   const [usuarios, setUsuarios] = useState<UsuarioAdmin[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [ocupado, setOcupado] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!esAdmin) return;
-    supabase.rpc("admin_usuarios").then(({ data, error }) => {
+  const cargar = useCallback(() => {
+    return supabase.rpc("admin_usuarios").then(({ data, error }) => {
       if (error) setError(error.message);
       else setUsuarios((data ?? []) as UsuarioAdmin[]);
     });
-  }, [esAdmin]);
+  }, []);
+
+  useEffect(() => {
+    if (!esAdmin) return;
+    cargar();
+  }, [esAdmin, cargar]);
+
+  // Activar/extender o suspender la suscripción de un dueño.
+  async function accion(owner: string, estado: string, dias: number, confirmacion: string) {
+    if (!confirm(confirmacion)) return;
+    setOcupado(owner);
+    const { error } = await supabase.rpc("admin_set_suscripcion", { p_owner: owner, p_estado: estado, p_dias: dias });
+    if (error) alert(error.message);
+    else await cargar();
+    setOcupado(null);
+  }
 
   if (!esAdmin) {
     return (
@@ -116,6 +131,29 @@ export default function AdminPanel() {
                   <span>{u.unidades} unidades</span>
                   <span>{u.reservas} reservas</span>
                   <span>{u.colaboradores} colaboradores</span>
+                </div>
+                <div className="flex flex-wrap gap-2 mt-3">
+                  <button
+                    disabled={ocupado === u.owner_id}
+                    onClick={() => accion(u.owner_id, "activa", 30, `¿Activar 30 días a ${u.email}?`)}
+                    className="text-xs rounded-md border border-emerald-300 dark:border-emerald-500/40 text-emerald-700 dark:text-emerald-300 px-2.5 py-1 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 disabled:opacity-40"
+                  >
+                    + 30 días
+                  </button>
+                  <button
+                    disabled={ocupado === u.owner_id}
+                    onClick={() => accion(u.owner_id, "activa", 365, `¿Activar 1 año a ${u.email}?`)}
+                    className="text-xs rounded-md border border-emerald-300 dark:border-emerald-500/40 text-emerald-700 dark:text-emerald-300 px-2.5 py-1 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 disabled:opacity-40"
+                  >
+                    + 1 año
+                  </button>
+                  <button
+                    disabled={ocupado === u.owner_id}
+                    onClick={() => accion(u.owner_id, "vencida", 0, `¿Suspender el acceso de ${u.email}?`)}
+                    className="text-xs rounded-md border border-rose-300 dark:border-rose-500/40 text-rose-700 dark:text-rose-300 px-2.5 py-1 hover:bg-rose-50 dark:hover:bg-rose-500/10 disabled:opacity-40"
+                  >
+                    Suspender
+                  </button>
                 </div>
               </div>
             );
