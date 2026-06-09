@@ -18,6 +18,9 @@ self.addEventListener("push", (event) => {
     badge: "/icon-192.png",
     data: { url: data.url || "/" },
     tag: data.tag || undefined,
+    vibrate: [120, 60, 120],
+    requireInteraction: true,
+    renotify: !!data.tag,
   };
   event.waitUntil(self.registration.showNotification(title, options));
 });
