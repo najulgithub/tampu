@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { planPorUnidades } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -8,7 +9,6 @@ export async function POST(req: Request) {
   const anon = process.env.NEXT_PUBLIC_SUPABASE_KEY;
   const mpToken = process.env.MP_ACCESS_TOKEN;
   const service = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const precio = Number(process.env.MP_PRECIO || "0");
 
   if (!url || !anon) return Response.json({ error: "config" }, { status: 500 });
   if (!mpToken) return Response.json({ error: "Mercado Pago no configurado" }, { status: 500 });
@@ -19,12 +19,17 @@ export async function POST(req: Request) {
   const { data: { user }, error } = await sb.auth.getUser();
   if (error || !user) return Response.json({ error: "no autenticado" }, { status: 401 });
 
+  // El plan (y su precio) depende de cuántas unidades tiene cargadas el dueño.
+  const { count } = await sb.from("unidades").select("id", { count: "exact", head: true });
+  const plan = planPorUnidades(count ?? 0);
+  const precio = plan.precio;
+
   const origin = req.headers.get("origin") || "https://tampu.ar";
   const r = await fetch("https://api.mercadopago.com/preapproval", {
     method: "POST",
     headers: { Authorization: `Bearer ${mpToken}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      reason: "Suscripción tampu",
+      reason: `Suscripción tampu — plan ${plan.nombre}`,
       external_reference: user.id,
       payer_email: user.email,
       back_url: origin,

@@ -10,6 +10,7 @@ import { ChatWidgetDueno } from "@/components/ChatWidget";
 import { CampanaDueno } from "@/components/Campana";
 import { LogoTampu } from "@/components/Logo";
 import { useStore } from "@/lib/store";
+import { planPorUnidades } from "@/lib/types";
 
 const NAV = [
   { href: "/", label: "Inicio", icon: "home" },
@@ -92,7 +93,8 @@ function BotonTema() {
 export default function Shell({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [authListo, setAuthListo] = useState(false);
-  const { rol, puedeEditar, avisos, accesoActivo, diasTrial, suscripcion, esAdmin } = useStore();
+  const { rol, puedeEditar, avisos, accesoActivo, diasTrial, suscripcion, esAdmin, unidades } = useStore();
+  const planActual = planPorUnidades(unidades.length);
   const mantenimiento = avisos.filter((a) => a.tipo === "mantenimiento");
   const pathname = usePathname();
   const navVisible = NAV.filter((n) => n.href !== "/reportes" || puedeEditar("reportes"));
@@ -188,7 +190,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
 
       {rol === "dueno" && suscripcion?.estado === "trial" && (
         <div className="bg-teal-600 text-white text-sm px-4 py-2 text-center">
-          Prueba gratis: te quedan <b>{diasTrial} {diasTrial === 1 ? "día" : "días"}</b>.{" "}
+          Prueba gratis: te quedan <b>{diasTrial} {diasTrial === 1 ? "día" : "días"}</b>. Plan {planActual.nombre} ${planActual.precio.toLocaleString("es-AR")}/mes.{" "}
           <button onClick={iniciarSuscripcion} className="underline font-medium hover:opacity-90">Suscribite ahora →</button>
         </div>
       )}
@@ -234,7 +236,9 @@ async function iniciarSuscripcion() {
 }
 
 function Paywall({ esDueno, email }: { esDueno: boolean; email: string }) {
+  const { unidades } = useStore();
   const [cargando, setCargando] = useState(false);
+  const plan = planPorUnidades(unidades.length);
   async function suscribir() { setCargando(true); await iniciarSuscripcion(); setCargando(false); }
 
   return (
@@ -247,6 +251,11 @@ function Paywall({ esDueno, email }: { esDueno: boolean; email: string }) {
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
               Suscribite para seguir gestionando tus alquileres con tampu. Tus datos están guardados y vuelven apenas reactivás.
             </p>
+            <div className="mt-4 rounded-xl border border-teal-200 dark:border-teal-500/30 bg-teal-50/60 dark:bg-teal-500/10 p-4">
+              <div className="text-xs uppercase tracking-wide text-teal-700 dark:text-teal-300 font-semibold">Plan {plan.nombre}</div>
+              <div className="text-3xl font-semibold text-slate-800 dark:text-slate-100 mt-1 tabular-nums">${plan.precio.toLocaleString("es-AR")}<span className="text-sm font-normal text-slate-500 dark:text-slate-400">/mes</span></div>
+              <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">Según tus {unidades.length} {unidades.length === 1 ? "unidad" : "unidades"} cargadas.</div>
+            </div>
             <button
               onClick={suscribir}
               disabled={cargando}

@@ -129,6 +129,23 @@ export interface Suscripcion {
   periodoFin?: string;    // ISO (fin del período pago vigente)
 }
 
+// Planes según la cantidad de unidades cargadas. El precio se calcula
+// al suscribirse. 'hasta' es el tope de unidades del tramo (el último, Infinity).
+export interface Plan {
+  nombre: string;
+  hasta: number;
+  precio: number;
+}
+export const PLANES: Plan[] = [
+  { nombre: "Básico", hasta: 3, precio: 15000 },
+  { nombre: "Plus", hasta: 6, precio: 25000 },
+  { nombre: "Pro", hasta: 10, precio: 40000 },
+  { nombre: "Max", hasta: Infinity, precio: 60000 },
+];
+export function planPorUnidades(n: number): Plan {
+  return PLANES.find((p) => n <= p.hasta) ?? PLANES[PLANES.length - 1];
+}
+
 // Configuración regional del negocio (una por dueño).
 export interface Configuracion {
   pais: string;
