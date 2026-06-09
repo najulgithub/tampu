@@ -10,7 +10,7 @@ import { ChatWidgetDueno } from "@/components/ChatWidget";
 import { CampanaDueno } from "@/components/Campana";
 import { LogoTampu } from "@/components/Logo";
 import { useStore } from "@/lib/store";
-import { planPorUnidades } from "@/lib/types";
+import { planPorUnidades, CONTACTO_EMPRESAS } from "@/lib/types";
 
 const NAV = [
   { href: "/", label: "Inicio", icon: "home" },
@@ -190,8 +190,14 @@ export default function Shell({ children }: { children: React.ReactNode }) {
 
       {rol === "dueno" && suscripcion?.estado === "trial" && (
         <div className="bg-teal-600 text-white text-sm px-4 py-2 text-center">
-          Prueba gratis: te quedan <b>{diasTrial} {diasTrial === 1 ? "día" : "días"}</b>. Plan {planActual.nombre} ${planActual.precio.toLocaleString("es-AR")}/mes.{" "}
-          <button onClick={iniciarSuscripcion} className="underline font-medium hover:opacity-90">Suscribite ahora →</button>
+          Prueba gratis: te quedan <b>{diasTrial} {diasTrial === 1 ? "día" : "días"}</b>.{" "}
+          {planActual.contacto ? (
+            <>Plan {planActual.nombre} (a medida).{" "}
+            <a href={`mailto:${CONTACTO_EMPRESAS}?subject=Plan%20Empresas%20tampu`} className="underline font-medium hover:opacity-90">Escribinos →</a></>
+          ) : (
+            <>Plan {planActual.nombre} ${planActual.precio.toLocaleString("es-AR")}/mes.{" "}
+            <button onClick={iniciarSuscripcion} className="underline font-medium hover:opacity-90">Suscribite ahora →</button></>
+          )}
         </div>
       )}
 
@@ -246,7 +252,20 @@ function Paywall({ esDueno, email }: { esDueno: boolean; email: string }) {
       <div className="w-full max-w-sm text-center animate-in">
         <LogoTampu size={64} className="rounded-2xl shadow-lg shadow-teal-500/25 mx-auto" />
         <h1 className="mt-4 font-display text-2xl font-semibold text-slate-800 dark:text-slate-100">Tu prueba terminó</h1>
-        {esDueno ? (
+        {esDueno && plan.contacto ? (
+          <>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
+              Con {unidades.length} unidades te corresponde el plan <b>Empresas</b>, a medida. Escribinos y armamos tu suscripción.
+            </p>
+            <a
+              href={`mailto:${CONTACTO_EMPRESAS}?subject=Plan%20Empresas%20tampu&body=Hola,%20tengo%20${unidades.length}%20unidades%20y%20quiero%20el%20plan%20Empresas.`}
+              className="mt-5 block w-full rounded-lg bg-teal-600 text-white py-3 text-sm font-semibold shadow-sm hover:bg-teal-700 active:scale-[.98] transition"
+            >
+              Escribinos para tu plan
+            </a>
+            <button onClick={() => location.reload()} className="mt-3 text-xs text-teal-600 dark:text-teal-400 hover:underline">Ya está activo — actualizar</button>
+          </>
+        ) : esDueno ? (
           <>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
               Suscribite para seguir gestionando tus alquileres con tampu. Tus datos están guardados y vuelven apenas reactivás.

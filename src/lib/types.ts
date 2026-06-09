@@ -135,13 +135,17 @@ export interface Plan {
   nombre: string;
   hasta: number;
   precio: number;
+  contacto?: boolean; // plan a medida: no se cobra automático, el dueño se contacta
 }
 export const PLANES: Plan[] = [
   { nombre: "Básico", hasta: 3, precio: 15000 },
   { nombre: "Plus", hasta: 6, precio: 25000 },
   { nombre: "Pro", hasta: 10, precio: 40000 },
-  { nombre: "Max", hasta: Infinity, precio: 60000 },
+  { nombre: "Max", hasta: 19, precio: 60000 },
+  { nombre: "Empresas", hasta: Infinity, precio: 0, contacto: true },
 ];
+// Dónde se comunica el cliente Empresas (cambiá este mail/whatsapp cuando quieras).
+export const CONTACTO_EMPRESAS = "israelbastarrica@marketarg.com";
 export function planPorUnidades(n: number): Plan {
   return PLANES.find((p) => n <= p.hasta) ?? PLANES[PLANES.length - 1];
 }

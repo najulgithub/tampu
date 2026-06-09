@@ -22,6 +22,8 @@ export async function POST(req: Request) {
   // El plan (y su precio) depende de cuántas unidades tiene cargadas el dueño.
   const { count } = await sb.from("unidades").select("id", { count: "exact", head: true });
   const plan = planPorUnidades(count ?? 0);
+  // El plan Empresas no se cobra automático: se gestiona por contacto.
+  if (plan.contacto) return Response.json({ error: "contacto", plan: plan.nombre }, { status: 200 });
   const precio = plan.precio;
 
   const origin = req.headers.get("origin") || "https://tampu.ar";
