@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useStore } from "@/lib/store";
 import { hoyISO, formatearFecha } from "@/lib/fechas";
-import { CATEGORIAS_GASTO, FRECUENCIAS, COLOR_CATEGORIA, COLOR_FRECUENCIA, PAGADO_POR, RUBROS_PROVEEDOR } from "@/lib/types";
+import { CATEGORIAS_GASTO, FRECUENCIAS, COLOR_CATEGORIA, COLOR_FRECUENCIA, PAGADO_POR, RUBROS_PROVEEDOR, planPorUnidades } from "@/lib/types";
 import type { AmbitoGasto, CategoriaGasto, Gasto, RepartoItem, GastoProgramado, Frecuencia, PagadoPor, Proveedor, Presupuesto, EstadoPresupuesto } from "@/lib/types";
 import { Overlay, Campo } from "@/components/ui";
 import InputMonto from "@/components/InputMonto";
@@ -70,13 +70,16 @@ function Movimientos() {
   const [filtro, setFiltro] = useState(""); // "", "u:<id>", "g:<id>"
 
   const etiquetaAmbito = (g: Gasto) =>
-    g.ambito === "unidad"
+    g.ambito === "general"
+      ? "Negocio (general)"
+      : g.ambito === "unidad"
       ? getUnidad(g.refId)?.nombre ?? "Unidad eliminada"
       : `${nombreGrupo(g.refId)} (grupo)`;
 
   // Para el filtro por unidad incluimos los gastos de grupo que la prorratean.
   const coincide = (g: Gasto) => {
     if (!filtro) return true;
+    if (g.ambito === "general") return false; // los generales solo se ven en "Todos"
     const [tipo, id] = filtro.split(":");
     if (tipo === "g") return g.ambito === "grupo" && g.refId === id;
     // tipo === "u"
@@ -190,26 +193,61 @@ function Movimientos() {
 
 // ---------- Pestaña Programados ----------
 function Programados() {
-  const { gastosProgramados, getUnidad, nombreGrupo, puedeEditar } = useStore();
+  const { gastosProgramados, getUnidad, nombreGrupo, puedeEditar, unidades, suscripcion, addProgramado } = useStore();
   const puedeEdit = puedeEditar("gastos");
   const [abrir, setAbrir] = useState(false);
   const [editando, setEditando] = useState<GastoProgramado | undefined>();
 
   const etiqueta = (p: GastoProgramado) =>
-    p.ambito === "unidad" ? getUnidad(p.refId)?.nombre ?? "Unidad eliminada" : `${nombreGrupo(p.refId)} (grupo)`;
+    p.ambito === "general"
+      ? "Negocio (general)"
+      : p.ambito === "unidad"
+      ? getUnidad(p.refId)?.nombre ?? "Unidad eliminada"
+      : `${nombreGrupo(p.refId)} (grupo)`;
+
+  // ¿Ya está cargado el gasto de la suscripción a tampu?
+  const yaEstaTampu = gastosProgramados.some((p) => p.proveedor === "tampu");
+  const precioTampu = suscripcion?.precio ?? planPorUnidades(unidades.length).precio;
+
+  function agregarTampu() {
+    if (yaEstaTampu || precioTampu <= 0) return;
+    addProgramado({
+      ambito: "general",
+      refId: "",
+      categoria: "Servicios",
+      descripcion: "Suscripción tampu",
+      monto: precioTampu,
+      proveedor: "tampu",
+      frecuencia: "Mensual",
+      fechaInicio: hoyISO(),
+      activo: true,
+    });
+  }
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 gap-3">
         <p className="text-sm text-slate-500 dark:text-slate-400">
           Gastos que se generan solos: por frecuencia o cuando se va un huésped.
         </p>
         {puedeEdit && (
-          <button onClick={() => setAbrir(true)} className="rounded-lg bg-teal-600 text-white px-4 py-2 text-sm font-medium hover:bg-teal-700 transition">
+          <button onClick={() => setAbrir(true)} className="rounded-lg bg-teal-600 text-white px-4 py-2 text-sm font-medium hover:bg-teal-700 transition shrink-0">
             + Programar gasto
           </button>
         )}
       </div>
+
+      {puedeEdit && !yaEstaTampu && precioTampu > 0 && (
+        <div className="mb-5 flex items-center justify-between gap-3 rounded-xl border border-teal-200 dark:border-teal-500/30 bg-teal-50/60 dark:bg-teal-500/10 p-3">
+          <div className="min-w-0">
+            <div className="text-sm font-medium text-slate-700 dark:text-slate-200">¿Sumás tu suscripción a tampu como gasto?</div>
+            <div className="text-xs text-slate-500 dark:text-slate-400">Mensual de ${precioTampu.toLocaleString("es-AR")}, prorrateado entre tus unidades.</div>
+          </div>
+          <button onClick={agregarTampu} className="shrink-0 rounded-lg bg-teal-600 text-white px-3 py-2 text-sm font-medium hover:bg-teal-700 transition">
+            Agregame como gasto
+          </button>
+        </div>
+      )}
 
       {gastosProgramados.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-600 p-10 text-center text-slate-500 dark:text-slate-400">
@@ -262,7 +300,7 @@ function FormProgramado({ programado, onCerrar }: { programado?: GastoProgramado
   const [activo, setActivo] = useState(programado?.activo ?? true);
 
   const opciones = ambito === "unidad" ? unidades : grupos;
-  const valido = refId && monto > 0;
+  const valido = (ambito === "general" || refId) && monto > 0;
   const porEvento = frecuencia === "Por check-out";
 
   function guardar() {
@@ -278,16 +316,23 @@ function FormProgramado({ programado, onCerrar }: { programado?: GastoProgramado
       <form onSubmit={(e) => { e.preventDefault(); guardar(); }} className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <Campo label="Imputar a">
-            <select value={ambito} onChange={(e) => { setAmbito(e.target.value as AmbitoGasto); setRefId((e.target.value === "unidad" ? unidades[0]?.id : grupos[0]?.id) ?? ""); }} className="input">
+            <select value={ambito} onChange={(e) => { const a = e.target.value as AmbitoGasto; setAmbito(a); setRefId(a === "general" ? "" : (a === "unidad" ? unidades[0]?.id : grupos[0]?.id) ?? ""); }} className="input">
               <option value="unidad">Una unidad</option>
               <option value="grupo">Un grupo</option>
+              <option value="general">Todo el negocio</option>
             </select>
           </Campo>
-          <Campo label={ambito === "unidad" ? "Unidad" : "Grupo"}>
-            <select value={refId} onChange={(e) => setRefId(e.target.value)} className="input">
-              {opciones.map((o) => (<option key={o.id} value={o.id}>{o.nombre}</option>))}
-            </select>
-          </Campo>
+          {ambito === "general" ? (
+            <Campo label="Reparto">
+              <p className="text-xs text-slate-400 dark:text-slate-500 pt-2.5">Se prorratea entre todas las unidades.</p>
+            </Campo>
+          ) : (
+            <Campo label={ambito === "unidad" ? "Unidad" : "Grupo"}>
+              <select value={refId} onChange={(e) => setRefId(e.target.value)} className="input">
+                {opciones.map((o) => (<option key={o.id} value={o.id}>{o.nombre}</option>))}
+              </select>
+            </Campo>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -376,8 +421,8 @@ function FormGasto({ gasto, onCerrar, presupuesto }: { gasto?: Gasto; onCerrar: 
   const opciones = ambito === "unidad" ? unidades : grupos;
   const unidadesDelGrupo = ambito === "grupo" ? unidades.filter((u) => u.grupoId === refId) : [];
   const sumaPct = unidadesDelGrupo.reduce((acc, u) => acc + (pct[u.id] ?? 0), 0);
-  const repartoOk = ambito === "unidad" || (unidadesDelGrupo.length > 0 && Math.abs(sumaPct - 100) < 0.01);
-  const valido = refId && monto > 0 && fecha && repartoOk;
+  const repartoOk = ambito === "unidad" || ambito === "general" || (unidadesDelGrupo.length > 0 && Math.abs(sumaPct - 100) < 0.01);
+  const valido = (ambito === "general" || refId) && monto > 0 && fecha && repartoOk;
 
   function equalSplitFor(grupoId: string): Record<string, number> {
     const us = unidades.filter((u) => u.grupoId === grupoId);
@@ -393,7 +438,10 @@ function FormGasto({ gasto, onCerrar, presupuesto }: { gasto?: Gasto; onCerrar: 
 
   function cambiarAmbito(nuevo: AmbitoGasto) {
     setAmbito(nuevo);
-    if (nuevo === "unidad") {
+    if (nuevo === "general") {
+      setRefId("");
+      setPct({});
+    } else if (nuevo === "unidad") {
       setRefId(unidades[0]?.id ?? "");
       setPct({});
     } else {
@@ -461,20 +509,27 @@ function FormGasto({ gasto, onCerrar, presupuesto }: { gasto?: Gasto; onCerrar: 
             <select value={ambito} onChange={(e) => cambiarAmbito(e.target.value as AmbitoGasto)} className="input">
               <option value="unidad">Una unidad</option>
               <option value="grupo">Un grupo</option>
+              <option value="general">Todo el negocio</option>
             </select>
           </Campo>
-          <Campo label={ambito === "unidad" ? "Unidad" : "Grupo"}>
-            <select
-              value={refId}
-              onChange={(e) => (ambito === "grupo" ? cambiarGrupo(e.target.value) : setRefId(e.target.value))}
-              className="input"
-            >
-              {opciones.length === 0 && <option value="">— ninguno —</option>}
-              {opciones.map((o) => (
-                <option key={o.id} value={o.id}>{o.nombre}</option>
-              ))}
-            </select>
-          </Campo>
+          {ambito === "general" ? (
+            <Campo label="Reparto">
+              <p className="text-xs text-slate-400 dark:text-slate-500 pt-2.5">Se prorratea entre todas las unidades.</p>
+            </Campo>
+          ) : (
+            <Campo label={ambito === "unidad" ? "Unidad" : "Grupo"}>
+              <select
+                value={refId}
+                onChange={(e) => (ambito === "grupo" ? cambiarGrupo(e.target.value) : setRefId(e.target.value))}
+                className="input"
+              >
+                {opciones.length === 0 && <option value="">— ninguno —</option>}
+                {opciones.map((o) => (
+                  <option key={o.id} value={o.id}>{o.nombre}</option>
+                ))}
+              </select>
+            </Campo>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-4">

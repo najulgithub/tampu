@@ -317,7 +317,7 @@ export interface Pago {
 }
 
 // Un gasto se imputa a una unidad puntual o a un grupo entero (gasto compartido).
-export type AmbitoGasto = "unidad" | "grupo";
+export type AmbitoGasto = "unidad" | "grupo" | "general";
 
 // Quién desembolsó el gasto. Si lo pagó el inquilino, se le acredita contra el
 // alquiler del mes (cuenta corriente).

@@ -393,17 +393,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   );
   const gastoDeUnidad = useCallback(
     (unidadId: string) => {
+      const nUnidades = Math.max(1, unidades.length);
       let total = 0;
       for (const g of gastos) {
         if (g.ambito === "unidad" && g.refId === unidadId) total += g.monto;
         else if (g.ambito === "grupo" && g.reparto) {
           const it = g.reparto.find((r) => r.unidadId === unidadId);
           if (it) total += (g.monto * it.porcentaje) / 100;
+        } else if (g.ambito === "general") {
+          total += g.monto / nUnidades;
         }
       }
       return Math.round(total);
     },
-    [gastos]
+    [gastos, unidades.length]
   );
 
   // ---------- Grupos ----------

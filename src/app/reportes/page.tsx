@@ -57,6 +57,7 @@ export default function Reportes() {
   const periodEndExcl = sumarDias(hasta, 1);
   const periodDays = Math.max(1, noches(desde, periodEndExcl));
 
+  const nUnidades = Math.max(1, unidades.length);
   function gastosUnidad(uid: string): number {
     let t = 0;
     for (const g of gastos) {
@@ -66,6 +67,8 @@ export default function Reportes() {
       else if (g.ambito === "grupo" && g.reparto) {
         const it = g.reparto.find((r) => r.unidadId === uid);
         if (it) t += (g.monto * it.porcentaje) / 100;
+      } else if (g.ambito === "general") {
+        t += g.monto / nUnidades; // gasto del negocio: se reparte en partes iguales entre todas las unidades
       }
     }
     return Math.round(t);
