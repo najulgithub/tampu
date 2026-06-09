@@ -29,7 +29,7 @@ function Panel({ avisos, children, onCerrar }: { avisos: AvisoSistema[]; childre
   return (
     <>
       <div className="fixed inset-0 z-30" onClick={onCerrar} />
-      <div className="absolute right-0 mt-2 w-[min(340px,calc(100vw-1.5rem))] max-h-[70vh] overflow-y-auto rounded-xl shadow-2xl ring-1 ring-black/10 bg-white dark:bg-slate-800 z-40 p-2">
+      <div className="fixed sm:absolute right-3 sm:right-0 top-14 sm:top-auto sm:mt-2 w-[min(340px,calc(100vw-1.5rem))] max-h-[70vh] overflow-y-auto rounded-xl shadow-2xl ring-1 ring-black/10 bg-white dark:bg-slate-800 z-40 p-2">
         {avisos.length > 0 && (
           <div className="space-y-1.5 mb-2">
             {avisos.map((a) => (
