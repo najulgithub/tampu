@@ -11,7 +11,9 @@ export async function POST(req: Request) {
   const service = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const pub = process.env.VAPID_PUBLIC_KEY;
   const priv = process.env.VAPID_PRIVATE_KEY;
-  const subject = process.env.VAPID_SUBJECT || "mailto:soporte@tampu.ar";
+  // El subject debe ser un mailto: o una URL. Si vino solo el mail, le anteponemos mailto:.
+  let subject = process.env.VAPID_SUBJECT || "mailto:soporte@tampu.ar";
+  if (!/^(mailto:|https?:)/i.test(subject)) subject = "mailto:" + subject;
   const secret = process.env.PUSH_WEBHOOK_SECRET;
 
   // Seguridad: solo acepta llamadas con el secreto compartido.
@@ -44,7 +46,11 @@ export async function POST(req: Request) {
     .in("user_id", targets);
   if (!subs || subs.length === 0) return new Response("no-subs", { status: 200 });
 
-  webpush.setVapidDetails(subject, pub, priv);
+  try {
+    webpush.setVapidDetails(subject, pub, priv);
+  } catch (e: unknown) {
+    return Response.json({ error: "vapid", detalle: (e as Error)?.message }, { status: 200 });
+  }
 
   const ruta = n.tipo === "mensaje" ? "/mensajes" : "/";
   const payload = JSON.stringify({
@@ -54,22 +60,25 @@ export async function POST(req: Request) {
     tag: n.reserva_id || n.tipo || undefined,
   });
 
-  await Promise.all(
+  // Enviamos a cada dispositivo y reportamos el resultado (para diagnóstico).
+  const resultados = await Promise.all(
     subs.map(async (s) => {
       try {
         await webpush.sendNotification(
           { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
           payload
         );
+        return "sent";
       } catch (err: unknown) {
-        // Suscripción muerta (navegador desinstalado / permiso revocado): la borramos.
         const code = (err as { statusCode?: number })?.statusCode;
+        // Suscripción muerta (navegador desinstalado / permiso revocado): la borramos.
         if (code === 404 || code === 410) {
           await admin.from("push_subscriptions").delete().eq("endpoint", s.endpoint);
         }
+        return "err:" + (code ?? "?");
       }
     })
   );
 
-  return new Response("ok", { status: 200 });
+  return Response.json({ ok: true, total: subs.length, resultados }, { status: 200 });
 }
