@@ -5,6 +5,7 @@ import { useStore } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
 import { PAISES, MONEDAS } from "@/lib/types";
 import type { Moneda, AvisoSistema, TipoAviso } from "@/lib/types";
+import { pushSoportado, pushActivo, activarPush, desactivarPush } from "@/lib/push";
 
 export default function Configuracion() {
   const { config, updateConfig, seedCuenta, puedeEditar, esAdmin } = useStore();
@@ -134,9 +135,70 @@ export default function Configuracion() {
       </div>
       </fieldset>
 
+      <NotificacionesPush />
       <FormConsulta />
       {esAdmin && <AdminConsultas />}
       {esAdmin && <AdminAvisos />}
+    </div>
+  );
+}
+
+// Activar/desactivar notificaciones push en este dispositivo.
+function NotificacionesPush() {
+  const [soportado, setSoportado] = useState(true);
+  const [activo, setActivo] = useState(false);
+  const [cargando, setCargando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setSoportado(pushSoportado());
+    pushActivo().then(setActivo);
+  }, []);
+
+  async function alternar() {
+    setError(null);
+    setCargando(true);
+    try {
+      if (activo) {
+        await desactivarPush();
+        setActivo(false);
+      } else {
+        const r = await activarPush();
+        if (r.ok) setActivo(true);
+        else setError(r.error ?? "No se pudo activar.");
+      }
+    } finally {
+      setCargando(false);
+    }
+  }
+
+  return (
+    <div className="card p-4 mt-6">
+      <div className="flex items-center justify-between gap-4">
+        <div className="min-w-0">
+          <div className="text-sm font-medium text-slate-700 dark:text-slate-200">Notificaciones push</div>
+          <div className="text-xs text-slate-500 dark:text-slate-400">
+            Recibí avisos en este dispositivo (nuevas reservas, pagos, mensajes), aunque tengas la app cerrada.
+          </div>
+        </div>
+        {soportado ? (
+          <button
+            onClick={alternar}
+            disabled={cargando}
+            className={activo ? "btn-secundario shrink-0" : "btn-primario shrink-0"}
+          >
+            {cargando ? "…" : activo ? "Desactivar" : "Activar"}
+          </button>
+        ) : (
+          <span className="text-xs text-slate-400 dark:text-slate-500 shrink-0">No disponible en este navegador</span>
+        )}
+      </div>
+      {error && <div className="text-xs text-rose-600 dark:text-rose-400 mt-2">{error}</div>}
+      {soportado && !activo && !error && (
+        <div className="text-[11px] text-slate-400 dark:text-slate-500 mt-2">
+          En iPhone tenés que abrir la app desde el ícono instalado (no desde Safari) para que funcione.
+        </div>
+      )}
     </div>
   );
 }
