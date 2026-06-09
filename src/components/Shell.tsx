@@ -29,6 +29,7 @@ function NavIcon({ name, size = 22 }: { name: string; size?: number }) {
     gear: <><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" /></>,
     doc: <><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5M9 13h6M9 17h6" /></>,
     chat: <><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" /></>,
+    shield: <><path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" /><path d="M9.5 12l1.8 1.8 3.4-3.6" /></>,
   };
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
@@ -91,7 +92,7 @@ function BotonTema() {
 export default function Shell({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [authListo, setAuthListo] = useState(false);
-  const { rol, puedeEditar, avisos, accesoActivo, diasTrial, suscripcion } = useStore();
+  const { rol, puedeEditar, avisos, accesoActivo, diasTrial, suscripcion, esAdmin } = useStore();
   const mantenimiento = avisos.filter((a) => a.tipo === "mantenimiento");
   const pathname = usePathname();
   const navVisible = NAV.filter((n) => n.href !== "/reportes" || puedeEditar("reportes"));
@@ -145,6 +146,16 @@ export default function Shell({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-3 text-sm">
             <BotonTema />
             <CampanaDueno />
+            {esAdmin && (
+              <Link
+                href="/admin"
+                aria-label="Admin"
+                title="Admin"
+                className={`transition ${esActivo("/admin", pathname) ? "text-teal-600 dark:text-teal-400" : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100"}`}
+              >
+                <NavIcon name="shield" size={20} />
+              </Link>
+            )}
             <Link
               href="/documentos"
               aria-label="Documentos"
