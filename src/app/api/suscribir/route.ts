@@ -42,10 +42,10 @@ export async function POST(req: Request) {
   const data = (await r.json().catch(() => ({}))) as { init_point?: string; id?: string; message?: string };
   if (!r.ok || !data.init_point) return Response.json({ error: data.message || "Error de Mercado Pago", detalle: data }, { status: 400 });
 
-  // Guardar el id de la suscripción (service role saltea RLS).
+  // Guardar el id de la suscripción y el precio pactado (service role saltea RLS).
   if (service) {
     const admin = createClient(url, service);
-    await admin.from("suscripciones").update({ mp_preapproval_id: data.id, updated_at: new Date().toISOString() }).eq("owner_id", user.id);
+    await admin.from("suscripciones").update({ mp_preapproval_id: data.id, precio, updated_at: new Date().toISOString() }).eq("owner_id", user.id);
   }
 
   return Response.json({ init_point: data.init_point });

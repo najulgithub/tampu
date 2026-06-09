@@ -201,6 +201,20 @@ export default function Shell({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
+      {rol === "dueno" && suscripcion?.estado === "activa" && !planActual.contacto && planActual.precio > (suscripcion.precio ?? 0) && (
+        <div className="bg-amber-500 text-white text-sm px-4 py-2 text-center">
+          Creciste a <b>{unidades.length} unidades</b> → te corresponde el plan {planActual.nombre} (${planActual.precio.toLocaleString("es-AR")}/mes).{" "}
+          <button onClick={actualizarPlan} className="underline font-medium hover:opacity-90">Actualizar mi plan →</button>
+        </div>
+      )}
+
+      {rol === "dueno" && suscripcion?.estado === "activa" && planActual.contacto && (suscripcion.precio ?? 0) > 0 && (
+        <div className="bg-amber-500 text-white text-sm px-4 py-2 text-center">
+          Tu cuenta creció al plan <b>Empresas</b> ({unidades.length} unidades).{" "}
+          <a href={`mailto:${CONTACTO_EMPRESAS}?subject=Plan%20Empresas%20tampu`} className="underline font-medium hover:opacity-90">Escribinos →</a>
+        </div>
+      )}
+
       <main key={pathname} className="max-w-5xl mx-auto px-4 py-6 pb-24 sm:pb-8 animate-in">{children}</main>
 
       {/* Barra inferior tipo app (solo mobile) */}
@@ -238,6 +252,21 @@ async function iniciarSuscripcion() {
     else alert("No se pudo iniciar la suscripción. Probá de nuevo en un momento.");
   } catch {
     alert("No se pudo iniciar la suscripción. Probá de nuevo en un momento.");
+  }
+}
+
+// Sube de plan: actualiza el monto de la suscripción en Mercado Pago.
+async function actualizarPlan() {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return;
+  try {
+    const res = await fetch("/api/plan/actualizar", { method: "POST", headers: { Authorization: `Bearer ${session.access_token}` } });
+    const j = await res.json().catch(() => ({}));
+    if (j.init_point) { window.location.href = j.init_point; return; }
+    if (j.ok) { alert(`Listo, tu plan ahora es ${j.plan} ($${(j.precio ?? 0).toLocaleString("es-AR")}/mes).`); window.location.reload(); return; }
+    alert("No se pudo actualizar el plan. Probá de nuevo en un rato.");
+  } catch {
+    alert("No se pudo actualizar el plan.");
   }
 }
 

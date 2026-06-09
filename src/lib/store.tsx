@@ -99,7 +99,7 @@ const notifDe = (r: any): Notificacion => ({
   id: r.id, tipo: r.tipo, titulo: r.titulo, cuerpo: r.cuerpo ?? "", reservaId: r.reserva_id ?? undefined, leida: r.leida ?? false, createdAt: r.created_at,
 });
 const suscDe = (r: any): Suscripcion => ({
-  estado: r.estado ?? "trial", trialFin: r.trial_fin, periodoFin: r.periodo_fin ?? undefined,
+  estado: r.estado ?? "trial", trialFin: r.trial_fin, periodoFin: r.periodo_fin ?? undefined, precio: r.precio ?? undefined,
 });
 
 const avisoDe = (r: any): AvisoSistema => ({

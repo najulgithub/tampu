@@ -127,6 +127,7 @@ export interface Suscripcion {
   estado: "trial" | "activa" | "vencida" | "cancelada";
   trialFin: string;       // ISO
   periodoFin?: string;    // ISO (fin del período pago vigente)
+  precio?: number;        // precio mensual que está pagando hoy (para detectar cambios de plan)
 }
 
 // Planes según la cantidad de unidades cargadas. El precio se calcula
