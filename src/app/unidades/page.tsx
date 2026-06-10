@@ -10,6 +10,7 @@ import { Overlay, Campo } from "@/components/ui";
 import SelectGrupo from "@/components/SelectGrupo";
 import AvatarUnidad from "@/components/AvatarUnidad";
 import AvatarGrupo from "@/components/AvatarGrupo";
+import InputEntero from "@/components/InputEntero";
 import { subirArchivo } from "@/lib/storage";
 
 export default function Unidades() {
@@ -330,10 +331,10 @@ function ModalAltaUnidad({
         </Campo>
         <div className="grid grid-cols-2 gap-4">
           <Campo label="Ambientes">
-            <input type="number" min={1} value={ambientes} onChange={(e) => setAmbientes(Math.max(1, Number(e.target.value)))} className="input" />
+            <InputEntero value={ambientes} onChange={setAmbientes} min={1} />
           </Campo>
           <Campo label="Capacidad (huéspedes)">
-            <input type="number" min={1} value={capacidad} onChange={(e) => setCapacidad(Math.max(1, Number(e.target.value)))} className="input" />
+            <InputEntero value={capacidad} onChange={setCapacidad} min={1} />
           </Campo>
         </div>
         <div className="flex justify-end gap-2 pt-2">

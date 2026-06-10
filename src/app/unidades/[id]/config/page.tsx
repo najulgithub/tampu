@@ -9,6 +9,7 @@ import { TIPOS_UNIDAD, COLORES_UNIDAD } from "@/lib/types";
 import { Campo } from "@/components/ui";
 import SelectGrupo from "@/components/SelectGrupo";
 import AvatarUnidad from "@/components/AvatarUnidad";
+import InputEntero from "@/components/InputEntero";
 import { subirArchivo } from "@/lib/storage";
 
 export default function ConfigUnidad() {
@@ -105,10 +106,10 @@ export default function ConfigUnidad() {
           </Campo>
           <div className="grid grid-cols-2 gap-4">
             <Campo label="Ambientes">
-              <input type="number" min={1} className="input" value={uni.ambientes} onChange={(e) => updateUnidad(uni.id, { ambientes: Math.max(1, Number(e.target.value)) })} />
+              <InputEntero value={uni.ambientes} onChange={(n) => updateUnidad(uni.id, { ambientes: n })} min={1} />
             </Campo>
             <Campo label="Capacidad">
-              <input type="number" min={1} className="input" value={uni.capacidad} onChange={(e) => updateUnidad(uni.id, { capacidad: Math.max(1, Number(e.target.value)) })} />
+              <InputEntero value={uni.capacidad} onChange={(n) => updateUnidad(uni.id, { capacidad: n })} min={1} />
             </Campo>
           </div>
           <Campo label="Notas">
