@@ -13,7 +13,7 @@ import AvatarGrupo from "@/components/AvatarGrupo";
 import { subirArchivo } from "@/lib/storage";
 
 export default function Unidades() {
-  const { unidades, reservas, grupos, addUnidad, getGrupo, vacio, seedCuenta, puedeEditar } = useStore();
+  const { unidades, reservas, grupos, addUnidad, getGrupo, vacio, seedCuenta, puedeEditar, esAdmin } = useStore();
   const [abrirAlta, setAbrirAlta] = useState(false);
   const puedeEdit = puedeEditar("unidades");
   const [editarGrupoId, setEditarGrupoId] = useState<string | null>(null);
@@ -58,13 +58,13 @@ export default function Unidades() {
       {unidades.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-600 p-10 text-center text-slate-500 dark:text-slate-400">
           Todavía no cargaste unidades. Empezá agregando una.
-          {vacio && (
+          {vacio && esAdmin && (
             <div className="mt-4">
               <button
                 onClick={() => { if (confirm("Esto carga un set de datos de PRUEBA (unidades, reservas, pagos…) en tu cuenta. Es solo para explorar la app. ¿Continuar?")) seedCuenta(); }}
                 className="text-xs text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 underline"
               >
-                ¿Solo querés probar? Cargá datos de ejemplo
+                (admin) Cargar datos de ejemplo
               </button>
             </div>
           )}

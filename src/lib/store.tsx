@@ -148,6 +148,7 @@ interface StoreCtx {
   cargado: boolean;
   vacio: boolean;
   seedCuenta: () => Promise<void>;
+  vaciarCuenta: () => Promise<void>;
   grupos: Grupo[];
   getGrupo: (id: string) => Grupo | undefined;
   nombreGrupo: (id: string) => string;
@@ -738,10 +739,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     await cargarTodo();
   }, [cargarTodo]);
 
+  const vaciarCuenta = useCallback(async () => {
+    const { error } = await supabase.rpc("vaciar_mi_cuenta");
+    if (error) { console.error(error); throw error; }
+    await cargarTodo();
+  }, [cargarTodo]);
+
   const vacio = cargado && grupos.length === 0 && unidades.length === 0 && reservas.length === 0;
 
   const value: StoreCtx = {
-    cargado, vacio, seedCuenta,
+    cargado, vacio, seedCuenta, vaciarCuenta,
     grupos, getGrupo, nombreGrupo, addGrupo, updateGrupo, deleteGrupo,
     unidades, reservas, getUnidad, reservasDe,
     addUnidad, updateUnidad, deleteUnidad,

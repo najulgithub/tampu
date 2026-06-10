@@ -8,7 +8,7 @@ import type { Moneda, AvisoSistema, TipoAviso } from "@/lib/types";
 import { pushSoportado, pushActivo, activarPush, desactivarPush } from "@/lib/push";
 
 export default function Configuracion() {
-  const { config, updateConfig, seedCuenta, puedeEditar, esAdmin } = useStore();
+  const { config, updateConfig, seedCuenta, puedeEditar, esAdmin, rol } = useStore();
   const puedeEdit = puedeEditar("config");
   const [sembrando, setSembrando] = useState(false);
 
@@ -117,28 +117,85 @@ export default function Configuracion() {
         Los cambios se guardan automáticamente.
       </p>
 
-      {/* Datos de demostración */}
-      <div className="card p-4 mt-6 flex items-center justify-between gap-4">
-        <div className="min-w-0">
-          <div className="text-sm font-medium text-slate-700 dark:text-slate-200">Datos de ejemplo</div>
-          <div className="text-xs text-slate-500 dark:text-slate-400">
-            Carga unidades, reservas, pagos, gastos y vencimientos de muestra para ver la app con datos. Se suman a lo que ya tengas.
+      {/* Datos de demostración (solo admin: evita que un cliente real los cargue sin querer) */}
+      {esAdmin && (
+        <div className="card p-4 mt-6 flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <div className="text-sm font-medium text-slate-700 dark:text-slate-200">Datos de ejemplo (admin)</div>
+            <div className="text-xs text-slate-500 dark:text-slate-400">
+              Carga unidades, reservas, pagos, gastos y vencimientos de muestra. Se suman a lo que ya tengas.
+            </div>
           </div>
+          <button
+            onClick={cargarDemo}
+            disabled={sembrando}
+            className="shrink-0 rounded-lg bg-teal-600 text-white px-4 py-2 text-sm font-medium hover:bg-teal-700 transition disabled:opacity-50"
+          >
+            {sembrando ? "Cargando…" : "Cargar"}
+          </button>
         </div>
-        <button
-          onClick={cargarDemo}
-          disabled={sembrando}
-          className="shrink-0 rounded-lg bg-teal-600 text-white px-4 py-2 text-sm font-medium hover:bg-teal-700 transition disabled:opacity-50"
-        >
-          {sembrando ? "Cargando…" : "Cargar"}
-        </button>
-      </div>
+      )}
       </fieldset>
 
+      {rol === "dueno" && <VaciarCuenta />}
       <NotificacionesPush />
       <FormConsulta />
       {esAdmin && <AdminConsultas />}
       {esAdmin && <AdminAvisos />}
+    </div>
+  );
+}
+
+// Zona peligrosa: borra todos los datos del negocio (deja la cuenta y la config).
+function VaciarCuenta() {
+  const { vaciarCuenta } = useStore();
+  const [abierto, setAbierto] = useState(false);
+  const [texto, setTexto] = useState("");
+  const [borrando, setBorrando] = useState(false);
+
+  async function confirmar() {
+    setBorrando(true);
+    try {
+      await vaciarCuenta();
+      setAbierto(false);
+      setTexto("");
+      alert("Listo, tu cuenta quedó vacía.");
+    } catch {
+      alert("No se pudo vaciar la cuenta. Probá de nuevo.");
+    } finally {
+      setBorrando(false);
+    }
+  }
+
+  return (
+    <div className="card p-4 mt-6 border-rose-200 dark:border-rose-500/30">
+      <div className="text-sm font-medium text-rose-700 dark:text-rose-300">Vaciar mi cuenta</div>
+      <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+        Borra todas tus unidades, reservas, pagos, gastos, proveedores y colaboradores. Tu usuario, tu suscripción y esta configuración se conservan. <b>No se puede deshacer.</b>
+      </div>
+
+      {!abierto ? (
+        <button onClick={() => setAbierto(true)} className="mt-3 text-sm font-medium text-rose-600 dark:text-rose-400 hover:underline">
+          Vaciar cuenta…
+        </button>
+      ) : (
+        <div className="mt-3 space-y-2">
+          <label className="block text-xs text-slate-500 dark:text-slate-400">
+            Escribí <b>VACIAR</b> para confirmar:
+            <input value={texto} onChange={(e) => setTexto(e.target.value)} className="input mt-1" placeholder="VACIAR" />
+          </label>
+          <div className="flex gap-2">
+            <button onClick={() => { setAbierto(false); setTexto(""); }} className="btn-secundario">Cancelar</button>
+            <button
+              onClick={confirmar}
+              disabled={texto.trim().toUpperCase() !== "VACIAR" || borrando}
+              className="rounded-lg bg-rose-600 text-white px-4 py-2 text-sm font-medium hover:bg-rose-700 transition disabled:opacity-40"
+            >
+              {borrando ? "Vaciando…" : "Vaciar definitivamente"}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
