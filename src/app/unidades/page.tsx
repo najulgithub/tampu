@@ -60,8 +60,11 @@ export default function Unidades() {
           Todavía no cargaste unidades. Empezá agregando una.
           {vacio && (
             <div className="mt-4">
-              <button onClick={() => seedCuenta()} className="btn-secundario">
-                O cargá datos de ejemplo para probar
+              <button
+                onClick={() => { if (confirm("Esto carga un set de datos de PRUEBA (unidades, reservas, pagos…) en tu cuenta. Es solo para explorar la app. ¿Continuar?")) seedCuenta(); }}
+                className="text-xs text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 underline"
+              >
+                ¿Solo querés probar? Cargá datos de ejemplo
               </button>
             </div>
           )}
