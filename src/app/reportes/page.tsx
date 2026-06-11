@@ -20,6 +20,7 @@ interface Metricas {
   ingARS: number;
   ingTemp: number; // ingresos temporarios (ARS)
   ingLargo: number; // ingresos largo plazo devengados (ARS)
+  ingOtros: number; // otros ingresos no-alquiler (ARS)
   ingUSD: number;
   gastos: number;
   resultado: number;
@@ -32,7 +33,7 @@ interface Metricas {
 const pesos = (n: number) => "$" + Math.round(n).toLocaleString("es-AR");
 
 export default function Reportes() {
-  const { unidades, reservas, gastos, grupos, getGrupo, getUnidad, pagos, saldoDe, config, puedeEditar } = useStore();
+  const { unidades, reservas, gastos, ingresos, grupos, getGrupo, getUnidad, pagos, saldoDe, config, puedeEditar } = useStore();
   const puedeVerReportes = puedeEditar("reportes");
   const reservaPorId = new Map(reservas.map((r) => [r.id, r]));
   const anio = new Date().getFullYear();
@@ -69,6 +70,22 @@ export default function Reportes() {
         if (it) t += (g.monto * it.porcentaje) / 100;
       } else if (g.ambito === "general") {
         t += g.monto / nUnidades; // gasto del negocio: se reparte en partes iguales entre todas las unidades
+      }
+    }
+    return Math.round(t);
+  }
+
+  // Otros ingresos (venta de muebles, etc.) imputados a la unidad (mismo prorrateo que gastos).
+  function otrosIngresosUnidad(uid: string): number {
+    let t = 0;
+    for (const i of ingresos) {
+      if (i.fecha < desde || i.fecha > hasta) continue;
+      if (i.ambito === "unidad" && i.refId === uid) t += i.monto;
+      else if (i.ambito === "grupo" && i.reparto) {
+        const it = i.reparto.find((r) => r.unidadId === uid);
+        if (it) t += (i.monto * it.porcentaje) / 100;
+      } else if (i.ambito === "general") {
+        t += i.monto / nUnidades;
       }
     }
     return Math.round(t);
@@ -116,10 +133,11 @@ export default function Reportes() {
     const rsPeriodo = todas.filter((r) => incluyeTipo(esLargoPlazo(r.tipo)) && r.checkIn >= desde && r.checkIn <= hasta);
     const totalNoches = rsPeriodo.reduce((a, r) => a + noches(r.checkIn, r.checkOut), 0);
 
-    const ingARS = ingTemp + ingLargo;
+    const otros = otrosIngresosUnidad(uid);
+    const ingARS = ingTemp + ingLargo + otros;
     const gastosU = gastosUnidad(uid);
     return {
-      ingARS, ingTemp, ingLargo, ingUSD,
+      ingARS, ingTemp, ingLargo, ingOtros: otros, ingUSD,
       gastos: gastosU, resultado: ingARS - gastosU,
       nochesOcup, reservas: rsPeriodo.length,
       estadia: rsPeriodo.length ? Math.round(totalNoches / rsPeriodo.length) : 0,
@@ -563,17 +581,23 @@ function TabBtn({ activo, onClick, children }: { activo: boolean; onClick: () =>
 
 // ---------- Resumen por unidad de negocio ----------
 function ResumenNegocios({ unidades, metricas, negocio, tipo, onGastosClick, onIngresosClick }: { unidades: Unidad[]; metricas: (uid: string) => Metricas; negocio: Negocio; tipo: TipoGrafico; onGastosClick: () => void; onIngresosClick: () => void }) {
-  let temp = 0, largo = 0, gastos = 0;
+  let temp = 0, largo = 0, otros = 0, gastos = 0;
   for (const u of unidades) {
     const m = metricas(u.id);
     temp += m.ingTemp;
     largo += m.ingLargo;
+    otros += m.ingOtros;
     gastos += m.gastos;
   }
-  const totalIng = temp + largo;
+  const totalIng = temp + largo + otros;
 
   if (negocio === "todos") {
-    const maxIng = Math.max(temp, largo, 1);
+    const maxIng = Math.max(temp, largo, otros, 1);
+    const datosTipo = [
+      { label: "Temporario", valor: temp, color: "#14b8a6" },
+      { label: "Largo plazo", valor: largo, color: "#8b5cf6" },
+      ...(otros > 0 ? [{ label: "Otros ingresos", valor: otros, color: "#f59e0b" }] : []),
+    ];
     return (
       <div className="mb-6 space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -582,19 +606,14 @@ function ResumenNegocios({ unidades, metricas, negocio, tipo, onGastosClick, onI
           <Tarjeta titulo="Resultado" valor={pesos(totalIng - gastos)} sub="ingresos − gastos" tono={totalIng - gastos >= 0 ? "emerald" : "rose"} />
         </div>
         <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700/70 shadow-sm p-4">
-          <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">Ingresos por tipo de negocio</h3>
+          <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">Ingresos por tipo</h3>
           {tipo === "dona" ? (
-            <GraficoTorta
-              dona
-              datos={[
-                { label: "Temporario", valor: temp, color: "#14b8a6" },
-                { label: "Largo plazo", valor: largo, color: "#8b5cf6" },
-              ]}
-            />
+            <GraficoTorta dona datos={datosTipo} />
           ) : (
             <>
               <BarraH label="Temporario" pct={(temp / maxIng) * 100} valorTexto={pesos(temp)} tono="bg-teal-500" />
               <BarraH label="Largo plazo" pct={(largo / maxIng) * 100} valorTexto={pesos(largo)} tono="bg-violet-500" />
+              {otros > 0 && <BarraH label="Otros ingresos" pct={(otros / maxIng) * 100} valorTexto={pesos(otros)} tono="bg-amber-500" />}
             </>
           )}
         </div>

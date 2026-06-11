@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
-import type { Grupo, Unidad, Reserva, Gasto, GastoProgramado, Colaborador, Pago, MedioPago, Configuracion, ServicioComprobante, Proveedor, Presupuesto, Mensaje, Notificacion, AvisoSistema, Suscripcion } from "./types";
+import type { Grupo, Unidad, Reserva, Gasto, GastoProgramado, Colaborador, Pago, MedioPago, Configuracion, ServicioComprobante, Proveedor, Presupuesto, Mensaje, Notificacion, AvisoSistema, Suscripcion, Ingreso } from "./types";
 import { COLORES_UNIDAD, MEDIOS_PAGO_DEFAULT, CONFIG_DEFAULT } from "./types";
 import { solapan, hoyISO } from "./fechas";
 import { generarGastos } from "./programados";
@@ -95,6 +95,15 @@ const gastoDb = (g: Gasto) => ({
   rating: g.rating ?? null, rating_nota: g.ratingNota ?? null,
 });
 
+const ingresoDe = (r: any): Ingreso => ({
+  id: r.id, ambito: r.ambito, refId: r.ref_id, fecha: r.fecha, categoria: r.categoria,
+  descripcion: r.descripcion ?? "", monto: Number(r.monto), reparto: r.reparto ?? undefined,
+});
+const ingresoDb = (i: Ingreso) => ({
+  id: i.id, ambito: i.ambito, ref_id: i.refId, fecha: i.fecha, categoria: i.categoria,
+  descripcion: i.descripcion, monto: i.monto, reparto: i.reparto ?? null,
+});
+
 const notifDe = (r: any): Notificacion => ({
   id: r.id, tipo: r.tipo, titulo: r.titulo, cuerpo: r.cuerpo ?? "", reservaId: r.reserva_id ?? undefined, leida: r.leida ?? false, createdAt: r.created_at,
 });
@@ -184,6 +193,10 @@ interface StoreCtx {
   updateGasto: (id: string, cambios: Partial<Gasto>) => void;
   deleteGasto: (id: string) => void;
   gastoDeUnidad: (unidadId: string) => number;
+  ingresos: Ingreso[];
+  addIngreso: (i: Omit<Ingreso, "id">) => string;
+  updateIngreso: (id: string, cambios: Partial<Ingreso>) => void;
+  deleteIngreso: (id: string) => void;
   proveedores: Proveedor[];
   addProveedor: (p: Omit<Proveedor, "id">) => string;
   updateProveedor: (id: string, cambios: Partial<Proveedor>) => void;
@@ -236,6 +249,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [unidades, setUnidades] = useState<Unidad[]>([]);
   const [reservas, setReservas] = useState<Reserva[]>([]);
   const [gastos, setGastos] = useState<Gasto[]>([]);
+  const [ingresos, setIngresos] = useState<Ingreso[]>([]);
   const [gastosProgramados, setGastosProgramados] = useState<GastoProgramado[]>([]);
   const [colaboradores, setColaboradores] = useState<Colaborador[]>([]);
   const [pagos, setPagos] = useState<Pago[]>([]);
@@ -253,8 +267,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [suscripcion, setSuscripcion] = useState<Suscripcion | null>(null);
 
   // Refs con el último estado, para materializar sin closures viejos.
-  const refs = useRef({ gastos, gastosProgramados, reservas, unidades });
-  refs.current = { gastos, gastosProgramados, reservas, unidades };
+  const refs = useRef({ gastos, gastosProgramados, reservas, unidades, ingresos });
+  refs.current = { gastos, gastosProgramados, reservas, unidades, ingresos };
   // Evita cargar dos veces para el mismo usuario (incluye el doble-mount de dev).
   const cargadoPara = useRef<string | null>(null);
 
@@ -296,7 +310,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const cargarTodo = useCallback(async () => {
     setCargado(false);
-    const [g, u, r, ga, pr, co, pa, me, cf, sc, pv, ps, mn, nt, av, ad, su] = await Promise.all([
+    const [g, u, r, ga, pr, co, pa, me, cf, sc, pv, ps, mn, nt, av, ad, su, in_] = await Promise.all([
       supabase.from("grupos").select("*"),
       supabase.from("unidades").select("*"),
       supabase.from("reservas").select("*"),
@@ -314,6 +328,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       supabase.from("avisos_sistema").select("*").eq("activo", true).order("created_at", { ascending: false }),
       supabase.rpc("es_admin_sistema"),
       supabase.from("suscripciones").select("*").maybeSingle(),
+      supabase.from("ingresos").select("*"),
     ]);
     const gr = (g.data ?? []).map(grupoDe);
     const un = (u.data ?? []).map(unidadDe);
@@ -347,6 +362,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setAvisos((av.data ?? []).map(avisoDe));
     setEsAdmin(ad.data === true);
     setSuscripcion(su.data ? suscDe(su.data) : null);
+    setIngresos((in_.data ?? []).map(ingresoDe));
     setConfig(cf.data ? configDe(cf.data) : CONFIG_DEFAULT);
     setCargado(true);
   }, []);
@@ -357,6 +373,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setGrupos([]); setUnidades([]); setReservas([]); setGastos([]); setGastosProgramados([]); setColaboradores([]); setPagos([]); setMediosPago([]);
       setServiciosComprobantes([]); setProveedores([]); setPresupuestos([]); setMensajes([]);
       setNotificaciones([]); setAvisos([]); setEsAdmin(false); setSuscripcion(null);
+      setIngresos([]);
       setConfig(CONFIG_DEFAULT);
       setCargado(false);
       return;
@@ -575,6 +592,23 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     supabase.from("gastos").delete().eq("id", id).then(() => {});
   }, []);
 
+  // ---------- Otros ingresos ----------
+  const addIngreso = useCallback((i: Omit<Ingreso, "id">) => {
+    const nuevo: Ingreso = { ...i, id: nuevoId() };
+    setIngresos((prev) => [...prev, nuevo]);
+    supabase.from("ingresos").insert(ingresoDb(nuevo)).then(({ error }) => error && console.error(error));
+    return nuevo.id;
+  }, []);
+  const updateIngreso = useCallback((id: string, cambios: Partial<Ingreso>) => {
+    setIngresos((prev) => prev.map((i) => (i.id === id ? { ...i, ...cambios } : i)));
+    const full = refs.current.ingresos.find((i) => i.id === id);
+    if (full) supabase.from("ingresos").update(ingresoDb({ ...full, ...cambios })).eq("id", id).then(() => {});
+  }, []);
+  const deleteIngreso = useCallback((id: string) => {
+    setIngresos((prev) => prev.filter((i) => i.id !== id));
+    supabase.from("ingresos").delete().eq("id", id).then(() => {});
+  }, []);
+
   // ---------- Proveedores ----------
   const addProveedor = useCallback((p: Omit<Proveedor, "id">) => {
     const nuevo: Proveedor = { ...p, id: nuevoId() };
@@ -757,6 +791,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     serviciosComprobantes, serviciosDe, guardarServicioComprobante, deleteServicioComprobante,
     mediosPago, addMedioPago, updateMedioPago, deleteMedioPago,
     gastos, addGasto, updateGasto, deleteGasto, gastoDeUnidad,
+    ingresos, addIngreso, updateIngreso, deleteIngreso,
     proveedores, addProveedor, updateProveedor, deleteProveedor, ratingProveedor, trabajosDe,
     presupuestos, presupuestosDe, addPresupuesto, updatePresupuesto, deletePresupuesto,
     mensajes, mensajesDe, enviarMensaje, marcarLeidos,

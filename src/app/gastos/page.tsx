@@ -3,19 +3,20 @@
 import { useState } from "react";
 import { useStore } from "@/lib/store";
 import { hoyISO, formatearFecha } from "@/lib/fechas";
-import { CATEGORIAS_GASTO, FRECUENCIAS, COLOR_CATEGORIA, COLOR_FRECUENCIA, PAGADO_POR, RUBROS_PROVEEDOR, planPorUnidades } from "@/lib/types";
-import type { AmbitoGasto, CategoriaGasto, Gasto, RepartoItem, GastoProgramado, Frecuencia, PagadoPor, Proveedor, Presupuesto, EstadoPresupuesto } from "@/lib/types";
+import { CATEGORIAS_GASTO, FRECUENCIAS, COLOR_CATEGORIA, COLOR_FRECUENCIA, PAGADO_POR, RUBROS_PROVEEDOR, planPorUnidades, CATEGORIAS_INGRESO } from "@/lib/types";
+import type { AmbitoGasto, CategoriaGasto, Gasto, RepartoItem, GastoProgramado, Frecuencia, PagadoPor, Proveedor, Presupuesto, EstadoPresupuesto, Ingreso, CategoriaIngreso } from "@/lib/types";
 import { Overlay, Campo } from "@/components/ui";
 import InputMonto from "@/components/InputMonto";
 import { Monto } from "@/components/Monto";
 import { subirArchivo } from "@/lib/storage";
 
-type TabGasto = "mov" | "prog" | "prov" | "pres";
+type TabGasto = "mov" | "ing" | "prog" | "prov" | "pres";
 
 export default function Gastos() {
   const [tab, setTab] = useState<TabGasto>("mov");
   const tabs: { v: TabGasto; label: string }[] = [
     { v: "mov", label: "Movimientos" },
+    { v: "ing", label: "Otros ingresos" },
     { v: "prog", label: "Programados" },
     { v: "prov", label: "Proveedores" },
     { v: "pres", label: "Presupuestos" },
@@ -36,7 +37,7 @@ export default function Gastos() {
           </button>
         ))}
       </div>
-      {tab === "mov" ? <Movimientos /> : tab === "prog" ? <Programados /> : tab === "prov" ? <Proveedores /> : <Presupuestos />}
+      {tab === "mov" ? <Movimientos /> : tab === "ing" ? <Ingresos /> : tab === "prog" ? <Programados /> : tab === "prov" ? <Proveedores /> : <Presupuestos />}
     </div>
   );
 }
@@ -188,6 +189,163 @@ function Movimientos() {
       {abrirNuevo && <FormGasto onCerrar={() => setAbrirNuevo(false)} />}
       {editando && <FormGasto gasto={editando} onCerrar={() => setEditando(undefined)} />}
     </div>
+  );
+}
+
+// ---------- Pestaña Otros ingresos ----------
+function Ingresos() {
+  const { ingresos, getUnidad, nombreGrupo, puedeEditar } = useStore();
+  const puedeEdit = puedeEditar("gastos");
+  const [abrir, setAbrir] = useState(false);
+  const [editando, setEditando] = useState<Ingreso | undefined>();
+
+  const lista = [...ingresos].sort((a, b) => b.fecha.localeCompare(a.fecha));
+  const total = lista.reduce((a, i) => a + i.monto, 0);
+
+  const etiqueta = (i: Ingreso) =>
+    i.ambito === "general"
+      ? "Negocio (general)"
+      : i.ambito === "unidad"
+      ? getUnidad(i.refId)?.nombre ?? "Unidad eliminada"
+      : `${nombreGrupo(i.refId)} (grupo)`;
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6 gap-3">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
+          Ingresos que no son alquiler: venta de muebles, electrodomésticos, reintegros… Suman en el informe económico.{" "}
+          {lista.length > 0 && <>Total <span className="font-medium text-slate-700 dark:text-slate-200"><Monto valor={total} /></span></>}
+        </p>
+        {puedeEdit && (
+          <button onClick={() => setAbrir(true)} className="rounded-lg bg-teal-600 text-white px-4 py-2 text-sm font-medium hover:bg-teal-700 transition shrink-0">
+            + Ingreso
+          </button>
+        )}
+      </div>
+
+      {lista.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-600 p-10 text-center text-slate-500 dark:text-slate-400">
+          No cargaste otros ingresos.
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {lista.map((i) => (
+            <button
+              key={i.id}
+              onClick={() => setEditando(i)}
+              className="w-full text-left flex items-center gap-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/70 shadow-sm p-3 hover:border-teal-400 dark:hover:border-teal-500 transition"
+            >
+              <span className="shrink-0 text-xs px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">{i.categoria}</span>
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">{i.descripcion || i.categoria}</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400 truncate">{etiqueta(i)} · {formatearFecha(i.fecha)}{i.ambito === "grupo" && " · prorrateado"}</div>
+              </div>
+              <div className="shrink-0 text-sm font-medium text-emerald-600 dark:text-emerald-400">+<Monto valor={i.monto} /></div>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {abrir && <FormIngreso onCerrar={() => setAbrir(false)} />}
+      {editando && <FormIngreso ingreso={editando} onCerrar={() => setEditando(undefined)} />}
+    </div>
+  );
+}
+
+function FormIngreso({ ingreso, onCerrar }: { ingreso?: Ingreso; onCerrar: () => void }) {
+  const { unidades, grupos, addIngreso, updateIngreso, deleteIngreso } = useStore();
+  const esEdicion = Boolean(ingreso);
+  const [ambito, setAmbito] = useState<AmbitoGasto>(ingreso?.ambito ?? "unidad");
+  const [refId, setRefId] = useState(ingreso?.refId ?? unidades[0]?.id ?? "");
+  const [fecha, setFecha] = useState(ingreso?.fecha ?? hoyISO());
+  const [categoria, setCategoria] = useState<CategoriaIngreso>(ingreso?.categoria ?? "Venta");
+  const [descripcion, setDescripcion] = useState(ingreso?.descripcion ?? "");
+  const [monto, setMonto] = useState(ingreso?.monto ?? 0);
+
+  const opciones = ambito === "unidad" ? unidades : grupos;
+  const valido = (ambito === "general" || refId) && monto > 0 && fecha;
+
+  function cambiarAmbito(a: AmbitoGasto) {
+    setAmbito(a);
+    setRefId(a === "general" ? "" : (a === "unidad" ? unidades[0]?.id : grupos[0]?.id) ?? "");
+  }
+
+  // Reparto equitativo entre las unidades del grupo (snapshot).
+  function repartoEqui(grupoId: string): RepartoItem[] | undefined {
+    const us = unidades.filter((u) => u.grupoId === grupoId);
+    if (us.length === 0) return undefined;
+    const base = Math.floor((100 / us.length) * 100) / 100;
+    const r = us.map((u) => ({ unidadId: u.id, porcentaje: base }));
+    r[r.length - 1].porcentaje = Math.round((base + (100 - base * us.length)) * 100) / 100;
+    return r;
+  }
+
+  function guardar() {
+    if (!valido) return;
+    const datos = {
+      ambito, refId, fecha, categoria, descripcion: descripcion.trim(), monto,
+      reparto: ambito === "grupo" ? repartoEqui(refId) : undefined,
+    };
+    if (esEdicion && ingreso) updateIngreso(ingreso.id, datos);
+    else addIngreso(datos);
+    onCerrar();
+  }
+
+  return (
+    <Overlay titulo={esEdicion ? "Editar ingreso" : "Nuevo ingreso"} onCerrar={onCerrar}>
+      <form onSubmit={(e) => { e.preventDefault(); guardar(); }} className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <Campo label="Imputar a">
+            <select value={ambito} onChange={(e) => cambiarAmbito(e.target.value as AmbitoGasto)} className="input">
+              <option value="unidad">Una unidad</option>
+              <option value="grupo">Un grupo</option>
+              <option value="general">Todo el negocio</option>
+            </select>
+          </Campo>
+          {ambito === "general" ? (
+            <Campo label="Reparto">
+              <p className="text-xs text-slate-400 dark:text-slate-500 pt-2.5">Se prorratea entre todas las unidades.</p>
+            </Campo>
+          ) : (
+            <Campo label={ambito === "unidad" ? "Unidad" : "Grupo"}>
+              <select value={refId} onChange={(e) => setRefId(e.target.value)} className="input">
+                {opciones.length === 0 && <option value="">— ninguno —</option>}
+                {opciones.map((o) => (<option key={o.id} value={o.id}>{o.nombre}</option>))}
+              </select>
+              {ambito === "grupo" && <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Se reparte en partes iguales entre las unidades del grupo.</p>}
+            </Campo>
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <Campo label="Fecha">
+            <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} className="input" />
+          </Campo>
+          <Campo label="Categoría">
+            <select value={categoria} onChange={(e) => setCategoria(e.target.value as CategoriaIngreso)} className="input">
+              {CATEGORIAS_INGRESO.map((c) => (<option key={c} value={c}>{c}</option>))}
+            </select>
+          </Campo>
+        </div>
+
+        <Campo label="Descripción">
+          <input value={descripcion} onChange={(e) => setDescripcion(e.target.value)} className="input" placeholder="ej: Venta de heladera vieja" />
+        </Campo>
+        <Campo label="Monto ($)">
+          <InputMonto value={monto} onChange={setMonto} />
+        </Campo>
+
+        <div className="flex justify-between items-center pt-2">
+          {esEdicion ? (
+            <button type="button" onClick={() => { if (ingreso && confirm("¿Eliminar este ingreso?")) { deleteIngreso(ingreso.id); onCerrar(); } }} className="text-sm text-rose-600 hover:text-rose-700 dark:text-rose-400">Eliminar</button>
+          ) : <span />}
+          <div className="flex gap-2">
+            <button type="button" onClick={onCerrar} className="btn-secundario">Cancelar</button>
+            <button type="submit" disabled={!valido} className="btn-primario">Guardar</button>
+          </div>
+        </div>
+      </form>
+    </Overlay>
   );
 }
 

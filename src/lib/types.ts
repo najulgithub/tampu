@@ -367,6 +367,21 @@ export interface Gasto {
   ratingNota?: string;
 }
 
+// ---------- Otros ingresos (no-alquiler) ----------
+export type CategoriaIngreso = "Venta" | "Reintegro" | "Servicio" | "Otro";
+export const CATEGORIAS_INGRESO: CategoriaIngreso[] = ["Venta", "Reintegro", "Servicio", "Otro"];
+
+export interface Ingreso {
+  id: string;
+  ambito: AmbitoGasto;   // unidad | grupo | general (mismo criterio que gastos)
+  refId: string;
+  fecha: string;         // ISO yyyy-mm-dd
+  categoria: CategoriaIngreso;
+  descripcion: string;
+  monto: number;
+  reparto?: RepartoItem[]; // solo para ambito="grupo"
+}
+
 // ---------- Proveedores ----------
 export const RUBROS_PROVEEDOR = ["Electricista", "Gasista", "Plomero", "Pintor", "Albañil", "Cerrajero", "Limpieza", "Jardinería", "Técnico (aires/electro)", "Vidriero", "Otro"];
 
