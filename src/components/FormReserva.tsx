@@ -24,7 +24,8 @@ export default function FormReserva({
   fechaInicial?: string;
   onCerrar: () => void;
 }) {
-  const { addReserva, updateReserva, deleteReserva, conflicto, pagosDe, config, puedeEditar } = useStore();
+  const { addReserva, updateReserva, deleteReserva, conflicto, pagosDe, config, puedeEditar, getUnidad } = useStore();
+  const unidad = getUnidad(unidadId);
   const esEdicion = Boolean(reserva);
   const puedeEdit = puedeEditar("reservas");
 
@@ -34,6 +35,7 @@ export default function FormReserva({
   const [checkOut, setCheckOut] = useState(reserva?.checkOut ?? "");
   const [montoTotal, setMontoTotal] = useState(reserva?.montoTotal ?? 0);
   const [montoMensual, setMontoMensual] = useState(reserva?.montoMensual ?? 0);
+  const [conCochera, setConCochera] = useState(reserva?.conCochera ?? false);
   const [sena, setSena] = useState(reserva?.sena ?? 0);
   const [canal, setCanal] = useState<Canal>(reserva?.canal ?? "Directo");
   const [tipo, setTipo] = useState<TipoAlquiler>(reserva?.tipo ?? "temporal");
@@ -63,7 +65,15 @@ export default function FormReserva({
   // Para largo plazo, el total del contrato se deriva del mensual × meses.
   const cantMeses = fechasOk ? mesesContrato(checkIn, checkOut) : 0;
   const totalContrato = montoMensual * cantMeses;
-  const totalEfectivo = esLargo ? totalContrato : montoTotal;
+
+  // Tarifa por día: si la unidad la tiene cargada, el total temporal se calcula solo
+  // (noches × tarifa, con o sin cochera). Si no, se usa el monto total manual.
+  const tieneCocheraTarifa = !!(unidad?.cochera && (unidad.precioDiaCochera ?? 0) > 0);
+  const tarifaDia = (conCochera && tieneCocheraTarifa ? unidad!.precioDiaCochera! : unidad?.precioDia) ?? 0;
+  const usaTarifaDia = !esLargo && tarifaDia > 0;
+  const totalPorDia = usaTarifaDia ? cantNoches * tarifaDia : 0;
+
+  const totalEfectivo = esLargo ? totalContrato : usaTarifaDia ? totalPorDia : montoTotal;
   const totalPagos = reserva ? pagosDe(reserva.id).reduce((a, p) => a + p.monto, 0) : 0;
   const saldo = Math.max(0, totalEfectivo - sena - totalPagos);
 
@@ -75,8 +85,9 @@ export default function FormReserva({
       contacto: contacto.trim(),
       checkIn,
       checkOut,
-      montoTotal: esLargo ? totalContrato : montoTotal,
+      montoTotal: esLargo ? totalContrato : usaTarifaDia ? totalPorDia : montoTotal,
       montoMensual: esLargo ? montoMensual : 0,
+      conCochera: !esLargo ? conCochera : false,
       sena,
       canal,
       tipo,
@@ -223,20 +234,48 @@ export default function FormReserva({
           </>
         ) : (
           <>
-            <div className="grid grid-cols-2 gap-4">
-              <Campo label={`Monto total (${simbolo})`}>
-                <InputMonto value={montoTotal} onChange={setMontoTotal} />
-              </Campo>
-              <Campo label={`Seña (${simbolo})`}>
-                <InputMonto value={sena} onChange={setSena} />
-              </Campo>
-            </div>
-            {montoTotal > 0 && (
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Saldo pendiente: <b className={saldo > 0 ? "text-amber-600" : "text-emerald-600"}>
-                  {simbolo}{saldo.toLocaleString("es-AR")}
-                </b>
-              </p>
+            {tieneCocheraTarifa && (
+              <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+                <input type="checkbox" checked={conCochera} onChange={(e) => setConCochera(e.target.checked)} />
+                Incluye cochera (🅿 ${(unidad!.precioDiaCochera ?? 0).toLocaleString("es-AR")}/día vs ${(unidad?.precioDia ?? 0).toLocaleString("es-AR")}/día)
+              </label>
+            )}
+            {usaTarifaDia ? (
+              <>
+                <Campo label={`Seña (${simbolo})`}>
+                  <InputMonto value={sena} onChange={setSena} />
+                </Campo>
+                <div className="rounded-lg bg-slate-50 dark:bg-slate-900 p-3 text-sm">
+                  <div className="flex justify-between text-slate-600 dark:text-slate-300">
+                    <span>{cantNoches} {cantNoches === 1 ? "noche" : "noches"} × {simbolo}{tarifaDia.toLocaleString("es-AR")}{conCochera && tieneCocheraTarifa ? " (con cochera)" : ""}</span>
+                    <b className="text-slate-800 dark:text-slate-100">{simbolo}{totalPorDia.toLocaleString("es-AR")}</b>
+                  </div>
+                  {totalPorDia > 0 && (
+                    <div className="flex justify-between mt-1 text-xs text-slate-400 dark:text-slate-500">
+                      <span>Saldo pendiente</span>
+                      <b className={saldo > 0 ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"}>{simbolo}{saldo.toLocaleString("es-AR")}</b>
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 gap-4">
+                  <Campo label={`Monto total (${simbolo})`}>
+                    <InputMonto value={montoTotal} onChange={setMontoTotal} />
+                  </Campo>
+                  <Campo label={`Seña (${simbolo})`}>
+                    <InputMonto value={sena} onChange={setSena} />
+                  </Campo>
+                </div>
+                {montoTotal > 0 && (
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Saldo pendiente: <b className={saldo > 0 ? "text-amber-600" : "text-emerald-600"}>
+                      {simbolo}{saldo.toLocaleString("es-AR")}
+                    </b>
+                  </p>
+                )}
+              </>
             )}
           </>
         )}

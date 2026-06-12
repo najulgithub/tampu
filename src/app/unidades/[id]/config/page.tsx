@@ -10,6 +10,7 @@ import { Campo } from "@/components/ui";
 import SelectGrupo from "@/components/SelectGrupo";
 import AvatarUnidad from "@/components/AvatarUnidad";
 import InputEntero from "@/components/InputEntero";
+import InputMonto from "@/components/InputMonto";
 import { subirArchivo } from "@/lib/storage";
 
 export default function ConfigUnidad() {
@@ -127,6 +128,19 @@ export default function ConfigUnidad() {
               Apta para camioneta / pickup
             </label>
           )}
+
+          {/* Tarifa por día para alquiler temporal (opcional: si la ponés, la reserva calcula el total sola). */}
+          <div className={uni.cochera ? "grid grid-cols-2 gap-4" : ""}>
+            <Campo label={uni.cochera ? "Valor por día (sin cochera)" : "Valor por día (temporal)"}>
+              <InputMonto value={uni.precioDia ?? 0} onChange={(n) => updateUnidad(uni.id, { precioDia: n || undefined })} />
+            </Campo>
+            {uni.cochera && (
+              <Campo label="Valor por día (con cochera)">
+                <InputMonto value={uni.precioDiaCochera ?? 0} onChange={(n) => updateUnidad(uni.id, { precioDiaCochera: n || undefined })} />
+              </Campo>
+            )}
+          </div>
+
           <Campo label="Notas">
             <textarea className="input min-h-20" value={uni.notas} onChange={(e) => updateUnidad(uni.id, { notas: e.target.value })} />
           </Campo>

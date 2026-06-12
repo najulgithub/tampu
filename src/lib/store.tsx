@@ -20,17 +20,21 @@ const grupoDb = (g: Grupo) => ({ id: g.id, nombre: g.nombre, ambiente: g.ambient
 const unidadDe = (r: any): Unidad => ({
   id: r.id, nombre: r.nombre, grupoId: r.grupo_id ?? "", tipoUnidad: r.tipo_unidad, color: r.color,
   foto: r.foto ?? undefined, direccion: r.direccion ?? "", localidad: r.localidad ?? "",
-  ambientes: Number(r.ambientes), capacidad: Number(r.capacidad), cochera: r.cochera ?? false, aptoCamioneta: r.apto_camioneta ?? false, icals: r.icals ?? [], notas: r.notas ?? "",
+  ambientes: Number(r.ambientes), capacidad: Number(r.capacidad), cochera: r.cochera ?? false, aptoCamioneta: r.apto_camioneta ?? false,
+  precioDia: r.precio_dia != null ? Number(r.precio_dia) : undefined, precioDiaCochera: r.precio_dia_cochera != null ? Number(r.precio_dia_cochera) : undefined,
+  icals: r.icals ?? [], notas: r.notas ?? "",
 });
 const unidadDb = (u: Unidad) => ({
   id: u.id, nombre: u.nombre, grupo_id: u.grupoId || null, tipo_unidad: u.tipoUnidad, color: u.color,
   foto: u.foto ?? null, direccion: u.direccion, localidad: u.localidad, ambientes: u.ambientes,
-  capacidad: u.capacidad, cochera: u.cochera ?? false, apto_camioneta: u.aptoCamioneta ?? false, icals: u.icals, notas: u.notas,
+  capacidad: u.capacidad, cochera: u.cochera ?? false, apto_camioneta: u.aptoCamioneta ?? false,
+  precio_dia: u.precioDia ?? null, precio_dia_cochera: u.precioDiaCochera ?? null,
+  icals: u.icals, notas: u.notas,
 });
 
 const reservaDe = (r: any): Reserva => ({
   id: r.id, unidadId: r.unidad_id, huesped: r.huesped, contacto: r.contacto ?? "",
-  checkIn: r.check_in, checkOut: r.check_out, montoTotal: Number(r.monto_total), montoMensual: Number(r.monto_mensual),
+  checkIn: r.check_in, checkOut: r.check_out, montoTotal: Number(r.monto_total), montoMensual: Number(r.monto_mensual), conCochera: r.con_cochera ?? false,
   sena: Number(r.sena), canal: r.canal, tipo: r.tipo, moneda: r.moneda, actualizacion: r.actualizacion,
   indice: r.indice, porcentajeManual: Number(r.porcentaje_manual),
   horaCheckIn: r.hora_check_in ?? "15:00", horaCheckOut: r.hora_check_out ?? "11:00", notas: r.notas ?? "",
@@ -41,7 +45,7 @@ const reservaDe = (r: any): Reserva => ({
 });
 const reservaDb = (r: Reserva) => ({
   id: r.id, unidad_id: r.unidadId, huesped: r.huesped, contacto: r.contacto, check_in: r.checkIn, check_out: r.checkOut,
-  monto_total: r.montoTotal, monto_mensual: r.montoMensual, sena: r.sena, canal: r.canal, tipo: r.tipo,
+  monto_total: r.montoTotal, monto_mensual: r.montoMensual, con_cochera: r.conCochera ?? false, sena: r.sena, canal: r.canal, tipo: r.tipo,
   moneda: r.moneda, actualizacion: r.actualizacion, indice: r.indice, porcentaje_manual: r.porcentajeManual,
   hora_check_in: r.horaCheckIn, hora_check_out: r.horaCheckOut, notas: r.notas,
   estado: r.estado ?? "confirmada", cliente_id: r.clienteId ?? null,
@@ -536,6 +540,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if ("capacidad" in cambios) db.capacidad = cambios.capacidad;
     if ("cochera" in cambios) db.cochera = cambios.cochera;
     if ("aptoCamioneta" in cambios) db.apto_camioneta = cambios.aptoCamioneta;
+    if ("precioDia" in cambios) db.precio_dia = cambios.precioDia ?? null;
+    if ("precioDiaCochera" in cambios) db.precio_dia_cochera = cambios.precioDiaCochera ?? null;
     if ("icals" in cambios) db.icals = cambios.icals;
     if ("notas" in cambios) db.notas = cambios.notas;
     supabase.from("unidades").update(db).eq("id", id).then(({ error }) => error && console.error(error));

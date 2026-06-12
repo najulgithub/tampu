@@ -252,6 +252,8 @@ export interface Unidad {
   capacidad: number; // huéspedes
   cochera?: boolean; // si el depto/unidad tiene cochera
   aptoCamioneta?: boolean; // si entra una camioneta/pickup (cocheras)
+  precioDia?: number; // tarifa por día para temporales (sin cochera, o única)
+  precioDiaCochera?: number; // tarifa por día con cochera (si la unidad tiene cochera)
   icals: PlataformaICal[];
   notas: string;
 }
@@ -269,6 +271,7 @@ export interface Reserva {
   checkOut: string; // ISO yyyy-mm-dd (día de salida, no se cuenta como noche ocupada)
   montoTotal: number; // temporal: total de la estadía. Largo plazo: total del contrato (mensual × meses).
   montoMensual: number; // largo plazo: alquiler por mes (0 en temporal).
+  conCochera?: boolean; // temporal: si la estadía incluye la cochera (afecta la tarifa diaria)
   sena: number; // temporal: seña. Largo plazo: depósito.
   canal: Canal;
   tipo: TipoAlquiler;
