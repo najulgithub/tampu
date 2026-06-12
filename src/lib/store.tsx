@@ -435,6 +435,25 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return j as { ok?: boolean; bloqueos?: number };
   }, [cargarTodo]);
 
+  // Tiempo real: la campanita y el chat se actualizan solos (sin recargar).
+  useEffect(() => {
+    if (!userId || !(rol === "dueno" || rol === "colaborador")) return;
+    const canal = supabase
+      .channel("rt-" + userId)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "notificaciones" }, (payload) => {
+        const row = payload.new as { para?: string };
+        if (row.para !== "dueno") return; // las del inquilino no van a esta campanita
+        const n = notifDe(payload.new);
+        setNotificaciones((prev) => (prev.some((x) => x.id === n.id) ? prev : [n, ...prev]));
+      })
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "mensajes" }, (payload) => {
+        const m = mensajeDe(payload.new);
+        setMensajes((prev) => (prev.some((x) => x.id === m.id) ? prev : [...prev, m]));
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(canal); };
+  }, [userId, rol]);
+
   // Sincronización iCal en segundo plano al entrar (dueño con calendarios conectados),
   // como máximo cada 3 h. No bloquea la UI: al terminar solo refresca los bloqueos.
   useEffect(() => {
