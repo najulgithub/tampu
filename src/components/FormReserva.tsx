@@ -68,7 +68,7 @@ export default function FormReserva({
 
   // Tarifa por día: si la unidad la tiene cargada, el total temporal se calcula solo
   // (noches × tarifa, con o sin cochera). Si no, se usa el monto total manual.
-  const tieneCocheraTarifa = !!(unidad?.cochera && (unidad.precioDiaCochera ?? 0) > 0);
+  const tieneCocheraTarifa = !!(unidad?.cochera && (unidad.precioDiaCochera ?? 0) > 0 && unidad.precioDiaCochera !== unidad.precioDia);
   const tarifaDia = (conCochera && tieneCocheraTarifa ? unidad!.precioDiaCochera! : unidad?.precioDia) ?? 0;
   const usaTarifaDia = !esLargo && tarifaDia > 0;
   const totalPorDia = usaTarifaDia ? cantNoches * tarifaDia : 0;

@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useStore } from "@/lib/store";
-import type { PlataformaICal, TipoUnidad } from "@/lib/types";
+import type { PlataformaICal, TipoUnidad, Unidad } from "@/lib/types";
 import { TIPOS_UNIDAD, COLORES_UNIDAD } from "@/lib/types";
 import { Campo } from "@/components/ui";
 import SelectGrupo from "@/components/SelectGrupo";
@@ -130,16 +130,7 @@ export default function ConfigUnidad() {
           )}
 
           {/* Tarifa por día para alquiler temporal (opcional: si la ponés, la reserva calcula el total sola). */}
-          <div className={uni.cochera ? "grid grid-cols-2 gap-4" : ""}>
-            <Campo label={uni.cochera ? "Valor por día (sin cochera)" : "Valor por día (temporal)"}>
-              <InputMonto value={uni.precioDia ?? 0} onChange={(n) => updateUnidad(uni.id, { precioDia: n || undefined })} />
-            </Campo>
-            {uni.cochera && (
-              <Campo label="Valor por día (con cochera)">
-                <InputMonto value={uni.precioDiaCochera ?? 0} onChange={(n) => updateUnidad(uni.id, { precioDiaCochera: n || undefined })} />
-              </Campo>
-            )}
-          </div>
+          <TarifasDia uni={uni} set={(c) => updateUnidad(uni.id, c)} />
 
           <Campo label="Notas">
             <textarea className="input min-h-20" value={uni.notas} onChange={(e) => updateUnidad(uni.id, { notas: e.target.value })} />
@@ -200,6 +191,48 @@ export default function ConfigUnidad() {
           Eliminar unidad
         </button>
       </section>
+    </div>
+  );
+}
+
+// Tarifas por día para temporal. Si la unidad tiene cochera, permite dos valores
+// (sin/con cochera) o uno solo con el check "Mismo valor".
+function TarifasDia({ uni, set }: { uni: Unidad; set: (c: Partial<Unidad>) => void }) {
+  const [mismo, setMismo] = useState(uni.precioDiaCochera == null || uni.precioDiaCochera === uni.precioDia);
+
+  function setSin(n: number) {
+    const v = n || undefined;
+    set(mismo ? { precioDia: v, precioDiaCochera: v } : { precioDia: v });
+  }
+  function toggleMismo(c: boolean) {
+    setMismo(c);
+    if (c) set({ precioDiaCochera: uni.precioDia });
+  }
+
+  if (!uni.cochera) {
+    return (
+      <Campo label="Valor por día (temporal)">
+        <InputMonto value={uni.precioDia ?? 0} onChange={(n) => set({ precioDia: n || undefined })} />
+      </Campo>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className={mismo ? "" : "grid grid-cols-2 gap-4"}>
+        <Campo label={mismo ? "Valor por día (temporal)" : "Valor por día (sin cochera)"}>
+          <InputMonto value={uni.precioDia ?? 0} onChange={setSin} />
+        </Campo>
+        {!mismo && (
+          <Campo label="Valor por día (con cochera)">
+            <InputMonto value={uni.precioDiaCochera ?? 0} onChange={(n) => set({ precioDiaCochera: n || undefined })} />
+          </Campo>
+        )}
+      </div>
+      <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+        <input type="checkbox" checked={mismo} onChange={(e) => toggleMismo(e.target.checked)} />
+        Mismo valor con cochera
+      </label>
     </div>
   );
 }
