@@ -22,7 +22,7 @@ export function Overlay({
       {/* Centrado en desktop; arriba en mobile para poder scrollear formularios largos
           y llegar al botón de guardar sin que lo tape la barra inferior. */}
       <div
-        className="min-h-full flex items-start sm:items-center justify-center p-4 pb-28 sm:pb-4"
+        className="min-h-full flex items-start sm:items-center justify-center p-4"
         onMouseDown={(e) => {
           desdeFondo.current = e.target === e.currentTarget;
         }}
