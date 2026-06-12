@@ -95,6 +95,10 @@ export default function Shell({ children }: { children: React.ReactNode }) {
   const [authListo, setAuthListo] = useState(false);
   const { rol, puedeEditar, avisos, accesoActivo, diasTrial, suscripcion, esAdmin, unidades } = useStore();
   const planActual = planPorUnidades(unidades.length);
+  // Días hasta la renovación (solo aplica a suscripciones pagas por Mercado Pago).
+  const diasRenovacion = suscripcion?.periodoFin ? Math.ceil((Date.parse(suscripcion.periodoFin) - Date.now()) / 86400000) : Infinity;
+  // Avisamos de cambio de plan solo si paga por MP (tiene precio) y está por renovar (< 30 días).
+  const ventanaRenovacion = suscripcion?.estado === "activa" && (suscripcion.precio ?? 0) > 0 && diasRenovacion < 30;
   const mantenimiento = avisos.filter((a) => a.tipo === "mantenimiento");
   const pathname = usePathname();
   const navVisible = NAV.filter((n) => n.href !== "/reportes" || puedeEditar("reportes"));
@@ -201,14 +205,14 @@ export default function Shell({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
-      {rol === "dueno" && suscripcion?.estado === "activa" && !planActual.contacto && planActual.precio > (suscripcion.precio ?? 0) && (
+      {rol === "dueno" && ventanaRenovacion && !planActual.contacto && planActual.precio > (suscripcion!.precio ?? 0) && (
         <div className="bg-amber-500 text-white text-sm px-4 py-2 text-center">
           Creciste a <b>{unidades.length} unidades</b> → te corresponde el plan {planActual.nombre} (${planActual.precio.toLocaleString("es-AR")}/mes).{" "}
           <button onClick={actualizarPlan} className="underline font-medium hover:opacity-90">Actualizar mi plan →</button>
         </div>
       )}
 
-      {rol === "dueno" && suscripcion?.estado === "activa" && planActual.contacto && (suscripcion.precio ?? 0) > 0 && (
+      {rol === "dueno" && ventanaRenovacion && planActual.contacto && (
         <div className="bg-amber-500 text-white text-sm px-4 py-2 text-center">
           Tu cuenta creció al plan <b>Empresas</b> ({unidades.length} unidades).{" "}
           <a href={`mailto:${CONTACTO_EMPRESAS}?subject=Plan%20Empresas%20tampu`} className="underline font-medium hover:opacity-90">Escribinos →</a>
