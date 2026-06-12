@@ -28,7 +28,8 @@ export default function ConfigUnidad() {
     );
   }
 
-  const urlExport = `https://alquileres.app/ical/${uni.id}.ics`;
+  const baseUrl = typeof window !== "undefined" ? window.location.origin : "https://tampu.ar";
+  const urlExport = `${baseUrl}/ical/${uni.id}.ics`;
 
   return (
     <div className="max-w-2xl">
@@ -146,7 +147,7 @@ export default function ConfigUnidad() {
             </button>
           </div>
           <p className="text-xs text-slate-400 dark:text-slate-500 mt-2">
-            En el prototipo este link es de ejemplo. Con el backend real va a exportar un .ics vivo.
+            Pegá este link en Airbnb/Booking (Importar calendario) para que bloqueen las fechas reservadas en tampu. Se actualiza solo.
           </p>
         </div>
       </section>
