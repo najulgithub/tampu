@@ -31,3 +31,17 @@ begin
 end; $$;
 drop trigger if exists t_notif_admin_negocio on negocios;
 create trigger t_notif_admin_negocio after insert on negocios for each row execute function trg_notif_admin_negocio();
+
+-- Al recibir una consulta al desarrollador -> avisar a los admins.
+create or replace function trg_notif_admin_consulta() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  perform notificar_admins(
+    'Nueva consulta 💬',
+    coalesce(nullif(new.email, ''), 'Un usuario') || ': ' || left(new.mensaje, 80),
+    'consulta|' || new.id
+  );
+  return new;
+end; $$;
+drop trigger if exists t_notif_admin_consulta on consultas;
+create trigger t_notif_admin_consulta after insert on consultas for each row execute function trg_notif_admin_consulta();
