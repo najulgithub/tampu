@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 // Componentes de UI reutilizables (modal y campo de formulario).
 
@@ -16,8 +17,12 @@ export function Overlay({
   // Cerramos solo si el gesto EMPEZÓ en el fondo. Así, seleccionar texto dentro
   // del modal y soltar el mouse sobre el fondo no cierra el modal.
   const desdeFondo = useRef(false);
+  // Renderizamos en un portal al <body> para escapar del contexto de apilamiento
+  // de <main> (que tiene transform), si no el menú inferior tapa el modal.
+  const [montado, setMontado] = useState(false);
+  useEffect(() => { setMontado(true); }, []);
 
-  return (
+  const contenido = (
     <div className="fixed inset-0 z-50 bg-slate-900/40 overflow-y-auto overscroll-contain">
       {/* Centrado en desktop; arriba en mobile para poder scrollear formularios largos
           y llegar al botón de guardar sin que lo tape la barra inferior. */}
@@ -45,6 +50,9 @@ export function Overlay({
       </div>
     </div>
   );
+
+  if (!montado) return null;
+  return createPortal(contenido, document.body);
 }
 
 export function Campo({ label, children }: { label: string; children: React.ReactNode }) {
