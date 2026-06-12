@@ -13,7 +13,7 @@ import AvatarUnidad from "@/components/AvatarUnidad";
 
 export default function DetalleUnidad() {
   const params = useParams<{ id: string }>();
-  const { cargado, getUnidad, reservasDe, nombreGrupo, getGrupo } = useStore();
+  const { cargado, getUnidad, reservasDe, nombreGrupo, getGrupo, bloqueosDe } = useStore();
 
   const [abrirNueva, setAbrirNueva] = useState(false);
   const [fechaInicial, setFechaInicial] = useState<string | undefined>();
@@ -70,6 +70,7 @@ export default function DetalleUnidad() {
       <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
         <Calendario
           reservas={reservas}
+          bloqueos={bloqueosDe(uni.id)}
           onClickDia={(iso) => { setFechaInicial(iso); setAbrirNueva(true); }}
           onClickReserva={(r) => setEditando(r)}
         />

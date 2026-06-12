@@ -169,6 +169,15 @@ export interface PlataformaICal {
   url: string; // link iCal de exportación de la plataforma
 }
 
+// Bloqueo de fechas importado de un calendario externo (Airbnb/Booking…).
+export interface Bloqueo {
+  id: string;
+  unidadId: string;
+  plataforma: string;
+  desde: string; // ISO yyyy-mm-dd (check-in, incl.)
+  hasta: string; // ISO yyyy-mm-dd (check-out, excl.)
+}
+
 // Ambiente / entorno general de un grupo, para identificarlo visualmente.
 export type AmbienteGrupo =
   | "Edificio"

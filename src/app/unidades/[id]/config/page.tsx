@@ -133,6 +133,8 @@ export default function ConfigUnidad() {
           onCambiar={(icals) => updateUnidad(uni.id, { icals })}
         />
 
+        {uni.icals.length > 0 && <SyncIcal unidadId={uni.id} />}
+
         <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-700">
           <span className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">
             Tu link de exportación (pegalo en Airbnb / Booking)
@@ -170,6 +172,35 @@ export default function ConfigUnidad() {
           Eliminar unidad
         </button>
       </section>
+    </div>
+  );
+}
+
+// Botón para traer ahora las reservas de las plataformas externas (Airbnb/Booking).
+function SyncIcal({ unidadId }: { unidadId: string }) {
+  const { sincronizarIcal, bloqueosDe } = useStore();
+  const [estado, setEstado] = useState<"idle" | "sync" | "ok" | "err">("idle");
+  const cantidad = bloqueosDe(unidadId).length;
+
+  async function sync() {
+    setEstado("sync");
+    try {
+      const r = await sincronizarIcal();
+      setEstado(r?.ok ? "ok" : "err");
+    } catch {
+      setEstado("err");
+    }
+  }
+
+  return (
+    <div className="mt-3 flex items-center gap-3 flex-wrap">
+      <button onClick={sync} disabled={estado === "sync"} className="btn-secundario disabled:opacity-50">
+        {estado === "sync" ? "Sincronizando…" : "Sincronizar ahora"}
+      </button>
+      <span className="text-xs text-slate-400 dark:text-slate-500">
+        {estado === "ok" ? "Calendarios actualizados. " : estado === "err" ? "No se pudo sincronizar. " : ""}
+        {cantidad > 0 && `${cantidad} ${cantidad === 1 ? "fecha bloqueada" : "fechas bloqueadas"} importadas.`}
+      </span>
     </div>
   );
 }

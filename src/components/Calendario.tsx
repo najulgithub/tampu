@@ -1,16 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import type { Reserva } from "@/lib/types";
+import type { Reserva, Bloqueo, Canal } from "@/lib/types";
 import { COLOR_CANAL } from "@/lib/types";
 import { grillaMes, nombreMes, DIAS_SEMANA, diaOcupado, hoyISO } from "@/lib/fechas";
 
 export default function Calendario({
   reservas,
+  bloqueos = [],
   onClickDia,
   onClickReserva,
 }: {
   reservas: Reserva[];
+  bloqueos?: Bloqueo[];
   onClickDia?: (iso: string) => void;
   onClickReserva?: (r: Reserva) => void;
 }) {
@@ -36,6 +38,9 @@ export default function Calendario({
 
   function reservaEnDia(iso: string): Reserva | undefined {
     return reservas.find((r) => diaOcupado(iso, r.checkIn, r.checkOut));
+  }
+  function bloqueoEnDia(iso: string): Bloqueo | undefined {
+    return bloqueos.find((b) => diaOcupado(iso, b.desde, b.hasta));
   }
 
   return (
@@ -65,6 +70,7 @@ export default function Calendario({
           // Quién pasa la noche (ocupa el día) y quién se va esa mañana.
           const noche = reservaEnDia(c.iso);
           const salida = reservas.find((r) => r.checkOut === c.iso) ?? null;
+          const bloq = !noche && !salida ? bloqueoEnDia(c.iso) : null;
           const esHoy = c.iso === hoy;
           const corte = noche && salida && noche.id !== salida.id;
 
@@ -92,6 +98,11 @@ export default function Calendario({
             style = { background: `linear-gradient(135deg, ${a}cc 0 48%, transparent 48%)` };
             clases = "text-slate-700 dark:text-slate-200 font-semibold";
             title = `Sale ${salida.huesped}`;
+          } else if (bloq) {
+            // Día ocupado por un bloqueo importado (Airbnb/Booking…).
+            const col = COLOR_CANAL[bloq.plataforma as Canal];
+            clases = col ? `${col.bg} ${col.texto} font-semibold` : "bg-slate-300 dark:bg-slate-500 text-slate-700 dark:text-slate-100 font-semibold";
+            title = `Bloqueado · ${bloq.plataforma}`;
           }
 
           const onClick = () => {

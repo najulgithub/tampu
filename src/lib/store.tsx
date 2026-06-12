@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
-import type { Grupo, Unidad, Reserva, Gasto, GastoProgramado, Colaborador, Pago, MedioPago, Configuracion, ServicioComprobante, Proveedor, Presupuesto, Mensaje, Notificacion, AvisoSistema, Suscripcion, Ingreso } from "./types";
+import type { Grupo, Unidad, Reserva, Gasto, GastoProgramado, Colaborador, Pago, MedioPago, Configuracion, ServicioComprobante, Proveedor, Presupuesto, Mensaje, Notificacion, AvisoSistema, Suscripcion, Ingreso, Bloqueo } from "./types";
 import { COLORES_UNIDAD, MEDIOS_PAGO_DEFAULT, CONFIG_DEFAULT } from "./types";
 import { solapan, hoyISO } from "./fechas";
 import { generarGastos } from "./programados";
@@ -104,6 +104,10 @@ const ingresoDb = (i: Ingreso) => ({
   descripcion: i.descripcion, monto: i.monto, reparto: i.reparto ?? null,
 });
 
+const bloqueoDe = (r: any): Bloqueo => ({
+  id: r.id, unidadId: r.unidad_id, plataforma: r.plataforma ?? "Otro", desde: r.desde, hasta: r.hasta,
+});
+
 const notifDe = (r: any): Notificacion => ({
   id: r.id, tipo: r.tipo, titulo: r.titulo, cuerpo: r.cuerpo ?? "", reservaId: r.reserva_id ?? undefined, leida: r.leida ?? false, createdAt: r.created_at,
 });
@@ -175,6 +179,9 @@ interface StoreCtx {
   updateReserva: (id: string, cambios: Partial<Reserva>) => void;
   deleteReserva: (id: string) => void;
   conflicto: (unidadId: string, checkIn: string, checkOut: string, excluirId?: string) => Reserva | null;
+  bloqueos: Bloqueo[];
+  bloqueosDe: (unidadId: string) => Bloqueo[];
+  sincronizarIcal: () => Promise<{ ok?: boolean; bloqueos?: number }>;
   pagos: Pago[];
   pagosDe: (reservaId: string) => Pago[];
   saldoDe: (reserva: Reserva) => number; // montoTotal − seña − pagos
@@ -250,6 +257,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [reservas, setReservas] = useState<Reserva[]>([]);
   const [gastos, setGastos] = useState<Gasto[]>([]);
   const [ingresos, setIngresos] = useState<Ingreso[]>([]);
+  const [bloqueos, setBloqueos] = useState<Bloqueo[]>([]);
   const [gastosProgramados, setGastosProgramados] = useState<GastoProgramado[]>([]);
   const [colaboradores, setColaboradores] = useState<Colaborador[]>([]);
   const [pagos, setPagos] = useState<Pago[]>([]);
@@ -310,7 +318,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const cargarTodo = useCallback(async () => {
     setCargado(false);
-    const [g, u, r, ga, pr, co, pa, me, cf, sc, pv, ps, mn, nt, av, ad, su, in_] = await Promise.all([
+    const [g, u, r, ga, pr, co, pa, me, cf, sc, pv, ps, mn, nt, av, ad, su, in_, bl] = await Promise.all([
       supabase.from("grupos").select("*"),
       supabase.from("unidades").select("*"),
       supabase.from("reservas").select("*"),
@@ -329,6 +337,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       supabase.rpc("es_admin_sistema"),
       supabase.from("suscripciones").select("*").maybeSingle(),
       supabase.from("ingresos").select("*"),
+      supabase.from("bloqueos").select("*"),
     ]);
     const gr = (g.data ?? []).map(grupoDe);
     const un = (u.data ?? []).map(unidadDe);
@@ -363,6 +372,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setEsAdmin(ad.data === true);
     setSuscripcion(su.data ? suscDe(su.data) : null);
     setIngresos((in_.data ?? []).map(ingresoDe));
+    setBloqueos((bl.data ?? []).map(bloqueoDe));
     setConfig(cf.data ? configDe(cf.data) : CONFIG_DEFAULT);
     setCargado(true);
   }, []);
@@ -373,7 +383,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setGrupos([]); setUnidades([]); setReservas([]); setGastos([]); setGastosProgramados([]); setColaboradores([]); setPagos([]); setMediosPago([]);
       setServiciosComprobantes([]); setProveedores([]); setPresupuestos([]); setMensajes([]);
       setNotificaciones([]); setAvisos([]); setEsAdmin(false); setSuscripcion(null);
-      setIngresos([]);
+      setIngresos([]); setBloqueos([]);
       setConfig(CONFIG_DEFAULT);
       setCargado(false);
       return;
@@ -405,10 +415,25 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     [reservas]
   );
   const conflicto = useCallback(
-    (unidadId: string, checkIn: string, checkOut: string, excluirId?: string) =>
-      reservas.find((r) => r.unidadId === unidadId && r.id !== excluirId && solapan(checkIn, checkOut, r.checkIn, r.checkOut)) ?? null,
-    [reservas]
+    (unidadId: string, checkIn: string, checkOut: string, excluirId?: string) => {
+      const r = reservas.find((r) => r.unidadId === unidadId && r.id !== excluirId && solapan(checkIn, checkOut, r.checkIn, r.checkOut));
+      if (r) return r;
+      // También chocamos contra los bloqueos importados (Airbnb/Booking).
+      const b = bloqueos.find((b) => b.unidadId === unidadId && solapan(checkIn, checkOut, b.desde, b.hasta));
+      if (b) return { id: "bloqueo-" + b.id, unidadId, huesped: `Bloqueo ${b.plataforma}`, checkIn: b.desde, checkOut: b.hasta, canal: b.plataforma } as unknown as Reserva;
+      return null;
+    },
+    [reservas, bloqueos]
   );
+  const bloqueosDe = useCallback((unidadId: string) => bloqueos.filter((b) => b.unidadId === unidadId), [bloqueos]);
+  const sincronizarIcal = useCallback(async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return { ok: false as const };
+    const res = await fetch("/api/ical/sync", { method: "POST", headers: { Authorization: `Bearer ${session.access_token}` } });
+    const j = await res.json().catch(() => ({}));
+    await cargarTodo();
+    return j as { ok?: boolean; bloqueos?: number };
+  }, [cargarTodo]);
   const gastoDeUnidad = useCallback(
     (unidadId: string) => {
       const nUnidades = Math.max(1, unidades.length);
@@ -787,6 +812,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     unidades, reservas, getUnidad, reservasDe,
     addUnidad, updateUnidad, deleteUnidad,
     addReserva, updateReserva, deleteReserva, conflicto,
+    bloqueos, bloqueosDe, sincronizarIcal,
     pagos, pagosDe, saldoDe, addPago, deletePago,
     serviciosComprobantes, serviciosDe, guardarServicioComprobante, deleteServicioComprobante,
     mediosPago, addMedioPago, updateMedioPago, deleteMedioPago,
