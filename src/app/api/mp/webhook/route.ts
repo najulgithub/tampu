@@ -28,6 +28,20 @@ export async function POST(req: Request) {
     updated_at: new Date().toISOString(),
   }).eq("owner_id", pre.external_reference);
 
+  // Avisar a los admins cuando una suscripción se activa (pago confirmado).
+  if (estado === "activa") {
+    let email = pre.external_reference;
+    try {
+      const { data } = await admin.auth.admin.getUserById(pre.external_reference);
+      email = data.user?.email ?? email;
+    } catch {}
+    await admin.rpc("notificar_admins", {
+      p_titulo: "Suscripción activada 💳",
+      p_cuerpo: `${email} activó su suscripción en tampu.`,
+      p_clave: `pago|${id}`,
+    });
+  }
+
   return new Response("ok", { status: 200 });
 }
 
