@@ -239,6 +239,7 @@ function TarjetaUnidad({
         <span>Hasta {uni.capacidad} huéspedes</span>
         <span>·</span>
         <span>{reservas.length} reservas</span>
+        {uni.cochera && <span className="text-teal-600 dark:text-teal-400">· 🅿 cochera</span>}
       </div>
 
       <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700 text-sm">
@@ -270,6 +271,7 @@ function ModalAltaUnidad({
   const [localidad, setLocalidad] = useState("Mar del Plata");
   const [ambientes, setAmbientes] = useState(2);
   const [capacidad, setCapacidad] = useState(4);
+  const [cochera, setCochera] = useState(false);
 
   const valido = nombre.trim().length > 0;
 
@@ -288,6 +290,7 @@ function ModalAltaUnidad({
             localidad: localidad.trim(),
             ambientes,
             capacidad,
+            cochera,
             icals: [],
             notas: "",
           });
@@ -337,6 +340,10 @@ function ModalAltaUnidad({
             <InputEntero value={capacidad} onChange={setCapacidad} min={1} />
           </Campo>
         </div>
+        <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+          <input type="checkbox" checked={cochera} onChange={(e) => setCochera(e.target.checked)} />
+          Tiene cochera
+        </label>
         <div className="flex justify-end gap-2 pt-2">
           <button type="button" onClick={onCerrar} className="btn-secundario">Cancelar</button>
           <button type="submit" disabled={!valido} className="btn-primario">Guardar</button>

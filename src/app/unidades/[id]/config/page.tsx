@@ -113,6 +113,10 @@ export default function ConfigUnidad() {
               <InputEntero value={uni.capacidad} onChange={(n) => updateUnidad(uni.id, { capacidad: n })} min={1} />
             </Campo>
           </div>
+          <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+            <input type="checkbox" checked={uni.cochera ?? false} onChange={(e) => updateUnidad(uni.id, { cochera: e.target.checked })} />
+            Tiene cochera
+          </label>
           <Campo label="Notas">
             <textarea className="input min-h-20" value={uni.notas} onChange={(e) => updateUnidad(uni.id, { notas: e.target.value })} />
           </Campo>

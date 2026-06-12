@@ -220,9 +220,10 @@ export type TipoUnidad =
   | "Monoambiente"
   | "PH"
   | "Local"
+  | "Cochera"
   | "Otro";
 
-export const TIPOS_UNIDAD: TipoUnidad[] = ["Departamento", "Casa", "Cabaña", "Monoambiente", "PH", "Local", "Otro"];
+export const TIPOS_UNIDAD: TipoUnidad[] = ["Departamento", "Casa", "Cabaña", "Monoambiente", "PH", "Local", "Cochera", "Otro"];
 
 export const ICONO_TIPO: Record<TipoUnidad, string> = {
   Departamento: "🏢",
@@ -231,6 +232,7 @@ export const ICONO_TIPO: Record<TipoUnidad, string> = {
   Monoambiente: "🏬",
   PH: "🏘️",
   Local: "🏪",
+  Cochera: "🅿️",
   Otro: "📍",
 };
 
@@ -248,6 +250,7 @@ export interface Unidad {
   localidad: string;
   ambientes: number; // cantidad de ambientes de la unidad
   capacidad: number; // huéspedes
+  cochera?: boolean; // si el depto/unidad tiene cochera
   icals: PlataformaICal[];
   notas: string;
 }

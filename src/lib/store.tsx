@@ -20,12 +20,12 @@ const grupoDb = (g: Grupo) => ({ id: g.id, nombre: g.nombre, ambiente: g.ambient
 const unidadDe = (r: any): Unidad => ({
   id: r.id, nombre: r.nombre, grupoId: r.grupo_id ?? "", tipoUnidad: r.tipo_unidad, color: r.color,
   foto: r.foto ?? undefined, direccion: r.direccion ?? "", localidad: r.localidad ?? "",
-  ambientes: Number(r.ambientes), capacidad: Number(r.capacidad), icals: r.icals ?? [], notas: r.notas ?? "",
+  ambientes: Number(r.ambientes), capacidad: Number(r.capacidad), cochera: r.cochera ?? false, icals: r.icals ?? [], notas: r.notas ?? "",
 });
 const unidadDb = (u: Unidad) => ({
   id: u.id, nombre: u.nombre, grupo_id: u.grupoId || null, tipo_unidad: u.tipoUnidad, color: u.color,
   foto: u.foto ?? null, direccion: u.direccion, localidad: u.localidad, ambientes: u.ambientes,
-  capacidad: u.capacidad, icals: u.icals, notas: u.notas,
+  capacidad: u.capacidad, cochera: u.cochera ?? false, icals: u.icals, notas: u.notas,
 });
 
 const reservaDe = (r: any): Reserva => ({
@@ -534,6 +534,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if ("localidad" in cambios) db.localidad = cambios.localidad;
     if ("ambientes" in cambios) db.ambientes = cambios.ambientes;
     if ("capacidad" in cambios) db.capacidad = cambios.capacidad;
+    if ("cochera" in cambios) db.cochera = cambios.cochera;
     if ("icals" in cambios) db.icals = cambios.icals;
     if ("notas" in cambios) db.notas = cambios.notas;
     supabase.from("unidades").update(db).eq("id", id).then(({ error }) => error && console.error(error));

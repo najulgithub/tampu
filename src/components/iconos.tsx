@@ -59,6 +59,12 @@ const UNIDAD: Record<TipoUnidad, React.ReactNode> = {
       <path d="M4 9h16M10 20v-5h4v5" />
     </>
   ),
+  Cochera: (
+    <>
+      <rect x="4" y="4" width="16" height="16" rx="2" />
+      <path d="M9 17V8h3.5a2.5 2.5 0 0 1 0 5H9" />
+    </>
+  ),
   Otro: (
     <>
       <path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z" />
