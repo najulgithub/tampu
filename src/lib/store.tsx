@@ -434,6 +434,29 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     await cargarTodo();
     return j as { ok?: boolean; bloqueos?: number };
   }, [cargarTodo]);
+
+  // Sincronización iCal en segundo plano al entrar (dueño con calendarios conectados),
+  // como máximo cada 3 h. No bloquea la UI: al terminar solo refresca los bloqueos.
+  useEffect(() => {
+    if (!cargado || rol !== "dueno") return;
+    const us = refs.current.unidades;
+    if (!us.some((u) => Array.isArray(u.icals) && u.icals.length > 0)) return;
+    const key = `tampu.icalSync.${userId ?? ""}`;
+    let ultimo = 0;
+    try { ultimo = Number(localStorage.getItem(key) || 0); } catch {}
+    if (Date.now() - ultimo < 3 * 60 * 60 * 1000) return; // ya está fresco
+    try { localStorage.setItem(key, String(Date.now())); } catch {}
+    (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      try {
+        const res = await fetch("/api/ical/sync", { method: "POST", headers: { Authorization: `Bearer ${session.access_token}` } });
+        if (!res.ok) return;
+        const { data } = await supabase.from("bloqueos").select("*");
+        setBloqueos((data ?? []).map(bloqueoDe));
+      } catch {}
+    })();
+  }, [cargado, rol, userId]);
   const gastoDeUnidad = useCallback(
     (unidadId: string) => {
       const nUnidades = Math.max(1, unidades.length);
