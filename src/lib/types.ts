@@ -251,6 +251,7 @@ export interface Unidad {
   ambientes: number; // cantidad de ambientes de la unidad
   capacidad: number; // huéspedes
   cochera?: boolean; // si el depto/unidad tiene cochera
+  aptoCamioneta?: boolean; // si entra una camioneta/pickup (cocheras)
   icals: PlataformaICal[];
   notas: string;
 }

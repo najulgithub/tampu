@@ -105,18 +105,28 @@ export default function ConfigUnidad() {
           <Campo label="Localidad">
             <input className="input" value={uni.localidad} onChange={(e) => updateUnidad(uni.id, { localidad: e.target.value })} />
           </Campo>
-          <div className="grid grid-cols-2 gap-4">
-            <Campo label="Ambientes">
-              <InputEntero value={uni.ambientes} onChange={(n) => updateUnidad(uni.id, { ambientes: n })} min={1} />
-            </Campo>
-            <Campo label="Capacidad">
-              <InputEntero value={uni.capacidad} onChange={(n) => updateUnidad(uni.id, { capacidad: n })} min={1} />
-            </Campo>
-          </div>
-          <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
-            <input type="checkbox" checked={uni.cochera ?? false} onChange={(e) => updateUnidad(uni.id, { cochera: e.target.checked })} />
-            Tiene cochera
-          </label>
+          {uni.tipoUnidad !== "Cochera" && (
+            <div className="grid grid-cols-2 gap-4">
+              <Campo label="Ambientes">
+                <InputEntero value={uni.ambientes} onChange={(n) => updateUnidad(uni.id, { ambientes: n })} min={1} />
+              </Campo>
+              <Campo label="Capacidad">
+                <InputEntero value={uni.capacidad} onChange={(n) => updateUnidad(uni.id, { capacidad: n })} min={1} />
+              </Campo>
+            </div>
+          )}
+          {uni.tipoUnidad !== "Cochera" && (
+            <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+              <input type="checkbox" checked={uni.cochera ?? false} onChange={(e) => updateUnidad(uni.id, { cochera: e.target.checked })} />
+              Tiene cochera
+            </label>
+          )}
+          {(uni.tipoUnidad === "Cochera" || uni.cochera) && (
+            <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+              <input type="checkbox" checked={uni.aptoCamioneta ?? false} onChange={(e) => updateUnidad(uni.id, { aptoCamioneta: e.target.checked })} />
+              Apta para camioneta / pickup
+            </label>
+          )}
           <Campo label="Notas">
             <textarea className="input min-h-20" value={uni.notas} onChange={(e) => updateUnidad(uni.id, { notas: e.target.value })} />
           </Campo>

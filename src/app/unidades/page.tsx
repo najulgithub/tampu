@@ -234,12 +234,23 @@ function TarjetaUnidad({
       </div>
 
       <div className="mt-4 flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
-        <span>{uni.ambientes === 1 ? "Monoambiente" : `${uni.ambientes} ambientes`}</span>
-        <span>·</span>
-        <span>Hasta {uni.capacidad} huéspedes</span>
-        <span>·</span>
-        <span>{reservas.length} reservas</span>
-        {uni.cochera && <span className="text-teal-600 dark:text-teal-400">· 🅿 cochera</span>}
+        {uni.tipoUnidad === "Cochera" ? (
+          <>
+            <span>🅿 Cochera</span>
+            {uni.aptoCamioneta && <span>· apta camioneta</span>}
+            <span>·</span>
+            <span>{reservas.length} reservas</span>
+          </>
+        ) : (
+          <>
+            <span>{uni.ambientes === 1 ? "Monoambiente" : `${uni.ambientes} ambientes`}</span>
+            <span>·</span>
+            <span>Hasta {uni.capacidad} huéspedes</span>
+            <span>·</span>
+            <span>{reservas.length} reservas</span>
+            {uni.cochera && <span className="text-teal-600 dark:text-teal-400">· 🅿 cochera{uni.aptoCamioneta ? " (camioneta)" : ""}</span>}
+          </>
+        )}
       </div>
 
       <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700 text-sm">
@@ -272,7 +283,9 @@ function ModalAltaUnidad({
   const [ambientes, setAmbientes] = useState(2);
   const [capacidad, setCapacidad] = useState(4);
   const [cochera, setCochera] = useState(false);
+  const [aptoCamioneta, setAptoCamioneta] = useState(false);
 
+  const esCochera = tipoUnidad === "Cochera";
   const valido = nombre.trim().length > 0;
 
   return (
@@ -288,9 +301,10 @@ function ModalAltaUnidad({
             color,
             direccion: direccion.trim(),
             localidad: localidad.trim(),
-            ambientes,
-            capacidad,
-            cochera,
+            ambientes: esCochera ? 0 : ambientes,
+            capacidad: esCochera ? 0 : capacidad,
+            cochera: esCochera ? false : cochera,
+            aptoCamioneta: (esCochera || cochera) ? aptoCamioneta : false,
             icals: [],
             notas: "",
           });
@@ -332,18 +346,28 @@ function ModalAltaUnidad({
         <Campo label="Localidad">
           <input value={localidad} onChange={(e) => setLocalidad(e.target.value)} className="input" />
         </Campo>
-        <div className="grid grid-cols-2 gap-4">
-          <Campo label="Ambientes">
-            <InputEntero value={ambientes} onChange={setAmbientes} min={1} />
-          </Campo>
-          <Campo label="Capacidad (huéspedes)">
-            <InputEntero value={capacidad} onChange={setCapacidad} min={1} />
-          </Campo>
-        </div>
-        <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
-          <input type="checkbox" checked={cochera} onChange={(e) => setCochera(e.target.checked)} />
-          Tiene cochera
-        </label>
+        {!esCochera && (
+          <div className="grid grid-cols-2 gap-4">
+            <Campo label="Ambientes">
+              <InputEntero value={ambientes} onChange={setAmbientes} min={1} />
+            </Campo>
+            <Campo label="Capacidad (huéspedes)">
+              <InputEntero value={capacidad} onChange={setCapacidad} min={1} />
+            </Campo>
+          </div>
+        )}
+        {!esCochera && (
+          <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+            <input type="checkbox" checked={cochera} onChange={(e) => setCochera(e.target.checked)} />
+            Tiene cochera
+          </label>
+        )}
+        {(esCochera || cochera) && (
+          <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+            <input type="checkbox" checked={aptoCamioneta} onChange={(e) => setAptoCamioneta(e.target.checked)} />
+            Apta para camioneta / pickup
+          </label>
+        )}
         <div className="flex justify-end gap-2 pt-2">
           <button type="button" onClick={onCerrar} className="btn-secundario">Cancelar</button>
           <button type="submit" disabled={!valido} className="btn-primario">Guardar</button>
