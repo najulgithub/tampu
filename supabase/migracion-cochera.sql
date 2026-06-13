@@ -14,3 +14,6 @@ alter table unidades add column if not exists precio_dia_cochera numeric;
 
 -- En la reserva temporal: si se alquila con cochera (para el cálculo).
 alter table reservas add column if not exists con_cochera boolean not null default false;
+
+-- Ubicación de la cochera (ej: "Subsuelo 2, lugar 14").
+alter table unidades add column if not exists ubicacion_cochera text;

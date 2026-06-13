@@ -22,6 +22,7 @@ const unidadDe = (r: any): Unidad => ({
   foto: r.foto ?? undefined, direccion: r.direccion ?? "", localidad: r.localidad ?? "",
   ambientes: Number(r.ambientes), capacidad: Number(r.capacidad), cochera: r.cochera ?? false, aptoCamioneta: r.apto_camioneta ?? false,
   precioDia: r.precio_dia != null ? Number(r.precio_dia) : undefined, precioDiaCochera: r.precio_dia_cochera != null ? Number(r.precio_dia_cochera) : undefined,
+  ubicacionCochera: r.ubicacion_cochera ?? undefined,
   icals: r.icals ?? [], notas: r.notas ?? "",
 });
 const unidadDb = (u: Unidad) => ({
@@ -29,6 +30,7 @@ const unidadDb = (u: Unidad) => ({
   foto: u.foto ?? null, direccion: u.direccion, localidad: u.localidad, ambientes: u.ambientes,
   capacidad: u.capacidad, cochera: u.cochera ?? false, apto_camioneta: u.aptoCamioneta ?? false,
   precio_dia: u.precioDia ?? null, precio_dia_cochera: u.precioDiaCochera ?? null,
+  ubicacion_cochera: u.ubicacionCochera ?? null,
   icals: u.icals, notas: u.notas,
 });
 
@@ -542,6 +544,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if ("aptoCamioneta" in cambios) db.apto_camioneta = cambios.aptoCamioneta;
     if ("precioDia" in cambios) db.precio_dia = cambios.precioDia ?? null;
     if ("precioDiaCochera" in cambios) db.precio_dia_cochera = cambios.precioDiaCochera ?? null;
+    if ("ubicacionCochera" in cambios) db.ubicacion_cochera = cambios.ubicacionCochera ?? null;
     if ("icals" in cambios) db.icals = cambios.icals;
     if ("notas" in cambios) db.notas = cambios.notas;
     supabase.from("unidades").update(db).eq("id", id).then(({ error }) => error && console.error(error));

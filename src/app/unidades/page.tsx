@@ -237,6 +237,7 @@ function TarjetaUnidad({
         {uni.tipoUnidad === "Cochera" ? (
           <>
             <span>🅿 Cochera</span>
+            {uni.ubicacionCochera && <span>· {uni.ubicacionCochera}</span>}
             {uni.aptoCamioneta && <span>· apta camioneta</span>}
             <span>·</span>
             <span>{reservas.length} reservas</span>
@@ -284,6 +285,7 @@ function ModalAltaUnidad({
   const [capacidad, setCapacidad] = useState(4);
   const [cochera, setCochera] = useState(false);
   const [aptoCamioneta, setAptoCamioneta] = useState(false);
+  const [ubicacionCochera, setUbicacionCochera] = useState("");
 
   const esCochera = tipoUnidad === "Cochera";
   const valido = nombre.trim().length > 0;
@@ -305,6 +307,7 @@ function ModalAltaUnidad({
             capacidad: esCochera ? 0 : capacidad,
             cochera: esCochera ? false : cochera,
             aptoCamioneta: (esCochera || cochera) ? aptoCamioneta : false,
+            ubicacionCochera: (esCochera || cochera) ? (ubicacionCochera.trim() || undefined) : undefined,
             icals: [],
             notas: "",
           });
@@ -363,10 +366,15 @@ function ModalAltaUnidad({
           </label>
         )}
         {(esCochera || cochera) && (
-          <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
-            <input type="checkbox" checked={aptoCamioneta} onChange={(e) => setAptoCamioneta(e.target.checked)} />
-            Apta para camioneta / pickup
-          </label>
+          <>
+            <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+              <input type="checkbox" checked={aptoCamioneta} onChange={(e) => setAptoCamioneta(e.target.checked)} />
+              Apta para camioneta / pickup
+            </label>
+            <Campo label="Ubicación de la cochera">
+              <input value={ubicacionCochera} onChange={(e) => setUbicacionCochera(e.target.value)} className="input" placeholder="ej: Subsuelo 2, lugar 14" />
+            </Campo>
+          </>
         )}
         <div className="flex justify-end gap-2 pt-2">
           <button type="button" onClick={onCerrar} className="btn-secundario">Cancelar</button>

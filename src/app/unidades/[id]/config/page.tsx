@@ -129,6 +129,12 @@ export default function ConfigUnidad() {
             </label>
           )}
 
+          {(uni.tipoUnidad === "Cochera" || uni.cochera) && (
+            <Campo label="Ubicación de la cochera">
+              <input className="input" value={uni.ubicacionCochera ?? ""} onChange={(e) => updateUnidad(uni.id, { ubicacionCochera: e.target.value })} placeholder="ej: Subsuelo 2, lugar 14" />
+            </Campo>
+          )}
+
           {/* Tarifa por día para alquiler temporal (opcional: si la ponés, la reserva calcula el total sola). */}
           <TarifasDia uni={uni} set={(c) => updateUnidad(uni.id, c)} />
 

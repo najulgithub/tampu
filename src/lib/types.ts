@@ -254,6 +254,7 @@ export interface Unidad {
   aptoCamioneta?: boolean; // si entra una camioneta/pickup (cocheras)
   precioDia?: number; // tarifa por día para temporales (sin cochera, o única)
   precioDiaCochera?: number; // tarifa por día con cochera (si la unidad tiene cochera)
+  ubicacionCochera?: string; // dónde está la cochera (ej: "Subsuelo 2, lugar 14")
   icals: PlataformaICal[];
   notas: string;
 }
