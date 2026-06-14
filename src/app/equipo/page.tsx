@@ -83,6 +83,9 @@ function LinkClientes() {
   const [copiado, setCopiado] = useState(false);
   const [qr, setQr] = useState("");
   const [verQr, setVerQr] = useState(false);
+  const [editandoSlug, setEditandoSlug] = useState(false);
+  const [borradorSlug, setBorradorSlug] = useState("");
+  const [errorSlug, setErrorSlug] = useState("");
 
   const cargar = useCallback(async () => {
     const { data } = await supabase.rpc("mi_negocio");
@@ -95,7 +98,7 @@ function LinkClientes() {
   // Genera el QR del link (localmente, sin servicios externos).
   useEffect(() => {
     if (!slug) return;
-    const url = `${window.location.origin}/?r=${slug}`;
+    const url = `${window.location.origin}/p/${slug}`;
     QRCode.toDataURL(url, { width: 512, margin: 2, color: { dark: "#0f172a", light: "#ffffff" } })
       .then(setQr)
       .catch(() => setQr(""));
@@ -103,7 +106,19 @@ function LinkClientes() {
 
   if (!slug) return null;
 
-  const link = `${typeof window !== "undefined" ? window.location.origin : ""}/?r=${slug}`;
+  const origin = typeof window !== "undefined" ? window.location.origin : "https://tampu.ar";
+  const link = `${origin}/p/${slug}`;
+  const linkCorto = link.replace(/^https?:\/\//, "");
+
+  async function guardarSlug() {
+    const v = borradorSlug.trim();
+    setErrorSlug("");
+    if (!v || v === slug) { setEditandoSlug(false); return; }
+    const { data, error } = await supabase.rpc("cambiar_slug", { p_slug: v });
+    if (error) { setErrorSlug(error.message); return; }
+    if (typeof data === "string") setSlug(data);
+    setEditandoSlug(false);
+  }
 
   async function copiar() {
     try {
@@ -144,6 +159,33 @@ function LinkClientes() {
       <p className="text-sm text-slate-500 dark:text-slate-400 mb-3">
         Compartí este link. Quien se registre desde acá entra como cliente y solo puede reservar tus unidades y subir la seña.
       </p>
+
+      {/* Dirección personalizable */}
+      <div className="mb-3">
+        {editandoSlug ? (
+          <div>
+            <div className="flex items-center gap-1">
+              <span className="text-sm text-slate-400 dark:text-slate-500">{origin.replace(/^https?:\/\//, "")}/p/</span>
+              <input
+                autoFocus value={borradorSlug}
+                onChange={(e) => setBorradorSlug(e.target.value)}
+                onBlur={guardarSlug}
+                onKeyDown={(e) => { if (e.key === "Enter") guardarSlug(); if (e.key === "Escape") setEditandoSlug(false); }}
+                className="input py-1 text-sm flex-1" placeholder="estadiaspepe"
+              />
+            </div>
+            {errorSlug && <p className="text-xs text-rose-600 dark:text-rose-400 mt-1">{errorSlug}</p>}
+          </div>
+        ) : (
+          <button
+            onClick={() => { setBorradorSlug(slug ?? ""); setErrorSlug(""); setEditandoSlug(true); }}
+            className="text-xs text-teal-700 dark:text-teal-400 hover:underline"
+          >
+            Dirección: <b>{linkCorto}</b> · personalizar
+          </button>
+        )}
+      </div>
+
       <div className="flex gap-2">
         <input readOnly value={link} onFocus={(e) => e.currentTarget.select()} className="input flex-1 text-sm" />
         <button onClick={copiar} className="rounded-lg bg-teal-600 text-white px-4 py-2 text-sm font-medium hover:bg-teal-700 transition whitespace-nowrap">
