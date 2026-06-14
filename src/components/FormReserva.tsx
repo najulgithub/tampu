@@ -39,7 +39,7 @@ export default function FormReserva({
   const [sena, setSena] = useState(reserva?.sena ?? 0);
   const [canal, setCanal] = useState<Canal>(reserva?.canal ?? "Directo");
   const [tipo, setTipo] = useState<TipoAlquiler>(reserva?.tipo ?? "temporal");
-  const [moneda, setMoneda] = useState<Moneda>(reserva?.moneda ?? config.monedaDefault);
+  const [moneda, setMoneda] = useState<Moneda>(reserva?.moneda ?? unidad?.moneda ?? config.monedaDefault);
   const [actualizacion, setActualizacion] = useState<TipoActualizacion>(reserva?.actualizacion ?? "Sin actualización");
   const [indice, setIndice] = useState<IndiceAjuste>(reserva?.indice ?? "ICL");
   const [porcentajeManual, setPorcentajeManual] = useState(reserva?.porcentajeManual ?? 0);

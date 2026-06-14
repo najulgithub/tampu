@@ -21,6 +21,7 @@ const unidadDe = (r: any): Unidad => ({
   id: r.id, nombre: r.nombre, grupoId: r.grupo_id ?? "", tipoUnidad: r.tipo_unidad, color: r.color,
   foto: r.foto ?? undefined, direccion: r.direccion ?? "", localidad: r.localidad ?? "",
   ambientes: Number(r.ambientes), capacidad: Number(r.capacidad), cochera: r.cochera ?? false, aptoCamioneta: r.apto_camioneta ?? false,
+  moneda: r.moneda ?? undefined,
   precioDia: r.precio_dia != null ? Number(r.precio_dia) : undefined, precioDiaCochera: r.precio_dia_cochera != null ? Number(r.precio_dia_cochera) : undefined,
   ubicacionCochera: r.ubicacion_cochera ?? undefined,
   icals: r.icals ?? [], notas: r.notas ?? "",
@@ -29,6 +30,7 @@ const unidadDb = (u: Unidad) => ({
   id: u.id, nombre: u.nombre, grupo_id: u.grupoId || null, tipo_unidad: u.tipoUnidad, color: u.color,
   foto: u.foto ?? null, direccion: u.direccion, localidad: u.localidad, ambientes: u.ambientes,
   capacidad: u.capacidad, cochera: u.cochera ?? false, apto_camioneta: u.aptoCamioneta ?? false,
+  moneda: u.moneda ?? null,
   precio_dia: u.precioDia ?? null, precio_dia_cochera: u.precioDiaCochera ?? null,
   ubicacion_cochera: u.ubicacionCochera ?? null,
   icals: u.icals, notas: u.notas,
@@ -554,6 +556,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if ("capacidad" in cambios) db.capacidad = cambios.capacidad;
     if ("cochera" in cambios) db.cochera = cambios.cochera;
     if ("aptoCamioneta" in cambios) db.apto_camioneta = cambios.aptoCamioneta;
+    if ("moneda" in cambios) db.moneda = cambios.moneda ?? null;
     if ("precioDia" in cambios) db.precio_dia = cambios.precioDia ?? null;
     if ("precioDiaCochera" in cambios) db.precio_dia_cochera = cambios.precioDiaCochera ?? null;
     if ("ubicacionCochera" in cambios) db.ubicacion_cochera = cambios.ubicacionCochera ?? null;

@@ -4,8 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useStore } from "@/lib/store";
-import type { PlataformaICal, TipoUnidad, Unidad } from "@/lib/types";
-import { TIPOS_UNIDAD, COLORES_UNIDAD } from "@/lib/types";
+import type { PlataformaICal, TipoUnidad, Unidad, Moneda } from "@/lib/types";
+import { TIPOS_UNIDAD, COLORES_UNIDAD, MONEDAS } from "@/lib/types";
 import { Campo } from "@/components/ui";
 import SelectGrupo from "@/components/SelectGrupo";
 import AvatarUnidad from "@/components/AvatarUnidad";
@@ -134,6 +134,13 @@ export default function ConfigUnidad() {
               <input className="input" value={uni.ubicacionCochera ?? ""} onChange={(e) => updateUnidad(uni.id, { ubicacionCochera: e.target.value })} placeholder="ej: Subsuelo 2, lugar 14" />
             </Campo>
           )}
+
+          <Campo label="Moneda">
+            <select className="input max-w-[200px]" value={uni.moneda ?? ""} onChange={(e) => updateUnidad(uni.id, { moneda: (e.target.value || undefined) as Moneda | undefined })}>
+              <option value="">Según configuración del negocio</option>
+              {MONEDAS.map((m) => <option key={m.valor} value={m.valor}>{m.label}</option>)}
+            </select>
+          </Campo>
 
           {/* Tarifa por día para alquiler temporal (opcional: si la ponés, la reserva calcula el total sola). */}
           <TarifasDia uni={uni} set={(c) => updateUnidad(uni.id, c)} />

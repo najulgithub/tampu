@@ -252,6 +252,7 @@ export interface Unidad {
   capacidad: number; // huéspedes
   cochera?: boolean; // si el depto/unidad tiene cochera
   aptoCamioneta?: boolean; // si entra una camioneta/pickup (cocheras)
+  moneda?: Moneda; // moneda por defecto de la unidad (ARS, USD…)
   precioDia?: number; // tarifa por día para temporales (sin cochera, o única)
   precioDiaCochera?: number; // tarifa por día con cochera (si la unidad tiene cochera)
   ubicacionCochera?: string; // dónde está la cochera (ej: "Subsuelo 2, lugar 14")
