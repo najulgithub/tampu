@@ -107,6 +107,8 @@ export default function PortalCliente({ session }: { session: Session }) {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
   const [activa, setActiva] = useState<UnidadPortal | null>(null); // unidad para reservar
+  const [duenos, setDuenos] = useState<{ owner_id: string; nombre: string; activo: boolean }[]>([]);
+  const [duenoActivo, setDuenoActivo] = useState<string>("");
 
   const cargarReservas = useCallback(async () => {
     const { data } = await supabase
@@ -120,6 +122,11 @@ export default function PortalCliente({ session }: { session: Session }) {
   useEffect(() => {
     let vivo = true;
     (async () => {
+      const { data: dd } = await supabase.rpc("mis_duenos");
+      if (vivo && Array.isArray(dd)) {
+        setDuenos(dd as typeof duenos);
+        setDuenoActivo((dd.find((d: { activo: boolean }) => d.activo)?.owner_id) ?? (dd[0]?.owner_id ?? ""));
+      }
       const { data, error } = await supabase.rpc("portal_unidades");
       if (!vivo) return;
       if (error) setError("No pudimos cargar las unidades. Intentá de nuevo en un momento.");
@@ -134,6 +141,14 @@ export default function PortalCliente({ session }: { session: Session }) {
     return () => { vivo = false; };
   }, [cargarReservas]);
 
+  // Cambiar de negocio: cambia el dueño activo y recarga el portal.
+  async function cambiarDueno(owner: string) {
+    if (owner === duenoActivo) return;
+    setDuenoActivo(owner);
+    await supabase.rpc("cambiar_dueno_activo", { p_owner: owner });
+    window.location.reload();
+  }
+
   const nombreUnidad = (id: string) => unidades.find((u) => u.id === id)?.nombre ?? "Unidad";
 
   return (
@@ -145,6 +160,16 @@ export default function PortalCliente({ session }: { session: Session }) {
             tampu
           </div>
           <div className="flex items-center gap-3 text-sm">
+            {duenos.length > 1 && (
+              <select
+                value={duenoActivo}
+                onChange={(e) => cambiarDueno(e.target.value)}
+                className="rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm px-2 py-1 max-w-[160px]"
+                title="Elegí el negocio"
+              >
+                {duenos.map((d) => <option key={d.owner_id} value={d.owner_id}>{d.nombre}</option>)}
+              </select>
+            )}
             <CampanaInquilino />
             <span className="text-slate-500 dark:text-slate-400 hidden sm:inline max-w-[160px] truncate">{session.user.email}</span>
             <button onClick={() => supabase.auth.signOut()} className="text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 transition">

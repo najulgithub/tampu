@@ -303,6 +303,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (error) { setRol("dueno"); return; } // migración aún no corrida → no bloquear al dueño
       const row = Array.isArray(data) ? (data[0] as { rol: string; permisos: unknown } | undefined) : null;
       if (row) {
+        // Si ya es cliente y abrió el link de OTRO dueño, lo vinculamos también
+        // (y ese dueño queda activo). Se hace antes de fijar el rol para que el
+        // portal cargue con el dueño recién elegido.
+        if (row.rol === "cliente") {
+          let ref: string | null = null;
+          try { ref = localStorage.getItem("alquileres.ref"); } catch {}
+          if (ref) {
+            try { localStorage.removeItem("alquileres.ref"); } catch {}
+            await supabase.rpc("registrarse_cliente", { p_slug: ref });
+          }
+        }
+        if (!activo) return;
         setRol(row.rol as StoreCtx["rol"]);
         setPermisosColab(Array.isArray(row.permisos) ? (row.permisos as string[]) : []);
         return;
