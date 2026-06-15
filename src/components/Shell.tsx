@@ -141,7 +141,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
       <header className="bg-white/80 dark:bg-slate-900/70 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-700/60 sticky top-0 z-20">
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-6">
-            <Link href="/" className="flex items-center gap-2 font-display text-lg font-semibold text-slate-800 dark:text-slate-100">
+            <Link href="/" className="flex items-center gap-2 text-xl font-bold tracking-tight text-slate-800 dark:text-slate-100">
               <LogoTampu size={28} />
               tampu
             </Link>
@@ -432,7 +432,7 @@ function Login() {
       <div className="w-full max-w-sm animate-in">
         <div className="flex flex-col items-center text-center mb-6">
           <LogoTampu size={64} className="rounded-2xl shadow-lg shadow-teal-500/25" />
-          <h1 className="mt-4 font-display text-3xl font-semibold text-slate-800 dark:text-slate-100">tampu</h1>
+          <h1 className="mt-4 text-3xl font-bold tracking-tight text-slate-800 dark:text-slate-100">tampu</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1.5">
             {negocioInvita ? `Reservá tu estadía en ${negocioInvita}.` : "Gestioná tus propiedades, todo el año."}
           </p>
