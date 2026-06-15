@@ -6,6 +6,10 @@
 --  y migracion-suscripciones.sql por la tabla suscripciones)
 -- ============================================================
 
+-- Si ya existía con otras columnas, hay que dropearla antes (no se puede
+-- cambiar el tipo de retorno con create or replace).
+drop function if exists admin_usuarios();
+
 -- Devuelve una fila por negocio/dueño. Si quien llama NO es admin,
 -- la cláusula es_admin_sistema() del WHERE hace que devuelva 0 filas.
 -- SECURITY DEFINER permite leer auth.users y saltear el RLS por-negocio.
