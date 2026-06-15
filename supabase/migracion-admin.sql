@@ -18,6 +18,7 @@ returns table (
   estado        text,
   trial_fin     timestamptz,
   periodo_fin   timestamptz,
+  precio        numeric,
   unidades      bigint,
   reservas      bigint,
   colaboradores bigint
@@ -31,6 +32,7 @@ language sql security definer stable set search_path = public as $$
     coalesce(s.estado, 'sin'),
     s.trial_fin,
     s.periodo_fin,
+    s.precio,
     (select count(*) from unidades      un where un.owner_id = n.owner_id),
     (select count(*) from reservas      r  where r.owner_id  = n.owner_id),
     (select count(*) from colaboradores c  where c.owner_id  = n.owner_id)
@@ -38,6 +40,9 @@ language sql security definer stable set search_path = public as $$
   join auth.users u on u.id = n.owner_id
   left join suscripciones s on s.owner_id = n.owner_id
   where es_admin_sistema()
+    -- No contar cuentas de admin/dev como dueños del negocio.
+    and not exists (select 1 from admins_sistema a where a.user_id = n.owner_id)
+    and lower(u.email) not in ('israbas@gmail.com', 'israelbastarrica@marketarg.com')
   order by n.created_at desc;
 $$;
 grant execute on function admin_usuarios() to authenticated;

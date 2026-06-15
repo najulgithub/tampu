@@ -12,6 +12,7 @@ interface UsuarioAdmin {
   estado: string;
   trial_fin: string | null;
   periodo_fin: string | null;
+  precio: number | null;
   unidades: number;
   reservas: number;
   colaboradores: number;
@@ -77,12 +78,22 @@ export default function AdminPanel() {
 
   const efectivos = (usuarios ?? []).map(estadoEfectivo);
   const cuenta = (e: string) => efectivos.filter((x) => x === e).length;
+  // Ingreso mensual = suma del precio de las suscripciones activas pagas (con precio de MP).
+  const ingresoMensual = (usuarios ?? [])
+    .filter((u) => estadoEfectivo(u) === "activa" && (u.precio ?? 0) > 0)
+    .reduce((a, u) => a + (u.precio ?? 0), 0);
 
   return (
     <div>
       <div className="mb-6">
         <h1 className="font-display text-2xl font-semibold text-slate-800 dark:text-slate-100">Admin</h1>
         <p className="text-sm text-slate-500 dark:text-slate-400">Dueños registrados y estado de suscripción.</p>
+      </div>
+
+      {/* Ingreso mensual recurrente */}
+      <div className="card p-4 mb-4 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-500/10 dark:to-teal-500/10 border-emerald-200 dark:border-emerald-500/30">
+        <div className="text-xs text-emerald-700 dark:text-emerald-300 font-medium">Ingreso mensual (suscripciones activas)</div>
+        <div className="text-3xl font-semibold text-emerald-700 dark:text-emerald-300 mt-1 tabular-nums">${ingresoMensual.toLocaleString("es-AR")}<span className="text-sm font-normal text-emerald-600/70 dark:text-emerald-400/70">/mes</span></div>
       </div>
 
       {/* Métricas */}
