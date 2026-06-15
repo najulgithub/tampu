@@ -20,7 +20,13 @@ export const metadata: Metadata = {
   description: "Gestioná tus propiedades todo el año: temporal y largo plazo, con portal para inquilinos.",
   applicationName: "tampu",
   appleWebApp: { capable: true, title: "tampu", statusBarStyle: "default" },
-  icons: { apple: "/apple-touch-icon.png" },
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/icon.png", type: "image/png", sizes: "192x192" },
+    ],
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 // El color de la barra del sistema cuando la app está instalada (claro/oscuro).
