@@ -90,14 +90,14 @@ const medioDb = (m: MedioPago) => ({ id: m.id, nombre: m.nombre, activo: m.activ
 
 const gastoDe = (r: any): Gasto => ({
   id: r.id, ambito: r.ambito, refId: r.ref_id, fecha: r.fecha, categoria: r.categoria, descripcion: r.descripcion ?? "",
-  monto: Number(r.monto), proveedor: r.proveedor ?? "", reparto: r.reparto ?? undefined, claveOrigen: r.clave_origen ?? undefined,
+  monto: Number(r.monto), proveedor: r.proveedor ?? "", reparto: r.reparto ?? undefined, claveOrigen: r.clave_origen ?? undefined, pendiente: r.pendiente ?? false,
   pagadoPor: r.pagado_por === "inquilino" ? "inquilino" : "dueno", comprobante: r.comprobante ?? undefined,
   proveedorId: r.proveedor_id ?? undefined, presupuestoId: r.presupuesto_id ?? undefined,
   rating: r.rating ?? undefined, ratingNota: r.rating_nota ?? undefined,
 });
 const gastoDb = (g: Gasto) => ({
   id: g.id, ambito: g.ambito, ref_id: g.refId, fecha: g.fecha, categoria: g.categoria, descripcion: g.descripcion,
-  monto: g.monto, proveedor: g.proveedor, reparto: g.reparto ?? null, clave_origen: g.claveOrigen ?? null,
+  monto: g.monto, proveedor: g.proveedor, reparto: g.reparto ?? null, clave_origen: g.claveOrigen ?? null, pendiente: g.pendiente ?? false,
   pagado_por: g.pagadoPor ?? "dueno", comprobante: g.comprobante ?? null,
   proveedor_id: g.proveedorId ?? null, presupuesto_id: g.presupuestoId ?? null,
   rating: g.rating ?? null, rating_nota: g.ratingNota ?? null,
@@ -155,10 +155,11 @@ const presupuestoDb = (p: Presupuesto) => ({
 const progDe = (r: any): GastoProgramado => ({
   id: r.id, ambito: r.ambito, refId: r.ref_id, categoria: r.categoria, descripcion: r.descripcion ?? "",
   monto: Number(r.monto), proveedor: r.proveedor ?? "", frecuencia: r.frecuencia, fechaInicio: r.fecha_inicio, activo: r.activo,
+  variable: r.variable ?? false,
 });
 const progDb = (p: GastoProgramado) => ({
   id: p.id, ambito: p.ambito, ref_id: p.refId, categoria: p.categoria, descripcion: p.descripcion, monto: p.monto,
-  proveedor: p.proveedor, frecuencia: p.frecuencia, fecha_inicio: p.fechaInicio, activo: p.activo,
+  proveedor: p.proveedor, frecuencia: p.frecuencia, fecha_inicio: p.fechaInicio, activo: p.activo, variable: p.variable ?? false,
 });
 
 const colabDe = (r: any): Colaborador => ({ id: r.id, nombre: r.nombre, email: r.email ?? "", rol: r.rol, gruposIds: r.grupos_ids ?? [], permisos: r.permisos ?? [] });

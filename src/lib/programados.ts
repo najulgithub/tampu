@@ -68,7 +68,9 @@ export function generarGastos(
             fecha: f,
             categoria: p.categoria,
             descripcion: p.descripcion,
-            monto: p.monto,
+            // Variable (luz/gas/expensas): nace en 0 y pendiente de importe.
+            monto: p.variable ? 0 : p.monto,
+            pendiente: p.variable ? true : undefined,
             proveedor: p.proveedor,
             reparto: p.ambito === "grupo" ? repartoEquit(p.refId) : undefined,
             claveOrigen: clave,

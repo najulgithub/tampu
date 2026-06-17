@@ -101,6 +101,7 @@ function Movimientos() {
     return g.monto;
   };
   const total = lista.reduce((acc, g) => acc + montoVisible(g), 0);
+  const pendientes = lista.filter((g) => g.pendiente);
 
   return (
     <div>
@@ -143,6 +144,12 @@ function Movimientos() {
         )}
       </div>
 
+      {pendientes.length > 0 && (
+        <div className="mb-4 rounded-xl border border-amber-300/70 dark:border-amber-500/30 bg-amber-50/70 dark:bg-amber-500/10 px-4 py-2.5 text-sm text-amber-800 dark:text-amber-300">
+          ⏳ Tenés <b>{pendientes.length}</b> {pendientes.length === 1 ? "gasto variable esperando" : "gastos variables esperando"} que cargues el importe (luz, gas, expensas…). Tocá cada uno para completarlo.
+        </div>
+      )}
+
       {lista.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-600 p-10 text-center text-slate-500 dark:text-slate-400">
           No hay gastos cargados {filtro && "para este filtro"}.
@@ -153,7 +160,7 @@ function Movimientos() {
             <button
               key={g.id}
               onClick={() => setEditando(g)}
-              className="w-full text-left flex items-center gap-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/70 shadow-sm p-3 hover:border-teal-400 dark:hover:border-teal-500 transition"
+              className={`w-full text-left flex items-center gap-3 bg-white dark:bg-slate-800 rounded-xl border shadow-sm p-3 transition ${g.pendiente ? "border-amber-300 dark:border-amber-500/40 hover:border-amber-400" : "border-slate-200 dark:border-slate-700/70 hover:border-teal-400 dark:hover:border-teal-500"}`}
             >
               <span className={`shrink-0 text-xs px-2 py-1 rounded-full ${COLOR_CATEGORIA[g.categoria].bg} ${COLOR_CATEGORIA[g.categoria].texto}`}>
                 {g.categoria}
@@ -161,6 +168,7 @@ function Movimientos() {
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">
                   {g.descripcion || g.categoria}
+                  {g.pendiente && <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400">cargar importe</span>}
                   {g.pagadoPor === "inquilino" && <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-400">pagó inquilino</span>}
                 </div>
                 <div className="text-xs text-slate-500 dark:text-slate-400 truncate">
@@ -173,7 +181,7 @@ function Movimientos() {
               </div>
               <div className="shrink-0 text-right">
                 <div className="text-sm font-medium text-slate-700 dark:text-slate-200">
-                  <Monto valor={montoVisible(g)} />
+                  {g.pendiente ? <span className="text-amber-600 dark:text-amber-400">a cargar</span> : <Monto valor={montoVisible(g)} />}
                 </div>
                 {filtraUnidad && g.ambito === "grupo" && (
                   <div className="text-xs text-slate-400 dark:text-slate-500">
@@ -430,7 +438,7 @@ function Programados() {
                 <div className="text-xs text-slate-500 dark:text-slate-400 truncate">{etiqueta(p)} · {p.categoria}</div>
               </div>
               <div className="shrink-0 text-sm font-medium text-slate-700 dark:text-slate-200">
-                ${p.monto.toLocaleString("es-AR")}
+                {p.variable ? <span className="text-amber-600 dark:text-amber-400">Variable</span> : `$${p.monto.toLocaleString("es-AR")}`}
               </div>
             </button>
           ))}
@@ -456,14 +464,16 @@ function FormProgramado({ programado, onCerrar }: { programado?: GastoProgramado
   const [frecuencia, setFrecuencia] = useState<Frecuencia>(programado?.frecuencia ?? "Mensual");
   const [fechaInicio, setFechaInicio] = useState(programado?.fechaInicio ?? hoyISO());
   const [activo, setActivo] = useState(programado?.activo ?? true);
+  const [variable, setVariable] = useState(programado?.variable ?? false);
 
   const opciones = ambito === "unidad" ? unidades : grupos;
-  const valido = (ambito === "general" || refId) && monto > 0;
   const porEvento = frecuencia === "Por check-out";
+  const esVariable = variable && !porEvento;
+  const valido = (ambito === "general" || refId) && (esVariable || monto > 0);
 
   function guardar() {
     if (!valido) return;
-    const datos = { ambito, refId, categoria, descripcion: descripcion.trim(), monto, proveedor: proveedor.trim(), frecuencia, fechaInicio, activo };
+    const datos = { ambito, refId, categoria, descripcion: descripcion.trim(), monto: esVariable ? 0 : monto, proveedor: proveedor.trim(), frecuencia, fechaInicio, activo, variable: esVariable };
     if (esEdicion && programado) updateProgramado(programado.id, datos);
     else addProgramado(datos);
     onCerrar();
@@ -512,15 +522,28 @@ function FormProgramado({ programado, onCerrar }: { programado?: GastoProgramado
           </p>
         )}
 
+        {!porEvento && (
+          <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 px-3 py-2">
+            <input type="checkbox" checked={variable} onChange={(e) => setVariable(e.target.checked)} />
+            <span>Importe variable (luz, gas, expensas…) — lo cargo cada mes</span>
+          </label>
+        )}
+
         <div className="grid grid-cols-2 gap-4">
           <Campo label="Categoría">
             <select value={categoria} onChange={(e) => setCategoria(e.target.value as CategoriaGasto)} className="input">
               {CATEGORIAS_GASTO.map((c) => (<option key={c} value={c}>{c}</option>))}
             </select>
           </Campo>
-          <Campo label="Monto ($)">
-            <InputMonto value={monto} onChange={setMonto} />
-          </Campo>
+          {esVariable ? (
+            <Campo label="Monto">
+              <p className="text-xs text-slate-400 dark:text-slate-500 pt-2.5">Se carga cada mes.</p>
+            </Campo>
+          ) : (
+            <Campo label="Monto ($)">
+              <InputMonto value={monto} onChange={setMonto} />
+            </Campo>
+          )}
         </div>
 
         <Campo label="Descripción">
@@ -653,6 +676,8 @@ function FormGasto({ gasto, onCerrar, presupuesto }: { gasto?: Gasto; onCerrar: 
       presupuestoId: gasto?.presupuestoId ?? presupuesto?.id,
       rating: rating || undefined,
       ratingNota: ratingNota.trim() || undefined,
+      // Si era un gasto pendiente de importe y se cargó el monto, deja de estar pendiente.
+      pendiente: monto > 0 ? false : (gasto?.pendiente ?? false),
     };
     if (esEdicion && gasto) updateGasto(gasto.id, datos);
     else addGasto(datos);

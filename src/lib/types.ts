@@ -373,6 +373,8 @@ export interface Gasto {
   reparto?: RepartoItem[];
   // Si fue generado por un gasto programado, clave única de la ocurrencia (para no duplicar).
   claveOrigen?: string;
+  // Generado por un programado variable y todavía sin importe cargado.
+  pendiente?: boolean;
   // Quién lo pagó. "dueno" por defecto. "inquilino" → se acredita contra su alquiler.
   pagadoPor?: PagadoPor;
   // Comprobante / factura del gasto (imagen, data URL), opcional.
@@ -485,6 +487,7 @@ export interface GastoProgramado {
   frecuencia: Frecuencia;
   fechaInicio: string; // ISO yyyy-mm-dd (para las basadas en fecha)
   activo: boolean;
+  variable?: boolean; // importe variable (luz, gas, expensas…): se carga el monto cada mes
 }
 
 export const CATEGORIAS_GASTO: CategoriaGasto[] = [
