@@ -339,6 +339,12 @@ export default function FormReserva({
           <SeccionPagos reserva={reserva} simbolo={simbolo} total={totalEfectivo} sena={sena} />
         )}
 
+        {!esEdicion && (
+          <p className="text-xs text-slate-400 dark:text-slate-500 border-t border-slate-100 dark:border-slate-700 pt-3">
+            💡 Guardá la reserva y volvé a abrirla para registrar los pagos (cada uno con su fecha) y ver el saldo actualizado.
+          </p>
+        )}
+
         {esEdicion && reserva && <ChatReserva reservaId={reserva.id} />}
 
         <Campo label="Notas">
