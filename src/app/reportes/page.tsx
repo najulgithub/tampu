@@ -36,6 +36,8 @@ export default function Reportes() {
   const { unidades, reservas, gastos, ingresos, grupos, getGrupo, getUnidad, pagos, saldoDe, config, puedeEditar } = useStore();
   const puedeVerReportes = puedeEditar("reportes");
   const reservaPorId = new Map(reservas.map((r) => [r.id, r]));
+  // Reservas cuya seña ya está registrada como un pago (con fecha): no imputar también el campo 'sena'.
+  const reservasConSenaPago = new Set(pagos.filter((p) => p.esSena).map((p) => p.reservaId));
   const anio = new Date().getFullYear();
   const [desde, setDesde] = useState(`${anio}-01-01`);
   const [hasta, setHasta] = useState(`${anio}-12-31`);
@@ -118,7 +120,7 @@ export default function Reportes() {
     for (const r of todas) {
       const largo = esLargoPlazo(r.tipo);
       if (!incluyeTipo(largo)) continue;
-      if (r.sena > 0 && r.checkIn >= desde && r.checkIn <= hasta) sumar(largo, r.moneda, r.sena);
+      if (r.sena > 0 && r.checkIn >= desde && r.checkIn <= hasta && !reservasConSenaPago.has(r.id)) sumar(largo, r.moneda, r.sena);
     }
     for (const p of pagos) {
       if (p.fecha < desde || p.fecha > hasta) continue;
@@ -157,7 +159,7 @@ export default function Reportes() {
     let senas = 0;
     for (const r of reservas) {
       if (r.moneda === "USD" || !incluyeTipo(esLargoPlazo(r.tipo))) continue;
-      if (r.sena > 0 && r.checkIn >= desde && r.checkIn <= hasta) senas += r.sena;
+      if (r.sena > 0 && r.checkIn >= desde && r.checkIn <= hasta && !reservasConSenaPago.has(r.id)) senas += r.sena;
     }
     if (senas > 0) map.set("Seña", senas);
     return [...map.entries()]

@@ -332,6 +332,7 @@ export interface Pago {
   comprobante?: string; // imagen (data URL), opcional
   nota: string;
   periodo?: string; // "yyyy-mm": mes/cuota al que se imputa (contratos largos). Vacío = imputación automática.
+  esSena?: boolean; // marca este pago como la seña (con su fecha real)
 }
 
 // Un gasto se imputa a una unidad puntual o a un grupo entero (gasto compartido).

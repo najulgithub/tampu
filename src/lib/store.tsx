@@ -78,11 +78,11 @@ const configDb = (c: Configuracion) => ({
 
 const pagoDe = (r: any): Pago => ({
   id: r.id, reservaId: r.reserva_id, fecha: r.fecha, monto: Number(r.monto), medio: r.medio,
-  comprobante: r.comprobante ?? undefined, nota: r.nota ?? "", periodo: r.periodo ?? undefined,
+  comprobante: r.comprobante ?? undefined, nota: r.nota ?? "", periodo: r.periodo ?? undefined, esSena: r.es_sena ?? false,
 });
 const pagoDb = (p: Pago) => ({
   id: p.id, reserva_id: p.reservaId, fecha: p.fecha, monto: p.monto, medio: p.medio,
-  comprobante: p.comprobante ?? null, nota: p.nota, periodo: p.periodo ?? null,
+  comprobante: p.comprobante ?? null, nota: p.nota, periodo: p.periodo ?? null, es_sena: p.esSena ?? false,
 });
 
 const medioDe = (r: any): MedioPago => ({ id: r.id, nombre: r.nombre, activo: r.activo ?? true });
@@ -601,7 +601,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const saldoDe = useCallback(
     (reserva: Reserva) => {
-      const pagado = reserva.sena + pagos.filter((p) => p.reservaId === reserva.id).reduce((a, p) => a + p.monto, 0);
+      const pagosR = pagos.filter((p) => p.reservaId === reserva.id);
+      // Si la seña está registrada como un pago, no sumamos también el campo 'sena' (no duplicar).
+      const haySenaPago = pagosR.some((p) => p.esSena);
+      const pagado = (haySenaPago ? 0 : reserva.sena) + pagosR.reduce((a, p) => a + p.monto, 0);
       return Math.max(0, reserva.montoTotal - pagado);
     },
     [pagos]

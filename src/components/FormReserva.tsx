@@ -520,7 +520,9 @@ function SeccionPagos({ reserva, simbolo, total, sena }: { reserva: Reserva; sim
   }
 
   const totalPagos = pagos.reduce((a, p) => a + p.monto, 0);
-  const pagado = sena + totalPagos;
+  // Si la seña está registrada como pago, no sumamos también el campo 'sena'.
+  const haySenaPago = pagos.some((p) => p.esSena);
+  const pagado = (haySenaPago ? 0 : sena) + totalPagos;
   const saldo = Math.max(0, total - pagado);
 
   const [abrir, setAbrir] = useState(false);
@@ -532,13 +534,14 @@ function SeccionPagos({ reserva, simbolo, total, sena }: { reserva: Reserva; sim
   const [periodo, setPeriodo] = useState<string>(cc?.proxima?.periodo ?? "");
   const [comprobante, setComprobante] = useState<string | undefined>();
   const [nota, setNota] = useState("");
+  const [esSena, setEsSena] = useState(false);
 
   const montoEfectivo = modo === "%" ? Math.round((total * pct) / 100) : monto;
 
   function registrar() {
     if (montoEfectivo <= 0) return;
-    addPago({ reservaId: reserva.id, fecha, monto: montoEfectivo, medio, comprobante, nota: nota.trim(), periodo: largo ? (periodo || undefined) : undefined });
-    setMonto(0); setPct(0); setComprobante(undefined); setNota(""); setAbrir(false);
+    addPago({ reservaId: reserva.id, fecha, monto: montoEfectivo, medio, comprobante, nota: nota.trim(), periodo: !esSena && largo ? (periodo || undefined) : undefined, esSena });
+    setMonto(0); setPct(0); setComprobante(undefined); setNota(""); setEsSena(false); setAbrir(false);
   }
 
   // Abre el formulario precargado para saldar una cuota puntual.
@@ -635,6 +638,7 @@ function SeccionPagos({ reserva, simbolo, total, sena }: { reserva: Reserva; sim
           {pagos.map((p) => (
             <div key={p.id} className="flex items-center gap-2 text-xs bg-slate-50 dark:bg-slate-900 rounded-lg px-2.5 py-1.5">
               <span className="text-slate-700 dark:text-slate-200 font-medium">{simbolo}{p.monto.toLocaleString("es-AR")}</span>
+              {p.esSena && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400">seña</span>}
               {p.periodo && <span className="text-teal-600 dark:text-teal-400 capitalize">{labelPeriodo(p.periodo)}</span>}
               <span className="text-slate-500 dark:text-slate-400">{p.medio}</span>
               <span className="text-slate-400 dark:text-slate-500">{formatearFecha(p.fecha)}</span>
@@ -685,6 +689,11 @@ function SeccionPagos({ reserva, simbolo, total, sena }: { reserva: Reserva; sim
             <SelectMedio value={medio} onChange={setMedio} />
             <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} className="input" />
           </div>
+
+          <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+            <input type="checkbox" checked={esSena} onChange={(e) => setEsSena(e.target.checked)} />
+            Es la seña (queda registrada con su fecha)
+          </label>
 
           <div className="flex items-center gap-2">
             <label className="btn-secundario cursor-pointer text-xs">
