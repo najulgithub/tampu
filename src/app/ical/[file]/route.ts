@@ -30,6 +30,13 @@ export async function GET(_req: Request, { params }: { params: Promise<{ file: s
     .eq("unidad_id", unidadId)
     .neq("estado", "cancelada");
 
+  // También exportamos los bloqueos importados de OTRAS plataformas, así tampu
+  // funciona de hub: una reserva de Airbnb (importada) bloquea también en Booking.
+  const { data: bloqueos } = await admin
+    .from("bloqueos")
+    .select("id, desde, hasta, plataforma")
+    .eq("unidad_id", unidadId);
+
   const stamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+/, "");
 
   const lines: string[] = [
@@ -51,6 +58,19 @@ export async function GET(_req: Request, { params }: { params: Promise<{ file: s
       `DTSTART;VALUE=DATE:${fechaICal(r.check_in)}`,
       `DTEND;VALUE=DATE:${fechaICal(r.check_out)}`,
       "SUMMARY:Reservado (tampu)",
+      "END:VEVENT"
+    );
+  }
+
+  for (const b of bloqueos ?? []) {
+    if (!b.desde || !b.hasta) continue;
+    lines.push(
+      "BEGIN:VEVENT",
+      `UID:bloq-${b.id}@tampu.ar`,
+      `DTSTAMP:${stamp}`,
+      `DTSTART;VALUE=DATE:${fechaICal(b.desde)}`,
+      `DTEND;VALUE=DATE:${fechaICal(b.hasta)}`,
+      `SUMMARY:Reservado (${b.plataforma || "otra plataforma"})`,
       "END:VEVENT"
     );
   }
