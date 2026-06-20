@@ -206,7 +206,7 @@ export default function FormReserva({
 
         {esOTA && (
           <Campo label={`Comisión ${canal} (${simbolo})`}>
-            <InputMonto value={comision} onChange={setComision} />
+            <InputMonto value={comision} onChange={setComision} decimales={moneda === "USD"} />
             <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Se carga como gasto de la unidad (concepto «Comisión {canal}»).</p>
           </Campo>
         )}
@@ -264,10 +264,10 @@ export default function FormReserva({
           <>
             <div className="grid grid-cols-2 gap-4">
               <Campo label={`Alquiler mensual (${simbolo})`}>
-                <InputMonto value={montoMensual} onChange={setMontoMensual} />
+                <InputMonto value={montoMensual} onChange={setMontoMensual} decimales={moneda === "USD"} />
               </Campo>
               <Campo label={`Depósito (${simbolo})`}>
-                <InputMonto value={sena} onChange={setSena} />
+                <InputMonto value={sena} onChange={setSena} decimales={moneda === "USD"} />
               </Campo>
             </div>
             {montoMensual > 0 && cantMeses > 0 && (
@@ -287,7 +287,7 @@ export default function FormReserva({
             {usaTarifaDia ? (
               <>
                 <Campo label={`Seña (${simbolo})`}>
-                  <InputMonto value={sena} onChange={setSena} />
+                  <InputMonto value={sena} onChange={setSena} decimales={moneda === "USD"} />
                 </Campo>
                 <div className="rounded-lg bg-slate-50 dark:bg-slate-900 p-3 text-sm">
                   <div className="flex justify-between text-slate-600 dark:text-slate-300">
@@ -306,10 +306,10 @@ export default function FormReserva({
               <>
                 <div className="grid grid-cols-2 gap-4">
                   <Campo label={`Monto total (${simbolo})`}>
-                    <InputMonto value={montoTotal} onChange={setMontoTotal} />
+                    <InputMonto value={montoTotal} onChange={setMontoTotal} decimales={moneda === "USD"} />
                   </Campo>
                   <Campo label={`Seña (${simbolo})`}>
-                    <InputMonto value={sena} onChange={setSena} />
+                    <InputMonto value={sena} onChange={setSena} decimales={moneda === "USD"} />
                   </Campo>
                 </div>
                 {montoTotal > 0 && (

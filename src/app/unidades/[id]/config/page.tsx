@@ -225,7 +225,7 @@ function TarifasDia({ uni, set }: { uni: Unidad; set: (c: Partial<Unidad>) => vo
   if (!uni.cochera) {
     return (
       <Campo label="Valor por día (temporal)">
-        <InputMonto value={uni.precioDia ?? 0} onChange={(n) => set({ precioDia: n || undefined })} />
+        <InputMonto value={uni.precioDia ?? 0} onChange={(n) => set({ precioDia: n || undefined })} decimales={uni.moneda === "USD"} />
       </Campo>
     );
   }
@@ -234,11 +234,11 @@ function TarifasDia({ uni, set }: { uni: Unidad; set: (c: Partial<Unidad>) => vo
     <div className="space-y-3">
       <div className={mismo ? "" : "grid grid-cols-2 gap-4"}>
         <Campo label={mismo ? "Valor por día (temporal)" : "Valor por día (sin cochera)"}>
-          <InputMonto value={uni.precioDia ?? 0} onChange={setSin} />
+          <InputMonto value={uni.precioDia ?? 0} onChange={setSin} decimales={uni.moneda === "USD"} />
         </Campo>
         {!mismo && (
           <Campo label="Valor por día (con cochera)">
-            <InputMonto value={uni.precioDiaCochera ?? 0} onChange={(n) => set({ precioDiaCochera: n || undefined })} />
+            <InputMonto value={uni.precioDiaCochera ?? 0} onChange={(n) => set({ precioDiaCochera: n || undefined })} decimales={uni.moneda === "USD"} />
           </Campo>
         )}
       </div>
