@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Fragment } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { Session } from "@supabase/supabase-js";
@@ -421,49 +421,52 @@ function ReservarComoHuesped({ slug, email, onCerrar }: { slug: string; email: s
               <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Elegí la unidad</h2>
               <div className="grid sm:grid-cols-2 gap-3">
                 {unidades.map((u) => (
-                  <button key={u.id} onClick={() => setSel(u)} className={`text-left card p-0 overflow-hidden transition ${sel?.id === u.id ? "ring-2 ring-teal-500" : "hover:border-teal-400"}`}>
-                    {u.foto ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={u.foto} alt={u.nombre} className="w-full h-40 object-cover" />
-                    ) : (
-                      <div className="w-full h-40 grid place-items-center bg-slate-100 dark:bg-slate-700/40 text-3xl" style={{ color: u.color }}>🏠</div>
+                  <Fragment key={u.id}>
+                    <button onClick={() => setSel(sel?.id === u.id ? null : u)} className={`text-left card p-0 overflow-hidden transition ${sel?.id === u.id ? "ring-2 ring-teal-500" : "hover:border-teal-400"}`}>
+                      {u.foto ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={u.foto} alt={u.nombre} className="w-full h-40 object-cover" />
+                      ) : (
+                        <div className="w-full h-40 grid place-items-center bg-slate-100 dark:bg-slate-700/40 text-3xl" style={{ color: u.color }}>🏠</div>
+                      )}
+                      <div className="p-3">
+                        <div className="flex items-center gap-2">
+                          <span className="w-3 h-3 rounded-full shrink-0" style={{ background: u.color }} />
+                          <span className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">{u.nombre}</span>
+                        </div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                          {u.tipo_unidad} · {u.localidad} · hasta {u.capacidad} {u.capacidad === 1 ? "huésped" : "huéspedes"}
+                        </div>
+                        {labelNoche(u) && <div className="text-sm font-semibold text-teal-700 dark:text-teal-300 mt-1">{labelNoche(u)}</div>}
+                      </div>
+                    </button>
+
+                    {sel?.id === u.id && (
+                      <div className="sm:col-span-2 card p-4 space-y-3">
+                        <div className="text-sm font-semibold text-slate-700 dark:text-slate-200">Reservar {u.nombre}</div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <label className="text-xs text-slate-500 dark:text-slate-400">Check-in<input type="date" value={checkIn} onChange={(e) => setCheckIn(e.target.value)} className="input mt-1" /></label>
+                          <label className="text-xs text-slate-500 dark:text-slate-400">Check-out<input type="date" value={checkOut} onChange={(e) => setCheckOut(e.target.value)} className="input mt-1" /></label>
+                        </div>
+                        {labelTotal(u) && (
+                          <div className="rounded-lg bg-teal-50 dark:bg-teal-500/10 border border-teal-200 dark:border-teal-500/30 px-3 py-2 text-sm text-teal-800 dark:text-teal-200">
+                            Total estimado: <b>{labelTotal(u)}</b> <span className="text-teal-600/80 dark:text-teal-300/70">({cantNoches} {cantNoches === 1 ? "noche" : "noches"})</span>
+                          </div>
+                        )}
+                        <label className="block text-xs text-slate-500 dark:text-slate-400">A nombre de<input value={huesped} onChange={(e) => setHuesped(e.target.value)} placeholder={email} className="input mt-1" /></label>
+                        <label className="block text-xs text-slate-500 dark:text-slate-400">Contacto (tel)<input value={contacto} onChange={(e) => setContacto(e.target.value)} className="input mt-1" placeholder="+54 9 223…" /></label>
+                        {error && <p className="text-sm text-rose-600 dark:text-rose-400">{error}</p>}
+                        <button onClick={reservar} disabled={estado === "enviando"} className="btn-primario w-full disabled:opacity-50">
+                          {estado === "enviando" ? "Enviando…" : `Reservar ${u.nombre}`}
+                        </button>
+                        <p className="text-[11px] text-slate-400 dark:text-slate-500 text-center">La reserva queda pendiente hasta que el propietario la apruebe.</p>
+                      </div>
                     )}
-                    <div className="p-3">
-                      <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full shrink-0" style={{ background: u.color }} />
-                        <span className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">{u.nombre}</span>
-                      </div>
-                      <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                        {u.tipo_unidad} · {u.localidad} · hasta {u.capacidad} {u.capacidad === 1 ? "huésped" : "huéspedes"}
-                      </div>
-                      {labelNoche(u) && <div className="text-sm font-semibold text-teal-700 dark:text-teal-300 mt-1">{labelNoche(u)}</div>}
-                    </div>
-                  </button>
+                  </Fragment>
                 ))}
                 {unidades.length === 0 && <p className="text-sm text-slate-400">Este negocio no tiene unidades publicadas.</p>}
               </div>
             </div>
-
-            {sel && (
-              <div className="card p-4 space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <label className="text-xs text-slate-500 dark:text-slate-400">Check-in<input type="date" value={checkIn} onChange={(e) => setCheckIn(e.target.value)} className="input mt-1" /></label>
-                  <label className="text-xs text-slate-500 dark:text-slate-400">Check-out<input type="date" value={checkOut} onChange={(e) => setCheckOut(e.target.value)} className="input mt-1" /></label>
-                </div>
-                {labelTotal(sel) && (
-                  <div className="rounded-lg bg-teal-50 dark:bg-teal-500/10 border border-teal-200 dark:border-teal-500/30 px-3 py-2 text-sm text-teal-800 dark:text-teal-200">
-                    Total estimado: <b>{labelTotal(sel)}</b> <span className="text-teal-600/80 dark:text-teal-300/70">({cantNoches} {cantNoches === 1 ? "noche" : "noches"})</span>
-                  </div>
-                )}
-                <label className="block text-xs text-slate-500 dark:text-slate-400">A nombre de<input value={huesped} onChange={(e) => setHuesped(e.target.value)} placeholder={email} className="input mt-1" /></label>
-                <label className="block text-xs text-slate-500 dark:text-slate-400">Contacto (tel)<input value={contacto} onChange={(e) => setContacto(e.target.value)} className="input mt-1" placeholder="+54 9 223…" /></label>
-                {error && <p className="text-sm text-rose-600 dark:text-rose-400">{error}</p>}
-                <button onClick={reservar} disabled={estado === "enviando"} className="btn-primario w-full disabled:opacity-50">
-                  {estado === "enviando" ? "Enviando…" : `Reservar en ${sel.nombre}`}
-                </button>
-                <p className="text-[11px] text-slate-400 dark:text-slate-500 text-center">La reserva queda pendiente hasta que el propietario la apruebe.</p>
-              </div>
-            )}
           </div>
         )}
       </div>
