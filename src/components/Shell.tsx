@@ -113,10 +113,12 @@ export default function Shell({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Si la URL trae un link de cliente (?r=slug), lo guardamos para usarlo al registrarse.
+  const [reservarSlug, setReservarSlug] = useState<string | null>(null);
   useEffect(() => {
     try {
       const r = new URLSearchParams(window.location.search).get("r");
       if (r) localStorage.setItem("alquileres.ref", r);
+      setReservarSlug(r);
     } catch {}
   }, []);
 
@@ -131,6 +133,20 @@ export default function Shell({ children }: { children: React.ReactNode }) {
   }
 
   if (rol === "cliente") return <PortalCliente session={session} />;
+
+  // Un dueño/colaborador que abre el link de OTRO negocio puede reservar ahí como huésped.
+  if ((rol === "dueno" || rol === "colaborador") && reservarSlug) {
+    return (
+      <ReservarComoHuesped
+        slug={reservarSlug}
+        email={session.user.email ?? ""}
+        onCerrar={() => {
+          setReservarSlug(null);
+          try { localStorage.removeItem("alquileres.ref"); window.history.replaceState(null, "", window.location.pathname); } catch {}
+        }}
+      />
+    );
+  }
 
   if ((rol === "dueno" || rol === "colaborador") && !accesoActivo) {
     return <Paywall esDueno={rol === "dueno"} email={session.user.email ?? ""} />;
@@ -323,6 +339,102 @@ function Paywall({ esDueno, email }: { esDueno: boolean; email: string }) {
           </p>
         )}
         <button onClick={() => supabase.auth.signOut()} className="mt-6 block mx-auto text-sm text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">Salir ({email})</button>
+      </div>
+    </div>
+  );
+}
+
+// Vista para reservar en el negocio de un link, estando logueado (aunque seas
+// dueño de otro negocio). Reserva como huésped sin cambiar tu cuenta.
+type UnidadSlug = { id: string; nombre: string; tipo_unidad: string; color: string; localidad: string; capacidad: number; ambientes: number };
+function ReservarComoHuesped({ slug, email, onCerrar }: { slug: string; email: string; onCerrar: () => void }) {
+  const [negocio, setNegocio] = useState<string>("");
+  const [unidades, setUnidades] = useState<UnidadSlug[]>([]);
+  const [cargando, setCargando] = useState(true);
+  const [sel, setSel] = useState<UnidadSlug | null>(null);
+  const [checkIn, setCheckIn] = useState("");
+  const [checkOut, setCheckOut] = useState("");
+  const [huesped, setHuesped] = useState("");
+  const [contacto, setContacto] = useState("");
+  const [estado, setEstado] = useState<"form" | "enviando" | "listo" | "error">("form");
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    (async () => {
+      const { data: n } = await supabase.rpc("negocio_por_slug", { p_slug: slug });
+      if (typeof n === "string") setNegocio(n);
+      const { data: us } = await supabase.rpc("negocio_unidades_slug", { p_slug: slug });
+      setUnidades((us as UnidadSlug[]) ?? []);
+      setCargando(false);
+    })();
+  }, [slug]);
+
+  async function reservar() {
+    if (!sel || !checkIn || !checkOut || checkIn >= checkOut) { setError("Completá unidad y fechas válidas."); return; }
+    setEstado("enviando");
+    const { error } = await supabase.rpc("reservar_en_slug", {
+      p_slug: slug, p_unidad: sel.id, p_check_in: checkIn, p_check_out: checkOut,
+      p_huesped: huesped.trim() || email, p_contacto: contacto.trim(),
+    });
+    if (error) { setError(error.message); setEstado("error"); return; }
+    setEstado("listo");
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-teal-50 via-stone-50 to-emerald-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 px-4 py-8">
+      <div className="max-w-2xl mx-auto animate-in">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <LogoTampu size={28} />
+            <span className="font-bold tracking-tight text-slate-800 dark:text-slate-100">{negocio || "Reservar"}</span>
+          </div>
+          <button onClick={onCerrar} className="text-sm text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100">← Volver a mi cuenta</button>
+        </div>
+
+        {cargando ? (
+          <p className="text-center text-slate-400 py-12">Cargando…</p>
+        ) : estado === "listo" ? (
+          <div className="card p-8 text-center">
+            <div className="text-4xl mb-2">✅</div>
+            <h2 className="font-display text-xl font-semibold text-slate-800 dark:text-slate-100">Solicitud enviada</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">Tu reserva quedó <b>pendiente de aprobación</b> del propietario. Te va a avisar cuando la confirme.</p>
+            <button onClick={onCerrar} className="btn-primario mt-5">Volver a mi cuenta</button>
+          </div>
+        ) : (
+          <div className="space-y-5">
+            <div>
+              <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Elegí la unidad</h2>
+              <div className="grid sm:grid-cols-2 gap-3">
+                {unidades.map((u) => (
+                  <button key={u.id} onClick={() => setSel(u)} className={`text-left card p-3 transition ${sel?.id === u.id ? "ring-2 ring-teal-500" : "hover:border-teal-400"}`}>
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full shrink-0" style={{ background: u.color }} />
+                      <span className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">{u.nombre}</span>
+                    </div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">{u.tipo_unidad} · {u.localidad} · hasta {u.capacidad}</div>
+                  </button>
+                ))}
+                {unidades.length === 0 && <p className="text-sm text-slate-400">Este negocio no tiene unidades publicadas.</p>}
+              </div>
+            </div>
+
+            {sel && (
+              <div className="card p-4 space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="text-xs text-slate-500 dark:text-slate-400">Check-in<input type="date" value={checkIn} onChange={(e) => setCheckIn(e.target.value)} className="input mt-1" /></label>
+                  <label className="text-xs text-slate-500 dark:text-slate-400">Check-out<input type="date" value={checkOut} onChange={(e) => setCheckOut(e.target.value)} className="input mt-1" /></label>
+                </div>
+                <label className="block text-xs text-slate-500 dark:text-slate-400">A nombre de<input value={huesped} onChange={(e) => setHuesped(e.target.value)} placeholder={email} className="input mt-1" /></label>
+                <label className="block text-xs text-slate-500 dark:text-slate-400">Contacto (tel)<input value={contacto} onChange={(e) => setContacto(e.target.value)} className="input mt-1" placeholder="+54 9 223…" /></label>
+                {error && <p className="text-sm text-rose-600 dark:text-rose-400">{error}</p>}
+                <button onClick={reservar} disabled={estado === "enviando"} className="btn-primario w-full disabled:opacity-50">
+                  {estado === "enviando" ? "Enviando…" : `Reservar en ${sel.nombre}`}
+                </button>
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 text-center">La reserva queda pendiente hasta que el propietario la apruebe.</p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
