@@ -62,7 +62,7 @@ function Burbuja({
   return (
     <>
       {abierto && (
-        <div className="fixed z-40 right-4 bottom-40 sm:bottom-20 w-[min(360px,calc(100vw-2rem))] h-[70vh] max-h-[520px] rounded-2xl shadow-2xl ring-1 ring-black/10 bg-white dark:bg-slate-800 flex flex-col overflow-hidden animate-in">
+        <div className="fixed z-40 inset-x-3 bottom-3 sm:inset-x-auto sm:right-4 sm:bottom-20 w-auto sm:w-[min(360px,calc(100vw-2rem))] h-[75vh] sm:h-[70vh] max-h-[560px] sm:max-h-[520px] rounded-2xl shadow-2xl ring-1 ring-black/10 bg-white dark:bg-slate-800 flex flex-col overflow-hidden animate-in">
           <div className="flex items-center gap-2 px-4 h-12 shrink-0 bg-gradient-to-r from-teal-600 to-emerald-600 text-white">
             {onAtras && <button onClick={onAtras} className="text-white/90 hover:text-white text-lg leading-none">‹</button>}
             <span className="font-medium text-sm truncate flex-1">{titulo}</span>
@@ -74,7 +74,7 @@ function Burbuja({
       <button
         onClick={() => setAbierto(!abierto)}
         aria-label="Mensajes"
-        className="fixed z-40 right-4 bottom-20 sm:bottom-6 w-14 h-14 rounded-full bg-teal-600 hover:bg-teal-700 text-white shadow-lg shadow-teal-600/30 grid place-items-center transition active:scale-95"
+        className={`fixed z-40 right-4 bottom-20 sm:bottom-6 w-14 h-14 rounded-full bg-teal-600 hover:bg-teal-700 text-white shadow-lg shadow-teal-600/30 place-items-center transition active:scale-95 ${abierto ? "hidden sm:grid" : "grid"}`}
       >
         {abierto ? <span className="text-2xl leading-none">×</span> : <IconoChat />}
         {!abierto && badge ? (
