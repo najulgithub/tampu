@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
@@ -14,7 +14,34 @@ function IconoChat({ size = 24 }: { size?: number }) {
 }
 
 const burbuja = (propio: boolean) =>
-  `text-sm px-3 py-1.5 rounded-2xl max-w-[80%] ${propio ? "bg-teal-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200"}`;
+  `text-sm px-3 py-1.5 rounded-2xl max-w-[80%] whitespace-pre-wrap break-words ${propio ? "bg-teal-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200"}`;
+
+// Fila de "escribir + enviar". El textarea crece con el texto (hasta un tope) y
+// Enter envía / Shift+Enter hace salto de línea.
+function CampoMensaje({ value, onChange, onEnviar }: { value: string; onChange: (v: string) => void; onEnviar: () => void }) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = Math.min(el.scrollHeight, 120) + "px";
+  }, [value]);
+  return (
+    <div className="p-2 border-t border-slate-100 dark:border-slate-700 flex items-end gap-2 shrink-0">
+      <textarea
+        ref={ref}
+        rows={1}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); onEnviar(); } }}
+        className="input flex-1 resize-none leading-snug py-2 max-h-[120px] overflow-y-auto"
+        placeholder="Escribir…"
+        autoFocus
+      />
+      <button onClick={onEnviar} disabled={!value.trim()} className="btn-primario shrink-0 disabled:opacity-50">Enviar</button>
+    </div>
+  );
+}
 
 // Cáscara visual del widget (botón flotante + panel).
 function Burbuja({
@@ -35,7 +62,7 @@ function Burbuja({
   return (
     <>
       {abierto && (
-        <div className="fixed z-40 right-4 bottom-24 sm:bottom-20 w-[min(360px,calc(100vw-2rem))] h-[70vh] max-h-[520px] rounded-2xl shadow-2xl ring-1 ring-black/10 bg-white dark:bg-slate-800 flex flex-col overflow-hidden animate-in">
+        <div className="fixed z-40 right-4 bottom-40 sm:bottom-20 w-[min(360px,calc(100vw-2rem))] h-[70vh] max-h-[520px] rounded-2xl shadow-2xl ring-1 ring-black/10 bg-white dark:bg-slate-800 flex flex-col overflow-hidden animate-in">
           <div className="flex items-center gap-2 px-4 h-12 shrink-0 bg-gradient-to-r from-teal-600 to-emerald-600 text-white">
             {onAtras && <button onClick={onAtras} className="text-white/90 hover:text-white text-lg leading-none">‹</button>}
             <span className="font-medium text-sm truncate flex-1">{titulo}</span>
@@ -155,10 +182,7 @@ export function ChatWidgetDueno() {
             {msgs.length === 0 ? <p className="text-xs text-slate-400 dark:text-slate-500 text-center py-4">Sin mensajes.</p> :
               msgs.map((m) => <div key={m.id} className={`flex ${m.autor === "dueno" ? "justify-end" : "justify-start"}`}><span className={burbuja(m.autor === "dueno")}>{m.texto}</span></div>)}
           </div>
-          <div className="p-2 border-t border-slate-100 dark:border-slate-700 flex gap-2 shrink-0">
-            <input value={texto} onChange={(e) => setTexto(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); enviar(); } }} className="input flex-1" placeholder="Escribir…" autoFocus />
-            <button onClick={enviar} disabled={!texto.trim()} className="btn-primario disabled:opacity-50">Enviar</button>
-          </div>
+          <CampoMensaje value={texto} onChange={setTexto} onEnviar={enviar} />
         </>
       )}
     </Burbuja>
@@ -200,10 +224,7 @@ export function ChatWidgetConsulta({ slug }: { slug: string }) {
           {msgs.length === 0 ? <p className="text-xs text-slate-400 dark:text-slate-500 text-center py-4">¿Dudas? Escribile al dueño por acá.</p> :
             msgs.map((m, i) => <div key={i} className={`flex ${m.autor === "inquilino" ? "justify-end" : "justify-start"}`}><span className={burbuja(m.autor === "inquilino")}>{m.texto}</span></div>)}
         </div>
-        <div className="p-2 border-t border-slate-100 dark:border-slate-700 flex gap-2 shrink-0">
-          <input value={texto} onChange={(e) => setTexto(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); enviar(); } }} className="input flex-1" placeholder="Escribir…" autoFocus />
-          <button onClick={enviar} disabled={!texto.trim()} className="btn-primario disabled:opacity-50">Enviar</button>
-        </div>
+        <CampoMensaje value={texto} onChange={setTexto} onEnviar={enviar} />
       </>
     </Burbuja>
   );
@@ -251,10 +272,7 @@ export function ChatWidgetInquilino({ contratos }: { contratos: { id: string; un
             {msgs.length === 0 ? <p className="text-xs text-slate-400 dark:text-slate-500 text-center py-4">Escribile al dueño por acá.</p> :
               msgs.map((m, i) => <div key={i} className={`flex ${m.autor === "inquilino" ? "justify-end" : "justify-start"}`}><span className={burbuja(m.autor === "inquilino")}>{m.texto}</span></div>)}
           </div>
-          <div className="p-2 border-t border-slate-100 dark:border-slate-700 flex gap-2 shrink-0">
-            <input value={texto} onChange={(e) => setTexto(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); enviar(); } }} className="input flex-1" placeholder="Escribir…" autoFocus />
-            <button onClick={enviar} disabled={!texto.trim()} className="btn-primario disabled:opacity-50">Enviar</button>
-          </div>
+          <CampoMensaje value={texto} onChange={setTexto} onEnviar={enviar} />
         </>
       )}
     </Burbuja>
