@@ -5,10 +5,11 @@
 -- ============================================================
 
 -- Unidades del dueño dueño del slug (para mostrar el portal de ese negocio).
+drop function if exists negocio_unidades_slug(text);
 create or replace function negocio_unidades_slug(p_slug text)
-returns table (id text, nombre text, tipo_unidad text, color text, foto text, localidad text, capacidad int, ambientes int)
+returns table (id text, nombre text, tipo_unidad text, color text, foto text, localidad text, capacidad int, ambientes int, precio_dia numeric, moneda text)
 language sql security definer set search_path = public as $$
-  select u.id, u.nombre, u.tipo_unidad, u.color, u.foto, u.localidad, u.capacidad, u.ambientes
+  select u.id, u.nombre, u.tipo_unidad, u.color, u.foto, u.localidad, u.capacidad, u.ambientes, u.precio_dia, u.moneda
   from unidades u
   join negocios n on n.owner_id = u.owner_id
   where n.slug = p_slug

@@ -346,8 +346,9 @@ function Paywall({ esDueno, email }: { esDueno: boolean; email: string }) {
 
 // Vista para reservar en el negocio de un link, estando logueado (aunque seas
 // dueño de otro negocio). Reserva como huésped sin cambiar tu cuenta.
-type UnidadSlug = { id: string; nombre: string; tipo_unidad: string; color: string; foto: string | null; localidad: string; capacidad: number; ambientes: number };
+type UnidadSlug = { id: string; nombre: string; tipo_unidad: string; color: string; foto: string | null; localidad: string; capacidad: number; ambientes: number; precio_dia: number | null; moneda: string | null };
 function ReservarComoHuesped({ slug, email, onCerrar }: { slug: string; email: string; onCerrar: () => void }) {
+  const { dolarOficial } = useStore();
   const [negocio, setNegocio] = useState<string>("");
   const [unidades, setUnidades] = useState<UnidadSlug[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -368,6 +369,20 @@ function ReservarComoHuesped({ slug, email, onCerrar }: { slug: string; email: s
       setCargando(false);
     })();
   }, [slug]);
+
+  const cantNoches = checkIn && checkOut && checkIn < checkOut ? Math.round((Date.parse(checkOut) - Date.parse(checkIn)) / 86400000) : 0;
+  // Precio por noche mostrado en pesos (si la unidad está en USD, lo convierte al dólar oficial).
+  const labelNoche = (u: UnidadSlug): string | null => {
+    if (!u.precio_dia) return null;
+    if (u.moneda === "USD") return dolarOficial ? `$${Math.round(u.precio_dia * dolarOficial).toLocaleString("es-AR")}/noche` : `US$${u.precio_dia.toLocaleString("es-AR")}/noche`;
+    return `$${Math.round(u.precio_dia).toLocaleString("es-AR")}/noche`;
+  };
+  const labelTotal = (u: UnidadSlug): string | null => {
+    if (!u.precio_dia || cantNoches <= 0) return null;
+    if (u.moneda === "USD" && !dolarOficial) return `US$${(u.precio_dia * cantNoches).toLocaleString("es-AR")}`;
+    const porNoche = u.moneda === "USD" ? Math.round(u.precio_dia * (dolarOficial || 0)) : Math.round(u.precio_dia);
+    return `$${(porNoche * cantNoches).toLocaleString("es-AR")}`;
+  };
 
   async function reservar() {
     if (!sel || !checkIn || !checkOut || checkIn >= checkOut) { setError("Completá unidad y fechas válidas."); return; }
@@ -421,6 +436,7 @@ function ReservarComoHuesped({ slug, email, onCerrar }: { slug: string; email: s
                       <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                         {u.tipo_unidad} · {u.localidad} · hasta {u.capacidad} {u.capacidad === 1 ? "huésped" : "huéspedes"}
                       </div>
+                      {labelNoche(u) && <div className="text-sm font-semibold text-teal-700 dark:text-teal-300 mt-1">{labelNoche(u)}</div>}
                     </div>
                   </button>
                 ))}
@@ -434,6 +450,11 @@ function ReservarComoHuesped({ slug, email, onCerrar }: { slug: string; email: s
                   <label className="text-xs text-slate-500 dark:text-slate-400">Check-in<input type="date" value={checkIn} onChange={(e) => setCheckIn(e.target.value)} className="input mt-1" /></label>
                   <label className="text-xs text-slate-500 dark:text-slate-400">Check-out<input type="date" value={checkOut} onChange={(e) => setCheckOut(e.target.value)} className="input mt-1" /></label>
                 </div>
+                {labelTotal(sel) && (
+                  <div className="rounded-lg bg-teal-50 dark:bg-teal-500/10 border border-teal-200 dark:border-teal-500/30 px-3 py-2 text-sm text-teal-800 dark:text-teal-200">
+                    Total estimado: <b>{labelTotal(sel)}</b> <span className="text-teal-600/80 dark:text-teal-300/70">({cantNoches} {cantNoches === 1 ? "noche" : "noches"})</span>
+                  </div>
+                )}
                 <label className="block text-xs text-slate-500 dark:text-slate-400">A nombre de<input value={huesped} onChange={(e) => setHuesped(e.target.value)} placeholder={email} className="input mt-1" /></label>
                 <label className="block text-xs text-slate-500 dark:text-slate-400">Contacto (tel)<input value={contacto} onChange={(e) => setContacto(e.target.value)} className="input mt-1" placeholder="+54 9 223…" /></label>
                 {error && <p className="text-sm text-rose-600 dark:text-rose-400">{error}</p>}
