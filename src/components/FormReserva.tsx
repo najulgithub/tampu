@@ -125,10 +125,16 @@ export default function FormReserva({
     const clave = `comision|${reservaId}`;
     const existente = gastos.find((g) => g.claveOrigen === clave);
     if (esOTA && comision > 0) {
+      // Si la reserva es en USD, el gasto se guarda en pesos (al dólar oficial),
+      // dejando el monto en dólares en el concepto. Los gastos/reportes son en pesos.
+      const enUSD = moneda === "USD";
+      const tc = dolarOficial ?? 0;
+      const montoGasto = enUSD && tc > 0 ? Math.round(comision * tc) : comision;
+      const descripcion = enUSD ? `Comisión ${canal} (US$${comision.toLocaleString("es-AR")})` : `Comisión ${canal}`;
       const gdatos = {
         ambito: "unidad" as const, refId: unidadId, fecha: checkIn || hoyISO(),
-        categoria: "Comisión" as const, descripcion: `Comisión ${canal}`,
-        monto: comision, proveedor: canal, claveOrigen: clave,
+        categoria: "Comisión" as const, descripcion,
+        monto: montoGasto, proveedor: canal, claveOrigen: clave,
       };
       if (existente) updateGasto(existente.id, gdatos);
       else addGasto(gdatos);
@@ -542,7 +548,7 @@ function ServiciosTablero({ reserva, servicios, simbolo }: { reserva: Reserva; s
 }
 
 function SeccionPagos({ reserva, simbolo, total, sena }: { reserva: Reserva; simbolo: string; total: number; sena: number }) {
-  const { pagosDe, addPago, deletePago, mediosPago, gastos, updateReserva, dolarOficial } = useStore();
+  const { pagosDe, addPago, updatePago, deletePago, mediosPago, gastos, updateReserva, dolarOficial } = useStore();
   const esUSD = reserva.moneda === "USD";
   const pagos = pagosDe(reserva.id);
   const largo = esLargoPlazo(reserva.tipo);
@@ -581,6 +587,7 @@ function SeccionPagos({ reserva, simbolo, total, sena }: { reserva: Reserva; sim
   const [nota, setNota] = useState("");
   const [esSena, setEsSena] = useState(false);
   const [tipoCambio, setTipoCambio] = useState(0);
+  const [editId, setEditId] = useState<string | null>(null);
 
   // Prefill del tipo de cambio con el dólar oficial cuando llega.
   useEffect(() => { if (esUSD && tipoCambio === 0 && dolarOficial) setTipoCambio(dolarOficial); }, [dolarOficial, esUSD, tipoCambio]);
@@ -594,12 +601,29 @@ function SeccionPagos({ reserva, simbolo, total, sena }: { reserva: Reserva; sim
 
   function registrar() {
     if (montoEfectivo <= 0) return;
-    addPago({
+    const datos = {
       reservaId: reserva.id, fecha, monto: montoEfectivo, medio, comprobante, nota: nota.trim(),
       periodo: !esSena && largo ? (periodo || undefined) : undefined, esSena,
       montoArs: esUSD ? montoArsCalc : undefined, tipoCambio: esUSD ? tipoCambio : undefined,
-    });
-    setMonto(0); setPct(0); setComprobante(undefined); setNota(""); setEsSena(false); setAbrir(false);
+    };
+    if (editId) updatePago(editId, datos);
+    else addPago(datos);
+    setEditId(null); setMonto(0); setPct(0); setComprobante(undefined); setNota(""); setEsSena(false); setAbrir(false);
+  }
+
+  // Abre el formulario precargado para editar un pago existente.
+  function editarPago(p: typeof pagos[number]) {
+    setEditId(p.id);
+    setModo("$");
+    setMonto(esUSD ? (p.montoArs ?? 0) : p.monto);
+    if (esUSD && p.tipoCambio) setTipoCambio(p.tipoCambio);
+    setMedio(p.medio);
+    setFecha(p.fecha);
+    setComprobante(p.comprobante);
+    setNota(p.nota ?? "");
+    setEsSena(p.esSena ?? false);
+    setPeriodo(p.periodo ?? "");
+    setAbrir(true);
   }
 
   // Abre el formulario precargado para saldar una cuota puntual.
@@ -707,7 +731,8 @@ function SeccionPagos({ reserva, simbolo, total, sena }: { reserva: Reserva; sim
               {p.comprobante && (
                 <a href={p.comprobante} target="_blank" rel="noreferrer" className="text-teal-600 dark:text-teal-400 hover:underline">comprobante</a>
               )}
-              <button type="button" onClick={() => deletePago(p.id)} className="ml-auto text-slate-400 hover:text-rose-600 dark:hover:text-rose-400">×</button>
+              <button type="button" onClick={() => editarPago(p)} className="ml-auto text-slate-400 hover:text-teal-600 dark:hover:text-teal-400">editar</button>
+              <button type="button" onClick={() => deletePago(p.id)} className="text-slate-400 hover:text-rose-600 dark:hover:text-rose-400">×</button>
             </div>
           ))}
         </div>
@@ -801,8 +826,8 @@ function SeccionPagos({ reserva, simbolo, total, sena }: { reserva: Reserva; sim
           <input value={nota} onChange={(e) => setNota(e.target.value)} placeholder="Nota (opcional)" className="input" />
 
           <div className="flex justify-end gap-2">
-            <button type="button" onClick={() => setAbrir(false)} className="btn-secundario">Cancelar</button>
-            <button type="button" onClick={registrar} disabled={montoEfectivo <= 0} className="btn-primario">Registrar</button>
+            <button type="button" onClick={() => { setAbrir(false); setEditId(null); }} className="btn-secundario">Cancelar</button>
+            <button type="button" onClick={registrar} disabled={montoEfectivo <= 0} className="btn-primario">{editId ? "Guardar" : "Registrar"}</button>
           </div>
         </div>
       )}

@@ -198,6 +198,7 @@ interface StoreCtx {
   pagosDe: (reservaId: string) => Pago[];
   saldoDe: (reserva: Reserva) => number; // montoTotal − seña − pagos
   addPago: (p: Omit<Pago, "id">) => string;
+  updatePago: (id: string, cambios: Partial<Pago>) => void;
   deletePago: (id: string) => void;
   serviciosComprobantes: ServicioComprobante[];
   serviciosDe: (reservaId: string) => ServicioComprobante[];
@@ -296,8 +297,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Refs con el último estado, para materializar sin closures viejos.
-  const refs = useRef({ gastos, gastosProgramados, reservas, unidades, ingresos });
-  refs.current = { gastos, gastosProgramados, reservas, unidades, ingresos };
+  const refs = useRef({ gastos, gastosProgramados, reservas, unidades, ingresos, pagos });
+  refs.current = { gastos, gastosProgramados, reservas, unidades, ingresos, pagos };
   // Evita cargar dos veces para el mismo usuario (incluye el doble-mount de dev).
   const cargadoPara = useRef<string | null>(null);
 
@@ -636,6 +637,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return nuevo.id;
   }, []);
 
+  const updatePago = useCallback((id: string, cambios: Partial<Pago>) => {
+    setPagos((prev) => prev.map((p) => (p.id === id ? { ...p, ...cambios } : p)));
+    const full = refs.current.pagos.find((p) => p.id === id);
+    if (full) supabase.from("pagos").update(pagoDb({ ...full, ...cambios })).eq("id", id).then(({ error }) => error && console.error(error));
+  }, []);
+
   const deletePago = useCallback((id: string) => {
     setPagos((prev) => prev.filter((p) => p.id !== id));
     supabase.from("pagos").delete().eq("id", id).then(() => {});
@@ -904,7 +911,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     addUnidad, updateUnidad, deleteUnidad,
     addReserva, updateReserva, deleteReserva, conflicto,
     dolarOficial, bloqueos, bloqueosDe, sincronizarIcal,
-    pagos, pagosDe, saldoDe, addPago, deletePago,
+    pagos, pagosDe, saldoDe, addPago, updatePago, deletePago,
     serviciosComprobantes, serviciosDe, guardarServicioComprobante, deleteServicioComprobante,
     mediosPago, addMedioPago, updateMedioPago, deleteMedioPago,
     gastos, addGasto, updateGasto, deleteGasto, gastoDeUnidad,
