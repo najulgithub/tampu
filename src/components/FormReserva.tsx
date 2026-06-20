@@ -17,11 +17,17 @@ export default function FormReserva({
   unidadId,
   reserva,
   fechaInicial,
+  checkOutInicial,
+  canalInicial,
+  sobreBloqueo = false,
   onCerrar,
 }: {
   unidadId: string;
   reserva?: Reserva; // si viene, es edición
   fechaInicial?: string;
+  checkOutInicial?: string; // prefill de check-out (convertir un bloqueo importado)
+  canalInicial?: Canal;     // prefill de canal (Airbnb/Booking…)
+  sobreBloqueo?: boolean;   // permite superponerse con el bloqueo que se está convirtiendo
   onCerrar: () => void;
 }) {
   const { addReserva, updateReserva, deleteReserva, conflicto, pagosDe, config, puedeEditar, getUnidad } = useStore();
@@ -32,12 +38,12 @@ export default function FormReserva({
   const [huesped, setHuesped] = useState(reserva?.huesped ?? "");
   const [contacto, setContacto] = useState(reserva?.contacto ?? "");
   const [checkIn, setCheckIn] = useState(reserva?.checkIn ?? fechaInicial ?? "");
-  const [checkOut, setCheckOut] = useState(reserva?.checkOut ?? "");
+  const [checkOut, setCheckOut] = useState(reserva?.checkOut ?? checkOutInicial ?? "");
   const [montoTotal, setMontoTotal] = useState(reserva?.montoTotal ?? 0);
   const [montoMensual, setMontoMensual] = useState(reserva?.montoMensual ?? 0);
   const [conCochera, setConCochera] = useState(reserva?.conCochera ?? false);
   const [sena, setSena] = useState(reserva?.sena ?? 0);
-  const [canal, setCanal] = useState<Canal>(reserva?.canal ?? "Directo");
+  const [canal, setCanal] = useState<Canal>(reserva?.canal ?? canalInicial ?? "Directo");
   const [tipo, setTipo] = useState<TipoAlquiler>(reserva?.tipo ?? "temporal");
   const [moneda, setMoneda] = useState<Moneda>(reserva?.moneda ?? unidad?.moneda ?? config.monedaDefault);
   const [actualizacion, setActualizacion] = useState<TipoActualizacion>(reserva?.actualizacion ?? "Sin actualización");
@@ -59,7 +65,7 @@ export default function FormReserva({
   const esLargo = tipo !== "temporal";
 
   const fechasOk = checkIn && checkOut && checkIn < checkOut;
-  const choque = fechasOk ? conflicto(unidadId, checkIn, checkOut, reserva?.id) : null;
+  const choque = fechasOk ? conflicto(unidadId, checkIn, checkOut, reserva?.id, sobreBloqueo) : null;
   const valido = huesped.trim() && fechasOk && !choque;
   const cantNoches = fechasOk ? noches(checkIn, checkOut) : 0;
   // Para largo plazo, el total del contrato se deriva del mensual × meses.

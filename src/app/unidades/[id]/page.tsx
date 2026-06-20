@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { COLOR_CANAL, TIPO_LABEL, SIMBOLO_MONEDA, esLargoPlazo } from "@/lib/types";
-import type { Reserva } from "@/lib/types";
+import type { Reserva, Bloqueo, Canal } from "@/lib/types";
 import { formatearFecha, noches, hoyISO } from "@/lib/fechas";
 import Calendario from "@/components/Calendario";
 import FormReserva from "@/components/FormReserva";
@@ -18,6 +18,7 @@ export default function DetalleUnidad() {
   const [abrirNueva, setAbrirNueva] = useState(false);
   const [fechaInicial, setFechaInicial] = useState<string | undefined>();
   const [editando, setEditando] = useState<Reserva | undefined>();
+  const [convertir, setConvertir] = useState<Bloqueo | undefined>(); // bloqueo importado a convertir en reserva
 
   if (!cargado) return null;
   const uni = getUnidad(params.id);
@@ -72,6 +73,7 @@ export default function DetalleUnidad() {
           reservas={reservas}
           bloqueos={bloqueosDe(uni.id)}
           onClickDia={(iso) => { setFechaInicial(iso); setAbrirNueva(true); }}
+          onClickBloqueo={(b) => setConvertir(b)}
           onClickReserva={(r) => setEditando(r)}
         />
 
@@ -115,6 +117,16 @@ export default function DetalleUnidad() {
           unidadId={uni.id}
           reserva={editando}
           onCerrar={() => setEditando(undefined)}
+        />
+      )}
+      {convertir && (
+        <FormReserva
+          unidadId={uni.id}
+          fechaInicial={convertir.desde}
+          checkOutInicial={convertir.hasta}
+          canalInicial={convertir.plataforma as Canal}
+          sobreBloqueo
+          onCerrar={() => setConvertir(undefined)}
         />
       )}
     </div>

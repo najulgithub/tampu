@@ -10,11 +10,13 @@ export default function Calendario({
   bloqueos = [],
   onClickDia,
   onClickReserva,
+  onClickBloqueo,
 }: {
   reservas: Reserva[];
   bloqueos?: Bloqueo[];
   onClickDia?: (iso: string) => void;
   onClickReserva?: (r: Reserva) => void;
+  onClickBloqueo?: (b: Bloqueo) => void;
 }) {
   const ahora = new Date();
   const [anio, setAnio] = useState(ahora.getFullYear());
@@ -108,6 +110,7 @@ export default function Calendario({
           const onClick = () => {
             if (noche && onClickReserva) onClickReserva(noche);
             else if (salida && onClickReserva) onClickReserva(salida);
+            else if (bloq && onClickBloqueo) onClickBloqueo(bloq);
             else if (onClickDia) onClickDia(c.iso);
           };
 

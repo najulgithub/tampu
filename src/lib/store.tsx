@@ -187,7 +187,7 @@ interface StoreCtx {
   addReserva: (r: Omit<Reserva, "id">) => string;
   updateReserva: (id: string, cambios: Partial<Reserva>) => void;
   deleteReserva: (id: string) => void;
-  conflicto: (unidadId: string, checkIn: string, checkOut: string, excluirId?: string) => Reserva | null;
+  conflicto: (unidadId: string, checkIn: string, checkOut: string, excluirId?: string, ignorarBloqueos?: boolean) => Reserva | null;
   bloqueos: Bloqueo[];
   bloqueosDe: (unidadId: string) => Bloqueo[];
   sincronizarIcal: () => Promise<{ ok?: boolean; bloqueos?: number }>;
@@ -436,12 +436,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     [reservas]
   );
   const conflicto = useCallback(
-    (unidadId: string, checkIn: string, checkOut: string, excluirId?: string) => {
+    (unidadId: string, checkIn: string, checkOut: string, excluirId?: string, ignorarBloqueos = false) => {
       const r = reservas.find((r) => r.unidadId === unidadId && r.id !== excluirId && solapan(checkIn, checkOut, r.checkIn, r.checkOut));
       if (r) return r;
-      // También chocamos contra los bloqueos importados (Airbnb/Booking).
-      const b = bloqueos.find((b) => b.unidadId === unidadId && solapan(checkIn, checkOut, b.desde, b.hasta));
-      if (b) return { id: "bloqueo-" + b.id, unidadId, huesped: `Bloqueo ${b.plataforma}`, checkIn: b.desde, checkOut: b.hasta, canal: b.plataforma } as unknown as Reserva;
+      // También chocamos contra los bloqueos importados (Airbnb/Booking),
+      // salvo que estemos justamente convirtiendo un bloqueo en reserva.
+      if (!ignorarBloqueos) {
+        const b = bloqueos.find((b) => b.unidadId === unidadId && solapan(checkIn, checkOut, b.desde, b.hasta));
+        if (b) return { id: "bloqueo-" + b.id, unidadId, huesped: `Bloqueo ${b.plataforma}`, checkIn: b.desde, checkOut: b.hasta, canal: b.plataforma } as unknown as Reserva;
+      }
       return null;
     },
     [reservas, bloqueos]
