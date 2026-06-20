@@ -346,7 +346,7 @@ function Paywall({ esDueno, email }: { esDueno: boolean; email: string }) {
 
 // Vista para reservar en el negocio de un link, estando logueado (aunque seas
 // dueño de otro negocio). Reserva como huésped sin cambiar tu cuenta.
-type UnidadSlug = { id: string; nombre: string; tipo_unidad: string; color: string; localidad: string; capacidad: number; ambientes: number };
+type UnidadSlug = { id: string; nombre: string; tipo_unidad: string; color: string; foto: string | null; localidad: string; capacidad: number; ambientes: number };
 function ReservarComoHuesped({ slug, email, onCerrar }: { slug: string; email: string; onCerrar: () => void }) {
   const [negocio, setNegocio] = useState<string>("");
   const [unidades, setUnidades] = useState<UnidadSlug[]>([]);
@@ -406,12 +406,22 @@ function ReservarComoHuesped({ slug, email, onCerrar }: { slug: string; email: s
               <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Elegí la unidad</h2>
               <div className="grid sm:grid-cols-2 gap-3">
                 {unidades.map((u) => (
-                  <button key={u.id} onClick={() => setSel(u)} className={`text-left card p-3 transition ${sel?.id === u.id ? "ring-2 ring-teal-500" : "hover:border-teal-400"}`}>
-                    <div className="flex items-center gap-2">
-                      <span className="w-3 h-3 rounded-full shrink-0" style={{ background: u.color }} />
-                      <span className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">{u.nombre}</span>
+                  <button key={u.id} onClick={() => setSel(u)} className={`text-left card p-0 overflow-hidden transition ${sel?.id === u.id ? "ring-2 ring-teal-500" : "hover:border-teal-400"}`}>
+                    {u.foto ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={u.foto} alt={u.nombre} className="w-full h-40 object-cover" />
+                    ) : (
+                      <div className="w-full h-40 grid place-items-center bg-slate-100 dark:bg-slate-700/40 text-3xl" style={{ color: u.color }}>🏠</div>
+                    )}
+                    <div className="p-3">
+                      <div className="flex items-center gap-2">
+                        <span className="w-3 h-3 rounded-full shrink-0" style={{ background: u.color }} />
+                        <span className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">{u.nombre}</span>
+                      </div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                        {u.tipo_unidad} · {u.localidad} · hasta {u.capacidad} {u.capacidad === 1 ? "huésped" : "huéspedes"}
+                      </div>
                     </div>
-                    <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">{u.tipo_unidad} · {u.localidad} · hasta {u.capacidad}</div>
                   </button>
                 ))}
                 {unidades.length === 0 && <p className="text-sm text-slate-400">Este negocio no tiene unidades publicadas.</p>}
