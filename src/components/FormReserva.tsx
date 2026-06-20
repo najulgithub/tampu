@@ -30,7 +30,7 @@ export default function FormReserva({
   sobreBloqueo?: boolean;   // permite superponerse con el bloqueo que se está convirtiendo
   onCerrar: () => void;
 }) {
-  const { addReserva, updateReserva, deleteReserva, conflicto, pagosDe, config, puedeEditar, getUnidad, gastos, addGasto, updateGasto, deleteGasto } = useStore();
+  const { addReserva, updateReserva, deleteReserva, conflicto, pagosDe, config, puedeEditar, getUnidad, gastos, addGasto, updateGasto, deleteGasto, dolarOficial } = useStore();
   const unidad = getUnidad(unidadId);
   const esEdicion = Boolean(reserva);
   const puedeEdit = puedeEditar("reservas");
@@ -209,6 +209,14 @@ export default function FormReserva({
             <InputMonto value={comision} onChange={setComision} />
             <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Se carga como gasto de la unidad (concepto «Comisión {canal}»).</p>
           </Campo>
+        )}
+
+        {moneda === "USD" && (
+          <div className="rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-3 py-2 text-xs text-slate-600 dark:text-slate-300">
+            💵 Dólar oficial hoy: <b>{dolarOficial ? `$${dolarOficial.toLocaleString("es-AR")}` : "—"}</b>
+            {dolarOficial && totalEfectivo > 0 && <> · Total ≈ <b>${Math.round(totalEfectivo * dolarOficial).toLocaleString("es-AR")}</b></>}
+            <span className="block text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">Al cobrar (Registrar pago) podés editar el tipo de cambio.</span>
+          </div>
         )}
 
         <div className="grid grid-cols-2 gap-4">
