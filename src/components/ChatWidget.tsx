@@ -165,6 +165,50 @@ export function ChatWidgetDueno() {
   );
 }
 
+// ---------- Widget de consulta pre-reserva (huésped → dueño del slug, vía RPC) ----------
+export function ChatWidgetConsulta({ slug }: { slug: string }) {
+  const [abierto, setAbierto] = useState(false);
+  const [msgs, setMsgs] = useState<{ autor: string; texto: string; created_at: string }[]>([]);
+  const [texto, setTexto] = useState("");
+
+  const recargar = useCallback(async () => {
+    const { data } = await supabase.rpc("consulta_mensajes", { p_slug: slug });
+    setMsgs((data as { autor: string; texto: string; created_at: string }[]) ?? []);
+  }, [slug]);
+
+  // Refresca al abrir y cada 5s mientras está abierto.
+  useEffect(() => {
+    if (!abierto) return;
+    recargar();
+    const t = setInterval(recargar, 5000);
+    return () => clearInterval(t);
+  }, [abierto, recargar]);
+
+  async function enviar() {
+    const t = texto.trim();
+    if (!t) return;
+    setTexto("");
+    setMsgs((prev) => [...prev, { autor: "inquilino", texto: t, created_at: new Date().toISOString() }]);
+    const { error } = await supabase.rpc("consulta_enviar", { p_slug: slug, p_texto: t });
+    if (!error) await recargar();
+  }
+
+  return (
+    <Burbuja abierto={abierto} setAbierto={setAbierto} titulo="Consultá al dueño">
+      <>
+        <div className="flex-1 overflow-y-auto p-3 space-y-1.5">
+          {msgs.length === 0 ? <p className="text-xs text-slate-400 dark:text-slate-500 text-center py-4">¿Dudas? Escribile al dueño por acá.</p> :
+            msgs.map((m, i) => <div key={i} className={`flex ${m.autor === "inquilino" ? "justify-end" : "justify-start"}`}><span className={burbuja(m.autor === "inquilino")}>{m.texto}</span></div>)}
+        </div>
+        <div className="p-2 border-t border-slate-100 dark:border-slate-700 flex gap-2 shrink-0">
+          <input value={texto} onChange={(e) => setTexto(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); enviar(); } }} className="input flex-1" placeholder="Escribir…" autoFocus />
+          <button onClick={enviar} disabled={!texto.trim()} className="btn-primario disabled:opacity-50">Enviar</button>
+        </div>
+      </>
+    </Burbuja>
+  );
+}
+
 // ---------- Widget del inquilino (chat por contrato, vía RPC) ----------
 export function ChatWidgetInquilino({ contratos }: { contratos: { id: string; unidad: string }[] }) {
   const [abierto, setAbierto] = useState(false);

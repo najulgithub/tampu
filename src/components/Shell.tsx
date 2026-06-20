@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import PortalCliente from "@/components/PortalCliente";
-import { ChatWidgetDueno } from "@/components/ChatWidget";
+import { ChatWidgetDueno, ChatWidgetConsulta } from "@/components/ChatWidget";
 import { CampanaDueno } from "@/components/Campana";
 import { LogoTampu } from "@/components/Logo";
 import { useStore } from "@/lib/store";
@@ -359,9 +359,6 @@ function ReservarComoHuesped({ slug, email, onCerrar }: { slug: string; email: s
   const [contacto, setContacto] = useState("");
   const [estado, setEstado] = useState<"form" | "enviando" | "listo" | "error">("form");
   const [error, setError] = useState("");
-  const [chat, setChat] = useState<{ autor: string; texto: string; created_at: string }[]>([]);
-  const [chatTexto, setChatTexto] = useState("");
-  const [chatAbierto, setChatAbierto] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -372,26 +369,6 @@ function ReservarComoHuesped({ slug, email, onCerrar }: { slug: string; email: s
       setCargando(false);
     })();
   }, [slug]);
-
-  // Chat de consulta con el dueño (poll cada 5s mientras está abierto).
-  useEffect(() => {
-    let vivo = true;
-    const cargar = async () => {
-      const { data } = await supabase.rpc("consulta_mensajes", { p_slug: slug });
-      if (vivo) setChat((data as { autor: string; texto: string; created_at: string }[]) ?? []);
-    };
-    cargar();
-    const t = setInterval(cargar, 5000);
-    return () => { vivo = false; clearInterval(t); };
-  }, [slug]);
-
-  async function enviarConsulta() {
-    const t = chatTexto.trim();
-    if (!t) return;
-    setChat((prev) => [...prev, { autor: "inquilino", texto: t, created_at: new Date().toISOString() }]);
-    setChatTexto("");
-    await supabase.rpc("consulta_enviar", { p_slug: slug, p_texto: t });
-  }
 
   const cantNoches = checkIn && checkOut && checkIn < checkOut ? Math.round((Date.parse(checkOut) - Date.parse(checkIn)) / 86400000) : 0;
   // Precio por noche mostrado en pesos (si la unidad está en USD, lo convierte al dólar oficial).
@@ -490,33 +467,9 @@ function ReservarComoHuesped({ slug, email, onCerrar }: { slug: string; email: s
                 {unidades.length === 0 && <p className="text-sm text-slate-400">Este negocio no tiene unidades publicadas.</p>}
               </div>
             </div>
-
-            {/* Chat de consulta con el dueño */}
-            <div className="card p-4">
-              <button onClick={() => setChatAbierto((v) => !v)} className="w-full flex items-center justify-between text-sm font-semibold text-slate-700 dark:text-slate-200">
-                <span>💬 ¿Dudas? Escribile al dueño</span>
-                <span className="text-slate-400">{chatAbierto ? "−" : "+"}</span>
-              </button>
-              {chatAbierto && (
-                <div className="mt-3">
-                  <div className="max-h-60 overflow-y-auto space-y-1.5 mb-2">
-                    {chat.length === 0 ? (
-                      <p className="text-xs text-slate-400 dark:text-slate-500 text-center py-3">Escribí tu consulta y el dueño te responde acá.</p>
-                    ) : chat.map((m, i) => (
-                      <div key={i} className={`flex ${m.autor === "inquilino" ? "justify-end" : "justify-start"}`}>
-                        <span className={`max-w-[80%] rounded-2xl px-3 py-1.5 text-sm ${m.autor === "inquilino" ? "bg-teal-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200"}`}>{m.texto}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex gap-2">
-                    <input value={chatTexto} onChange={(e) => setChatTexto(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); enviarConsulta(); } }} className="input flex-1" placeholder="Escribí tu consulta…" />
-                    <button onClick={enviarConsulta} disabled={!chatTexto.trim()} className="btn-primario disabled:opacity-50">Enviar</button>
-                  </div>
-                </div>
-              )}
-            </div>
           </div>
         )}
+        <ChatWidgetConsulta slug={slug} />
       </div>
     </div>
   );
