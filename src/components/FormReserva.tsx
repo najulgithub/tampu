@@ -68,7 +68,9 @@ export default function FormReserva({
   const esOTA = canal === "Booking" || canal === "Airbnb" || canal === "Vrbo";
 
   const fechasOk = checkIn && checkOut && checkIn < checkOut;
-  const choque = fechasOk ? conflicto(unidadId, checkIn, checkOut, reserva?.id, sobreBloqueo) : null;
+  // Al convertir un bloqueo o al editar una reserva existente, ignoramos los bloqueos
+  // importados (el bloqueo "gemelo" de Airbnb/Booking no es un conflicto real).
+  const choque = fechasOk ? conflicto(unidadId, checkIn, checkOut, reserva?.id, sobreBloqueo || esEdicion) : null;
   const valido = huesped.trim() && fechasOk && !choque;
   const cantNoches = fechasOk ? noches(checkIn, checkOut) : 0;
   // Para largo plazo, el total del contrato se deriva del mensual × meses.
