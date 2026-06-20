@@ -169,6 +169,12 @@ export interface PlataformaICal {
   url: string; // link iCal de exportación de la plataforma
 }
 
+// Punto de interés cercano (para la guía del huésped): nombre + link a Google Maps.
+export interface PuntoInteres {
+  nombre: string;
+  url: string;
+}
+
 // Bloqueo de fechas importado de un calendario externo (Airbnb/Booking…).
 export interface Bloqueo {
   id: string;
@@ -252,6 +258,13 @@ export interface Unidad {
   capacidad: number; // huéspedes
   cochera?: boolean; // si el depto/unidad tiene cochera
   aptoCamioneta?: boolean; // si entra una camioneta/pickup (cocheras)
+  // Guía del huésped (se muestra al escanear el QR de la unidad).
+  wifiNombre?: string;
+  wifiClave?: string;
+  encargadoNombre?: string;
+  encargadoTel?: string;
+  instrucciones?: string; // ingreso, normas, cómo funciona algo, etc.
+  puntosInteres?: PuntoInteres[];
   moneda?: Moneda; // moneda por defecto de la unidad (ARS, USD…)
   precioDia?: number; // tarifa por día para temporales (sin cochera, o única)
   precioDiaCochera?: number; // tarifa por día con cochera (si la unidad tiene cochera)

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import QRCode from "qrcode";
 import { useStore } from "@/lib/store";
 import type { PlataformaICal, TipoUnidad, Unidad, Moneda } from "@/lib/types";
 import { TIPOS_UNIDAD, COLORES_UNIDAD, MONEDAS } from "@/lib/types";
@@ -186,6 +187,9 @@ export default function ConfigUnidad() {
         </div>
       </section>
 
+      {/* Guía del huésped */}
+      <GuiaHuesped uni={uni} set={(c) => updateUnidad(uni.id, c)} />
+
       {/* Zona peligrosa */}
       <section className="bg-white dark:bg-slate-800 rounded-2xl border border-rose-200 dark:border-rose-500/40 shadow-sm p-5">
         <h2 className="font-semibold text-rose-700 dark:text-rose-400 mb-1">Eliminar unidad</h2>
@@ -205,6 +209,85 @@ export default function ConfigUnidad() {
         </button>
       </section>
     </div>
+  );
+}
+
+// Guía del huésped: datos que ve quien escanea el QR de la unidad.
+function GuiaHuesped({ uni, set }: { uni: Unidad; set: (c: Partial<Unidad>) => void }) {
+  const [qr, setQr] = useState("");
+  const [copiado, setCopiado] = useState(false);
+  const [puntoNombre, setPuntoNombre] = useState("");
+  const [puntoUrl, setPuntoUrl] = useState("");
+  const origin = typeof window !== "undefined" ? window.location.origin : "https://tampu.ar";
+  const link = `${origin}/u/${uni.id}`;
+  const puntos = uni.puntosInteres ?? [];
+
+  useEffect(() => {
+    QRCode.toDataURL(link, { width: 512, margin: 2, color: { dark: "#0f172a", light: "#ffffff" } }).then(setQr).catch(() => setQr(""));
+  }, [link]);
+
+  function agregarPunto() {
+    if (!puntoNombre.trim() || !puntoUrl.trim()) return;
+    set({ puntosInteres: [...puntos, { nombre: puntoNombre.trim(), url: puntoUrl.trim() }] });
+    setPuntoNombre(""); setPuntoUrl("");
+  }
+
+  return (
+    <section className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700/70 shadow-sm p-5 mb-5">
+      <h2 className="font-semibold text-slate-800 dark:text-slate-100 mb-1">Guía del huésped (QR)</h2>
+      <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+        Datos que ve el huésped al escanear el QR de la unidad: WiFi, encargado, instrucciones y lugares de interés.
+      </p>
+
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <Campo label="WiFi - Red"><input className="input" value={uni.wifiNombre ?? ""} onChange={(e) => set({ wifiNombre: e.target.value })} /></Campo>
+          <Campo label="WiFi - Clave"><input className="input" value={uni.wifiClave ?? ""} onChange={(e) => set({ wifiClave: e.target.value })} /></Campo>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <Campo label="Encargado - Nombre"><input className="input" value={uni.encargadoNombre ?? ""} onChange={(e) => set({ encargadoNombre: e.target.value })} /></Campo>
+          <Campo label="Encargado - Teléfono"><input className="input" value={uni.encargadoTel ?? ""} onChange={(e) => set({ encargadoTel: e.target.value })} placeholder="+54 9 223…" /></Campo>
+        </div>
+        <Campo label="Instrucciones / normas">
+          <textarea className="input min-h-24" value={uni.instrucciones ?? ""} onChange={(e) => set({ instrucciones: e.target.value })} placeholder="Cómo ingresar, normas de la casa, cómo usar el aire, etc." />
+        </Campo>
+
+        <div>
+          <span className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">Lugares de interés</span>
+          <div className="space-y-2 mb-2">
+            {puntos.map((p, i) => (
+              <div key={i} className="flex items-center gap-2 bg-slate-50 dark:bg-slate-900 rounded-lg px-3 py-2">
+                <span className="text-sm text-slate-700 dark:text-slate-200 flex-1 truncate">{p.nombre}</span>
+                <a href={p.url} target="_blank" rel="noreferrer" className="text-xs text-teal-600 dark:text-teal-400 truncate max-w-[120px]">link</a>
+                <button onClick={() => set({ puntosInteres: puntos.filter((_, j) => j !== i) })} className="text-slate-400 hover:text-rose-600 text-sm">Quitar</button>
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <input className="input" value={puntoNombre} onChange={(e) => setPuntoNombre(e.target.value)} placeholder="Nombre (ej: Playa Varese)" />
+            <div className="flex gap-2">
+              <input className="input flex-1" value={puntoUrl} onChange={(e) => setPuntoUrl(e.target.value)} placeholder="Link de Google Maps" />
+              <button type="button" onClick={agregarPunto} className="btn-secundario whitespace-nowrap">+</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-700">
+        <span className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">Link / QR de la guía (pegalo o imprimilo para el huésped)</span>
+        <div className="flex gap-2">
+          <input readOnly value={link} className="input bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400" />
+          <button onClick={() => { navigator.clipboard?.writeText(link); setCopiado(true); setTimeout(() => setCopiado(false), 1500); }} className="btn-secundario whitespace-nowrap">{copiado ? "¡Copiado!" : "Copiar"}</button>
+        </div>
+        {qr && (
+          <div className="mt-3 flex items-center gap-4">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={qr} alt="QR guía" className="w-28 h-28 rounded-lg ring-1 ring-slate-200 dark:ring-slate-700" />
+            <a href={qr} download={`guia-${uni.id}.png`} className="text-sm text-teal-600 dark:text-teal-400 hover:underline">Descargar QR</a>
+          </div>
+        )}
+      </div>
+    </section>
   );
 }
 

@@ -24,6 +24,9 @@ const unidadDe = (r: any): Unidad => ({
   moneda: r.moneda ?? undefined,
   precioDia: r.precio_dia != null ? Number(r.precio_dia) : undefined, precioDiaCochera: r.precio_dia_cochera != null ? Number(r.precio_dia_cochera) : undefined,
   ubicacionCochera: r.ubicacion_cochera ?? undefined,
+  wifiNombre: r.wifi_nombre ?? undefined, wifiClave: r.wifi_clave ?? undefined,
+  encargadoNombre: r.encargado_nombre ?? undefined, encargadoTel: r.encargado_tel ?? undefined,
+  instrucciones: r.instrucciones ?? undefined, puntosInteres: r.puntos_interes ?? [],
   icals: r.icals ?? [], notas: r.notas ?? "",
 });
 const unidadDb = (u: Unidad) => ({
@@ -33,6 +36,9 @@ const unidadDb = (u: Unidad) => ({
   moneda: u.moneda ?? null,
   precio_dia: u.precioDia ?? null, precio_dia_cochera: u.precioDiaCochera ?? null,
   ubicacion_cochera: u.ubicacionCochera ?? null,
+  wifi_nombre: u.wifiNombre ?? null, wifi_clave: u.wifiClave ?? null,
+  encargado_nombre: u.encargadoNombre ?? null, encargado_tel: u.encargadoTel ?? null,
+  instrucciones: u.instrucciones ?? null, puntos_interes: u.puntosInteres ?? [],
   icals: u.icals, notas: u.notas,
 });
 
@@ -577,6 +583,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if ("precioDia" in cambios) db.precio_dia = cambios.precioDia ?? null;
     if ("precioDiaCochera" in cambios) db.precio_dia_cochera = cambios.precioDiaCochera ?? null;
     if ("ubicacionCochera" in cambios) db.ubicacion_cochera = cambios.ubicacionCochera ?? null;
+    if ("wifiNombre" in cambios) db.wifi_nombre = cambios.wifiNombre ?? null;
+    if ("wifiClave" in cambios) db.wifi_clave = cambios.wifiClave ?? null;
+    if ("encargadoNombre" in cambios) db.encargado_nombre = cambios.encargadoNombre ?? null;
+    if ("encargadoTel" in cambios) db.encargado_tel = cambios.encargadoTel ?? null;
+    if ("instrucciones" in cambios) db.instrucciones = cambios.instrucciones ?? null;
+    if ("puntosInteres" in cambios) db.puntos_interes = cambios.puntosInteres ?? [];
     if ("icals" in cambios) db.icals = cambios.icals;
     if ("notas" in cambios) db.notas = cambios.notas;
     supabase.from("unidades").update(db).eq("id", id).then(({ error }) => error && console.error(error));
