@@ -79,10 +79,12 @@ const configDb = (c: Configuracion) => ({
 const pagoDe = (r: any): Pago => ({
   id: r.id, reservaId: r.reserva_id, fecha: r.fecha, monto: Number(r.monto), medio: r.medio,
   comprobante: r.comprobante ?? undefined, nota: r.nota ?? "", periodo: r.periodo ?? undefined, esSena: r.es_sena ?? false,
+  montoArs: r.monto_ars != null ? Number(r.monto_ars) : undefined, tipoCambio: r.tipo_cambio != null ? Number(r.tipo_cambio) : undefined,
 });
 const pagoDb = (p: Pago) => ({
   id: p.id, reserva_id: p.reservaId, fecha: p.fecha, monto: p.monto, medio: p.medio,
   comprobante: p.comprobante ?? null, nota: p.nota, periodo: p.periodo ?? null, es_sena: p.esSena ?? false,
+  monto_ars: p.montoArs ?? null, tipo_cambio: p.tipoCambio ?? null,
 });
 
 const medioDe = (r: any): MedioPago => ({ id: r.id, nombre: r.nombre, activo: r.activo ?? true });
@@ -188,6 +190,7 @@ interface StoreCtx {
   updateReserva: (id: string, cambios: Partial<Reserva>) => void;
   deleteReserva: (id: string) => void;
   conflicto: (unidadId: string, checkIn: string, checkOut: string, excluirId?: string, ignorarBloqueos?: boolean) => Reserva | null;
+  dolarOficial: number | null;
   bloqueos: Bloqueo[];
   bloqueosDe: (unidadId: string) => Bloqueo[];
   sincronizarIcal: () => Promise<{ ok?: boolean; bloqueos?: number }>;
@@ -282,6 +285,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [avisos, setAvisos] = useState<AvisoSistema[]>([]);
   const [esAdmin, setEsAdmin] = useState(false);
   const [suscripcion, setSuscripcion] = useState<Suscripcion | null>(null);
+  const [dolarOficial, setDolarOficial] = useState<number | null>(null);
+
+  // Cotización del dólar oficial (para reservas en USD cobradas en pesos).
+  useEffect(() => {
+    fetch("https://dolarapi.com/v1/dolares/oficial")
+      .then((r) => r.json())
+      .then((d) => { if (typeof d?.venta === "number") setDolarOficial(d.venta); })
+      .catch(() => {});
+  }, []);
 
   // Refs con el último estado, para materializar sin closures viejos.
   const refs = useRef({ gastos, gastosProgramados, reservas, unidades, ingresos });
@@ -891,7 +903,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     unidades, reservas, getUnidad, reservasDe,
     addUnidad, updateUnidad, deleteUnidad,
     addReserva, updateReserva, deleteReserva, conflicto,
-    bloqueos, bloqueosDe, sincronizarIcal,
+    dolarOficial, bloqueos, bloqueosDe, sincronizarIcal,
     pagos, pagosDe, saldoDe, addPago, deletePago,
     serviciosComprobantes, serviciosDe, guardarServicioComprobante, deleteServicioComprobante,
     mediosPago, addMedioPago, updateMedioPago, deleteMedioPago,

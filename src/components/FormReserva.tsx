@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useStore } from "@/lib/store";
 import { CANALES, TIPOS_ALQUILER, TIPOS_ACTUALIZACION, MONEDAS, SIMBOLO_MONEDA, INDICES_AJUSTE, esLargoPlazo, SERVICIOS_DEFAULT } from "@/lib/types";
 import type { Canal, Reserva, TipoAlquiler, TipoActualizacion, Moneda, IndiceAjuste, ServicioComprobante } from "@/lib/types";
@@ -534,7 +534,8 @@ function ServiciosTablero({ reserva, servicios, simbolo }: { reserva: Reserva; s
 }
 
 function SeccionPagos({ reserva, simbolo, total, sena }: { reserva: Reserva; simbolo: string; total: number; sena: number }) {
-  const { pagosDe, addPago, deletePago, mediosPago, gastos, updateReserva } = useStore();
+  const { pagosDe, addPago, deletePago, mediosPago, gastos, updateReserva, dolarOficial } = useStore();
+  const esUSD = reserva.moneda === "USD";
   const pagos = pagosDe(reserva.id);
   const largo = esLargoPlazo(reserva.tipo);
   const hoy = hoyISO();
@@ -571,12 +572,25 @@ function SeccionPagos({ reserva, simbolo, total, sena }: { reserva: Reserva; sim
   const [comprobante, setComprobante] = useState<string | undefined>();
   const [nota, setNota] = useState("");
   const [esSena, setEsSena] = useState(false);
+  const [tipoCambio, setTipoCambio] = useState(0);
 
-  const montoEfectivo = modo === "%" ? Math.round((total * pct) / 100) : monto;
+  // Prefill del tipo de cambio con el dólar oficial cuando llega.
+  useEffect(() => { if (esUSD && tipoCambio === 0 && dolarOficial) setTipoCambio(dolarOficial); }, [dolarOficial, esUSD, tipoCambio]);
+
+  // Para USD: el "$" del formulario representa PESOS; el monto guardado (pago.monto)
+  // es el equivalente en USD (total en dólares - USD = saldo en dólares).
+  const r2 = (n: number) => Math.round(n * 100) / 100;
+  const montoUsd = esUSD ? (modo === "%" ? r2((total * pct) / 100) : (tipoCambio > 0 ? r2(monto / tipoCambio) : 0)) : 0;
+  const montoArsCalc = esUSD ? (modo === "%" ? Math.round(montoUsd * tipoCambio) : monto) : 0;
+  const montoEfectivo = esUSD ? montoUsd : (modo === "%" ? Math.round((total * pct) / 100) : monto);
 
   function registrar() {
     if (montoEfectivo <= 0) return;
-    addPago({ reservaId: reserva.id, fecha, monto: montoEfectivo, medio, comprobante, nota: nota.trim(), periodo: !esSena && largo ? (periodo || undefined) : undefined, esSena });
+    addPago({
+      reservaId: reserva.id, fecha, monto: montoEfectivo, medio, comprobante, nota: nota.trim(),
+      periodo: !esSena && largo ? (periodo || undefined) : undefined, esSena,
+      montoArs: esUSD ? montoArsCalc : undefined, tipoCambio: esUSD ? tipoCambio : undefined,
+    });
     setMonto(0); setPct(0); setComprobante(undefined); setNota(""); setEsSena(false); setAbrir(false);
   }
 
@@ -673,7 +687,11 @@ function SeccionPagos({ reserva, simbolo, total, sena }: { reserva: Reserva; sim
         <div className="space-y-1.5 mb-2">
           {pagos.map((p) => (
             <div key={p.id} className="flex items-center gap-2 text-xs bg-slate-50 dark:bg-slate-900 rounded-lg px-2.5 py-1.5">
-              <span className="text-slate-700 dark:text-slate-200 font-medium">{simbolo}{p.monto.toLocaleString("es-AR")}</span>
+              {p.montoArs != null ? (
+                <span className="text-slate-700 dark:text-slate-200 font-medium">${p.montoArs.toLocaleString("es-AR")} <span className="text-slate-400 dark:text-slate-500 font-normal">· US${p.monto.toLocaleString("es-AR")}</span></span>
+              ) : (
+                <span className="text-slate-700 dark:text-slate-200 font-medium">{simbolo}{p.monto.toLocaleString("es-AR")}</span>
+              )}
               {p.esSena && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400">seña</span>}
               {p.periodo && <span className="text-teal-600 dark:text-teal-400 capitalize">{labelPeriodo(p.periodo)}</span>}
               <span className="text-slate-500 dark:text-slate-400">{p.medio}</span>
@@ -693,6 +711,34 @@ function SeccionPagos({ reserva, simbolo, total, sena }: { reserva: Reserva; sim
         </button>
       ) : (
         <div className="space-y-2 border-t border-slate-100 dark:border-slate-700 pt-2">
+          {esUSD ? (
+            <>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">Dólar oficial $</span>
+                <input type="number" min={0} value={tipoCambio} onChange={(e) => setTipoCambio(Math.max(0, Number(e.target.value)))} className="input w-28 text-right" />
+                <span className="text-[10px] text-slate-400 dark:text-slate-500">{dolarOficial ? "auto" : "cargá el valor"}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="flex rounded-md border border-slate-300 dark:border-slate-600 overflow-hidden text-xs">
+                  <button type="button" onClick={() => setModo("%")} className={modo === "%" ? "px-2 py-1 bg-teal-600 text-white" : "px-2 py-1 text-slate-500 dark:text-slate-400"}>%</button>
+                  <button type="button" onClick={() => setModo("$")} className={modo === "$" ? "px-2 py-1 bg-teal-600 text-white" : "px-2 py-1 text-slate-500 dark:text-slate-400"}>pesos</button>
+                </div>
+                {modo === "%" ? (
+                  <div className="flex items-center gap-2 flex-1">
+                    <input type="number" min={0} max={100} value={pct} onChange={(e) => setPct(Math.max(0, Math.min(100, Number(e.target.value))))} className="input w-20 text-right" />
+                    <span className="text-xs text-slate-400">% del total</span>
+                  </div>
+                ) : (
+                  <InputMonto value={monto} onChange={setMonto} className="flex-1" />
+                )}
+                <button type="button" onClick={() => { setModo("%"); setPct(30); }} className="text-xs text-teal-600 dark:text-teal-400 hover:underline whitespace-nowrap">Seña 30%</button>
+                <button type="button" onClick={() => { setModo("$"); setMonto(Math.round(saldo * tipoCambio)); }} className="text-xs text-teal-600 dark:text-teal-400 hover:underline whitespace-nowrap">Saldar</button>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                = <b>US${montoUsd.toLocaleString("es-AR")}</b> · <b>${montoArsCalc.toLocaleString("es-AR")}</b> en pesos {tipoCambio > 0 && `(al dólar $${tipoCambio.toLocaleString("es-AR")})`}
+              </p>
+            </>
+          ) : (
           <div className="flex items-center gap-2">
             <div className="flex rounded-md border border-slate-300 dark:border-slate-600 overflow-hidden text-xs">
               <button type="button" onClick={() => setModo("$")} className={modo === "$" ? "px-2 py-1 bg-teal-600 text-white" : "px-2 py-1 text-slate-500 dark:text-slate-400"}>$</button>
@@ -708,6 +754,7 @@ function SeccionPagos({ reserva, simbolo, total, sena }: { reserva: Reserva; sim
             )}
             <button type="button" onClick={() => { setModo("$"); setMonto(largo && cc ? (cc.proxima?.saldo ?? saldo) : saldo); }} className="text-xs text-teal-600 dark:text-teal-400 hover:underline whitespace-nowrap">Saldar</button>
           </div>
+          )}
 
           {largo && cc && (
             <label className="block">

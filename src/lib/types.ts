@@ -334,6 +334,10 @@ export interface Pago {
   nota: string;
   periodo?: string; // "yyyy-mm": mes/cuota al que se imputa (contratos largos). Vacío = imputación automática.
   esSena?: boolean; // marca este pago como la seña (con su fecha real)
+  // Reserva en USD cobrada en pesos: pesos efectivamente pagados y tipo de cambio usado.
+  // (el campo 'monto' guarda el equivalente en USD que descuenta del total)
+  montoArs?: number;
+  tipoCambio?: number;
 }
 
 // Un gasto se imputa a una unidad puntual o a un grupo entero (gasto compartido).
