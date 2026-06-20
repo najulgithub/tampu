@@ -469,7 +469,13 @@ function Login() {
 
           <button
             type="button"
-            onClick={() => supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.origin } })}
+            onClick={() => {
+              // Si vino por un link de cliente, lo mantenemos en el redirect para no perder el vínculo al volver de Google.
+              let ref: string | null = null;
+              try { ref = new URLSearchParams(window.location.search).get("r") ?? localStorage.getItem("alquileres.ref"); } catch {}
+              const redirectTo = window.location.origin + (ref ? `/?r=${encodeURIComponent(ref)}` : "");
+              supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo } });
+            }}
             className="w-full flex items-center justify-center gap-2 rounded-lg border border-slate-300 dark:border-slate-600 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
