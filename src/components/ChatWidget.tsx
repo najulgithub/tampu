@@ -60,7 +60,7 @@ function Burbuja({
 
 // ---------- Widget del dueño (conversaciones desde el store) ----------
 export function ChatWidgetDueno() {
-  const { mensajes, reservas, getUnidad, mensajesDe, enviarMensaje, marcarLeidos, mensajesNoLeidos } = useStore();
+  const { mensajes, reservas, getUnidad, mensajesDe, enviarMensaje, marcarLeidos, enviarConsultaDueno, marcarLeidosConsulta, mensajesNoLeidos } = useStore();
   const [abierto, setAbierto] = useState(false);
   const [sel, setSel] = useState<string | null>(null);
   const [nuevo, setNuevo] = useState(false);
@@ -72,22 +72,46 @@ export function ChatWidgetDueno() {
     .map((r) => ({ rid: r.id, huesped: r.huesped, unidad: getUnidad(r.unidadId)?.nombre ?? "—" }))
     .sort((a, b) => a.huesped.localeCompare(b.huesped));
 
-  const ids = Array.from(new Set(mensajes.map((m) => m.reservaId)));
-  const convos = ids
-    .map((rid) => {
-      const ms = mensajes.filter((m) => m.reservaId === rid).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
-      const ultimo = ms[ms.length - 1];
-      const noLeidos = ms.filter((m) => m.autor === "inquilino" && !m.leidoDueno).length;
-      const r = reservas.find((x) => x.id === rid);
-      return { rid, ultimo, noLeidos, huesped: r?.huesped ?? "Inquilino", unidad: r ? (getUnidad(r.unidadId)?.nombre ?? "—") : "—" };
-    })
-    .sort((a, b) => (b.ultimo?.createdAt ?? "").localeCompare(a.ultimo?.createdAt ?? ""));
+  // Conversaciones por reserva.
+  const ids = Array.from(new Set(mensajes.filter((m) => m.reservaId).map((m) => m.reservaId)));
+  const convoReservas = ids.map((rid) => {
+    const ms = mensajes.filter((m) => m.reservaId === rid).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    const r = reservas.find((x) => x.id === rid);
+    return {
+      key: rid, esConsulta: false, cid: "", email: "",
+      ultimo: ms[ms.length - 1], noLeidos: ms.filter((m) => m.autor === "inquilino" && !m.leidoDueno).length,
+      huesped: r?.huesped ?? "Inquilino", unidad: r ? (getUnidad(r.unidadId)?.nombre ?? "—") : "—",
+    };
+  });
+  // Consultas pre-reserva (sin reserva), agrupadas por huésped.
+  const cids = Array.from(new Set(mensajes.filter((m) => m.clienteId && !m.reservaId).map((m) => m.clienteId!)));
+  const convoConsultas = cids.map((cid) => {
+    const ms = mensajes.filter((m) => m.clienteId === cid && !m.reservaId).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    const email = ms.find((m) => m.clienteEmail)?.clienteEmail ?? "Consulta";
+    return {
+      key: "c:" + cid, esConsulta: true, cid, email,
+      ultimo: ms[ms.length - 1], noLeidos: ms.filter((m) => m.autor === "inquilino" && !m.leidoDueno).length,
+      huesped: email, unidad: "Consulta (sin reserva)",
+    };
+  });
+  const convos = [...convoReservas, ...convoConsultas].sort((a, b) => (b.ultimo?.createdAt ?? "").localeCompare(a.ultimo?.createdAt ?? ""));
 
-  function abrir(rid: string) { setSel(rid); setNuevo(false); marcarLeidos(rid); }
-  function enviar() { if (!sel || !texto.trim()) return; enviarMensaje(sel, texto.trim()); setTexto(""); }
+  const selConvo = convos.find((c) => c.key === sel);
+  function abrir(key: string) {
+    setSel(key); setNuevo(false);
+    if (key.startsWith("c:")) marcarLeidosConsulta(key.slice(2)); else marcarLeidos(key);
+  }
+  function enviar() {
+    if (!sel || !texto.trim()) return;
+    if (sel.startsWith("c:") && selConvo) enviarConsultaDueno(selConvo.cid, selConvo.email, texto.trim());
+    else enviarMensaje(sel, texto.trim());
+    setTexto("");
+  }
 
-  const msgs = sel ? mensajesDe(sel) : [];
-  const titulo = sel ? (reservas.find((r) => r.id === sel)?.huesped ?? "Inquilino") : nuevo ? "Escribir a…" : "Mensajes";
+  const msgs = !sel ? [] : sel.startsWith("c:")
+    ? mensajes.filter((m) => m.clienteId === sel.slice(2) && !m.reservaId).sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+    : mensajesDe(sel);
+  const titulo = sel ? (selConvo?.huesped ?? "Inquilino") : nuevo ? "Escribir a…" : "Mensajes";
   const onAtras = sel ? () => setSel(null) : nuevo ? () => setNuevo(false) : undefined;
 
   return (
@@ -114,7 +138,7 @@ export function ChatWidgetDueno() {
           {convos.length === 0 ? (
             <p className="text-sm text-slate-400 dark:text-slate-500 p-6 text-center">Sin conversaciones todavía.</p>
           ) : convos.map((c) => (
-            <button key={c.rid} onClick={() => abrir(c.rid)} className="w-full text-left flex items-center gap-3 px-4 py-3 border-b border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/40">
+            <button key={c.key} onClick={() => abrir(c.key)} className="w-full text-left flex items-center gap-3 px-4 py-3 border-b border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/40">
               <span className="shrink-0 w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-700 grid place-items-center text-xs font-semibold text-slate-600 dark:text-slate-200 uppercase">{c.huesped.trim().charAt(0) || "?"}</span>
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">{c.huesped} <span className="text-xs text-slate-400">· {c.unidad}</span></div>

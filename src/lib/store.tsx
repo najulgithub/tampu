@@ -136,8 +136,8 @@ const avisoDe = (r: any): AvisoSistema => ({
 });
 
 const mensajeDe = (r: any): Mensaje => ({
-  id: r.id, reservaId: r.reserva_id, autor: r.autor === "inquilino" ? "inquilino" : "dueno", texto: r.texto, createdAt: r.created_at,
-  leidoDueno: r.leido_dueno ?? false,
+  id: r.id, reservaId: r.reserva_id ?? "", autor: r.autor === "inquilino" ? "inquilino" : "dueno", texto: r.texto, createdAt: r.created_at,
+  leidoDueno: r.leido_dueno ?? false, clienteId: r.cliente_id ?? undefined, clienteEmail: r.cliente_email ?? undefined,
 });
 
 const proveedorDe = (r: any): Proveedor => ({
@@ -238,6 +238,8 @@ interface StoreCtx {
   mensajesDe: (reservaId: string) => Mensaje[];
   enviarMensaje: (reservaId: string, texto: string) => void;
   marcarLeidos: (reservaId: string) => void;
+  enviarConsultaDueno: (clienteId: string, clienteEmail: string, texto: string) => void;
+  marcarLeidosConsulta: (clienteId: string) => void;
   mensajesNoLeidos: number;
   gastosProgramados: GastoProgramado[];
   addProgramado: (p: Omit<GastoProgramado, "id">) => string;
@@ -818,6 +820,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setMensajes((prev) => prev.map((m) => (m.reservaId === reservaId && m.autor === "inquilino" && !m.leidoDueno ? { ...m, leidoDueno: true } : m)));
     supabase.from("mensajes").update({ leido_dueno: true }).eq("reserva_id", reservaId).eq("autor", "inquilino").then(() => {});
   }, []);
+  // El dueño responde una consulta pre-reserva (sin reserva, identificada por cliente_id).
+  const enviarConsultaDueno = useCallback((clienteId: string, clienteEmail: string, texto: string) => {
+    const t = texto.trim();
+    if (!t) return;
+    const m: Mensaje = { id: nuevoId(), reservaId: "", autor: "dueno", texto: t, createdAt: new Date().toISOString(), leidoDueno: true, clienteId, clienteEmail };
+    setMensajes((prev) => [...prev, m]);
+    supabase.from("mensajes").insert({ id: m.id, reserva_id: null, autor: "dueno", texto: t, leido_dueno: true, cliente_id: clienteId, cliente_email: clienteEmail }).then(({ error }) => error && console.error(error));
+  }, []);
+  const marcarLeidosConsulta = useCallback((clienteId: string) => {
+    setMensajes((prev) => prev.map((m) => (m.clienteId === clienteId && !m.reservaId && m.autor === "inquilino" && !m.leidoDueno ? { ...m, leidoDueno: true } : m)));
+    supabase.from("mensajes").update({ leido_dueno: true }).eq("cliente_id", clienteId).is("reserva_id", null).eq("autor", "inquilino").then(() => {});
+  }, []);
 
   // ---------- Notificaciones (lado dueño) ----------
   const marcarNotifLeidas = useCallback(() => {
@@ -930,7 +944,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     ingresos, addIngreso, updateIngreso, deleteIngreso,
     proveedores, addProveedor, updateProveedor, deleteProveedor, ratingProveedor, trabajosDe,
     presupuestos, presupuestosDe, addPresupuesto, updatePresupuesto, deletePresupuesto,
-    mensajes, mensajesDe, enviarMensaje, marcarLeidos,
+    mensajes, mensajesDe, enviarMensaje, marcarLeidos, enviarConsultaDueno, marcarLeidosConsulta,
     mensajesNoLeidos: mensajes.filter((m) => m.autor === "inquilino" && !m.leidoDueno).length,
     gastosProgramados, addProgramado, updateProgramado, deleteProgramado,
     colaboradores, addColaborador, updateColaborador, deleteColaborador,

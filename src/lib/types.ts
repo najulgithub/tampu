@@ -460,11 +460,13 @@ export interface AvisoSistema {
 // Mensaje del chat dueño <-> inquilino (por contrato).
 export interface Mensaje {
   id: string;
-  reservaId: string;
+  reservaId: string; // "" para consultas pre-reserva
   autor: "dueno" | "inquilino";
   texto: string;
   createdAt: string;
   leidoDueno?: boolean;
+  clienteId?: string;    // consultas: el huésped que escribe
+  clienteEmail?: string; // consultas: para identificar la conversación
 }
 
 export type EstadoPresupuesto = "pendiente" | "aprobado" | "rechazado";
