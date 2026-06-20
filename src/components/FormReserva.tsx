@@ -30,7 +30,7 @@ export default function FormReserva({
   sobreBloqueo?: boolean;   // permite superponerse con el bloqueo que se está convirtiendo
   onCerrar: () => void;
 }) {
-  const { addReserva, updateReserva, deleteReserva, conflicto, pagosDe, config, puedeEditar, getUnidad } = useStore();
+  const { addReserva, updateReserva, deleteReserva, conflicto, pagosDe, config, puedeEditar, getUnidad, gastos, addGasto, updateGasto, deleteGasto } = useStore();
   const unidad = getUnidad(unidadId);
   const esEdicion = Boolean(reserva);
   const puedeEdit = puedeEditar("reservas");
@@ -42,6 +42,7 @@ export default function FormReserva({
   const [montoTotal, setMontoTotal] = useState(reserva?.montoTotal ?? 0);
   const [montoMensual, setMontoMensual] = useState(reserva?.montoMensual ?? 0);
   const [conCochera, setConCochera] = useState(reserva?.conCochera ?? false);
+  const [comision, setComision] = useState(reserva?.comision ?? 0);
   const [sena, setSena] = useState(reserva?.sena ?? 0);
   const [canal, setCanal] = useState<Canal>(reserva?.canal ?? canalInicial ?? "Directo");
   const [tipo, setTipo] = useState<TipoAlquiler>(reserva?.tipo ?? "temporal");
@@ -63,6 +64,8 @@ export default function FormReserva({
 
   const simbolo = SIMBOLO_MONEDA[moneda];
   const esLargo = tipo !== "temporal";
+  // Canales con comisión (plataformas OTA).
+  const esOTA = canal === "Booking" || canal === "Airbnb" || canal === "Vrbo";
 
   const fechasOk = checkIn && checkOut && checkIn < checkOut;
   const choque = fechasOk ? conflicto(unidadId, checkIn, checkOut, reserva?.id, sobreBloqueo) : null;
@@ -107,11 +110,29 @@ export default function FormReserva({
       diaVencimiento: esLargo ? (diaVencimiento ? Number(diaVencimiento) : undefined) : undefined,
       serviciosInquilino: esLargo ? serviciosInquilino : [],
       emailInquilino: esLargo ? (emailInquilino.trim() || undefined) : undefined,
+      comision: esOTA ? comision : undefined,
       notas: notas.trim(),
     };
-    if (esEdicion && reserva) updateReserva(reserva.id, datos);
-    else addReserva(datos);
+    const reservaId = esEdicion && reserva ? (updateReserva(reserva.id, datos), reserva.id) : addReserva(datos);
+    sincronizarComision(reservaId);
     onCerrar();
+  }
+
+  // Mantiene en sync el gasto "Comisión {canal}" de la unidad con el valor cargado.
+  function sincronizarComision(reservaId: string) {
+    const clave = `comision|${reservaId}`;
+    const existente = gastos.find((g) => g.claveOrigen === clave);
+    if (esOTA && comision > 0) {
+      const gdatos = {
+        ambito: "unidad" as const, refId: unidadId, fecha: checkIn || hoyISO(),
+        categoria: "Comisión" as const, descripcion: `Comisión ${canal}`,
+        monto: comision, proveedor: canal, claveOrigen: clave,
+      };
+      if (existente) updateGasto(existente.id, gdatos);
+      else addGasto(gdatos);
+    } else if (existente) {
+      deleteGasto(existente.id);
+    }
   }
 
   return (
@@ -180,6 +201,13 @@ export default function FormReserva({
             </select>
           </Campo>
         </div>
+
+        {esOTA && (
+          <Campo label={`Comisión ${canal} (${simbolo})`}>
+            <InputMonto value={comision} onChange={setComision} />
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Se carga como gasto de la unidad (concepto «Comisión {canal}»).</p>
+          </Campo>
+        )}
 
         <div className="grid grid-cols-2 gap-4">
           <Campo label="Moneda">

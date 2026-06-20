@@ -38,7 +38,7 @@ const unidadDb = (u: Unidad) => ({
 
 const reservaDe = (r: any): Reserva => ({
   id: r.id, unidadId: r.unidad_id, huesped: r.huesped, contacto: r.contacto ?? "",
-  checkIn: r.check_in, checkOut: r.check_out, montoTotal: Number(r.monto_total), montoMensual: Number(r.monto_mensual), conCochera: r.con_cochera ?? false,
+  checkIn: r.check_in, checkOut: r.check_out, montoTotal: Number(r.monto_total), montoMensual: Number(r.monto_mensual), conCochera: r.con_cochera ?? false, comision: r.comision != null ? Number(r.comision) : undefined,
   sena: Number(r.sena), canal: r.canal, tipo: r.tipo, moneda: r.moneda, actualizacion: r.actualizacion,
   indice: r.indice, porcentajeManual: Number(r.porcentaje_manual),
   horaCheckIn: r.hora_check_in ?? "15:00", horaCheckOut: r.hora_check_out ?? "11:00", notas: r.notas ?? "",
@@ -49,7 +49,7 @@ const reservaDe = (r: any): Reserva => ({
 });
 const reservaDb = (r: Reserva) => ({
   id: r.id, unidad_id: r.unidadId, huesped: r.huesped, contacto: r.contacto, check_in: r.checkIn, check_out: r.checkOut,
-  monto_total: r.montoTotal, monto_mensual: r.montoMensual, con_cochera: r.conCochera ?? false, sena: r.sena, canal: r.canal, tipo: r.tipo,
+  monto_total: r.montoTotal, monto_mensual: r.montoMensual, con_cochera: r.conCochera ?? false, comision: r.comision ?? null, sena: r.sena, canal: r.canal, tipo: r.tipo,
   moneda: r.moneda, actualizacion: r.actualizacion, indice: r.indice, porcentaje_manual: r.porcentajeManual,
   hora_check_in: r.horaCheckIn, hora_check_out: r.horaCheckOut, notas: r.notas,
   estado: r.estado ?? "confirmada", cliente_id: r.clienteId ?? null,
@@ -593,7 +593,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const deleteReserva = useCallback((id: string) => {
     setReservas((prev) => prev.filter((r) => r.id !== id));
     setPagos((prev) => prev.filter((p) => p.reservaId !== id));
+    // Borrar también el gasto de comisión asociado, si existe.
+    const claveComision = `comision|${id}`;
+    setGastos((prev) => prev.filter((g) => g.claveOrigen !== claveComision));
     supabase.from("pagos").delete().eq("reserva_id", id).then(() => {});
+    supabase.from("gastos").delete().eq("clave_origen", claveComision).then(() => {});
     supabase.from("reservas").delete().eq("id", id).then(() => {});
   }, []);
 

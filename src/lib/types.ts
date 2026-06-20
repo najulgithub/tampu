@@ -274,6 +274,7 @@ export interface Reserva {
   montoTotal: number; // temporal: total de la estadía. Largo plazo: total del contrato (mensual × meses).
   montoMensual: number; // largo plazo: alquiler por mes (0 en temporal).
   conCochera?: boolean; // temporal: si la estadía incluye la cochera (afecta la tarifa diaria)
+  comision?: number; // comisión de la plataforma (Booking/Airbnb…): se vuelca como gasto de la unidad
   sena: number; // temporal: seña. Largo plazo: depósito.
   canal: Canal;
   tipo: TipoAlquiler;
@@ -352,6 +353,7 @@ export type CategoriaGasto =
   | "Reparación"
   | "Servicios"
   | "Impuestos"
+  | "Comisión"
   | "Otro";
 
 // Cómo se reparte un gasto de grupo entre sus unidades.
@@ -497,6 +499,7 @@ export const CATEGORIAS_GASTO: CategoriaGasto[] = [
   "Reparación",
   "Servicios",
   "Impuestos",
+  "Comisión",
   "Otro",
 ];
 
@@ -507,6 +510,7 @@ export const COLOR_CATEGORIA: Record<CategoriaGasto, { bg: string; texto: string
   "Reparación": { bg: "bg-rose-100 dark:bg-rose-500/15", texto: "text-rose-700 dark:text-rose-300", hex: "#ef4444" },
   Servicios: { bg: "bg-violet-100 dark:bg-violet-500/15", texto: "text-violet-700 dark:text-violet-300", hex: "#8b5cf6" },
   Impuestos: { bg: "bg-slate-200 dark:bg-slate-600", texto: "text-slate-700 dark:text-slate-200", hex: "#64748b" },
+  "Comisión": { bg: "bg-pink-100 dark:bg-pink-500/15", texto: "text-pink-700 dark:text-pink-300", hex: "#ec4899" },
   Otro: { bg: "bg-emerald-100 dark:bg-emerald-500/15", texto: "text-emerald-700 dark:text-emerald-300", hex: "#10b981" },
 };
 
