@@ -469,8 +469,8 @@ function ReservarComoHuesped({ slug, email, onCerrar }: { slug: string; email: s
             </div>
           </div>
         )}
-        <ChatWidgetConsulta slug={slug} />
       </div>
+      <ChatWidgetConsulta slug={slug} />
     </div>
   );
 }
