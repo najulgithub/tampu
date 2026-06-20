@@ -10,6 +10,7 @@ import { ChatWidgetDueno, ChatWidgetConsulta } from "@/components/ChatWidget";
 import { CampanaDueno } from "@/components/Campana";
 import { LogoTampu } from "@/components/Logo";
 import { useStore } from "@/lib/store";
+import { grillaMes, nombreMes, DIAS_SEMANA, diaOcupado, solapan, hoyISO } from "@/lib/fechas";
 import { planPorUnidades, CONTACTO_EMPRESAS, PLANES } from "@/lib/types";
 
 const NAV = [
@@ -344,6 +345,64 @@ function Paywall({ esDueno, email }: { esDueno: boolean; email: string }) {
   );
 }
 
+// Calendario compacto para elegir fechas viendo lo ocupado. Las noches ocupadas
+// (reservas + bloqueos) no se pueden seleccionar. Clic = check-in; 2º clic = check-out.
+type Rango = { desde: string; hasta: string };
+function MiniCalendario({ ocupados, checkIn, checkOut, onPick }: { ocupados: Rango[]; checkIn: string; checkOut: string; onPick: (iso: string) => void }) {
+  const ahora = new Date();
+  const [anio, setAnio] = useState(ahora.getFullYear());
+  const [mes, setMes] = useState(ahora.getMonth());
+  const hoy = hoyISO();
+  const celdas = grillaMes(anio, mes);
+
+  function mover(d: number) {
+    const m = mes + d;
+    if (m < 0) { setMes(11); setAnio((a) => a - 1); }
+    else if (m > 11) { setMes(0); setAnio((a) => a + 1); }
+    else setMes(m);
+  }
+  const noche = (iso: string) => ocupados.some((o) => diaOcupado(iso, o.desde, o.hasta));
+  const enRango = (iso: string) => Boolean(checkIn && checkOut && iso >= checkIn && iso < checkOut);
+
+  return (
+    <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-3">
+      <div className="flex items-center justify-between mb-2">
+        <button type="button" onClick={() => mover(-1)} className="px-2 py-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500">‹</button>
+        <div className="text-sm font-medium text-slate-700 dark:text-slate-200 capitalize">{nombreMes(mes)} {anio}</div>
+        <button type="button" onClick={() => mover(1)} className="px-2 py-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500">›</button>
+      </div>
+      <div className="grid grid-cols-7 gap-0.5 mb-1">
+        {DIAS_SEMANA.map((d) => <div key={d} className="text-center text-[10px] font-medium text-slate-400 py-0.5">{d}</div>)}
+      </div>
+      <div className="grid grid-cols-7 gap-0.5">
+        {celdas.map((c) => {
+          const pasado = c.iso < hoy;
+          const ocupado = noche(c.iso);
+          const esCheckIn = c.iso === checkIn;
+          const esCheckOut = c.iso === checkOut;
+          const dentro = enRango(c.iso);
+          // El día de check-out puede estar "ocupado" como noche por la reserva que sale: igual se puede elegir como salida.
+          const deshabilitado = !c.delMes || pasado || (ocupado && !esCheckOut);
+          let clases = "text-slate-600 dark:text-slate-300 hover:bg-teal-50 dark:hover:bg-teal-500/10";
+          if (deshabilitado) clases = ocupado ? "bg-rose-100 dark:bg-rose-500/20 text-rose-400 dark:text-rose-300 line-through cursor-not-allowed" : "text-slate-300 dark:text-slate-600 cursor-not-allowed";
+          else if (esCheckIn || esCheckOut) clases = "bg-teal-600 text-white font-semibold";
+          else if (dentro) clases = "bg-teal-100 dark:bg-teal-500/20 text-teal-800 dark:text-teal-200";
+          return (
+            <button key={c.iso} type="button" disabled={deshabilitado} onClick={() => onPick(c.iso)} title={ocupado ? "Ocupado" : ""}
+              className={`aspect-square rounded-md grid place-items-center text-xs transition ${c.delMes ? "" : "opacity-0 pointer-events-none"} ${clases}`}>
+              {c.dia}
+            </button>
+          );
+        })}
+      </div>
+      <div className="flex items-center gap-3 mt-2 pt-2 border-t border-slate-100 dark:border-slate-700 text-[10px] text-slate-400">
+        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded bg-rose-200 dark:bg-rose-500/30" /> Ocupado</span>
+        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded bg-teal-600" /> Tu estadía</span>
+      </div>
+    </div>
+  );
+}
+
 // Vista para reservar en el negocio de un link, estando logueado (aunque seas
 // dueño de otro negocio). Reserva como huésped sin cambiar tu cuenta.
 type UnidadSlug = { id: string; nombre: string; tipo_unidad: string; color: string; foto: string | null; localidad: string; capacidad: number; ambientes: number; precio_dia: number | null; moneda: string | null };
@@ -359,6 +418,7 @@ function ReservarComoHuesped({ slug, email, onCerrar }: { slug: string; email: s
   const [contacto, setContacto] = useState("");
   const [estado, setEstado] = useState<"form" | "enviando" | "listo" | "error">("form");
   const [error, setError] = useState("");
+  const [ocupacion, setOcupacion] = useState<Record<string, Rango[]>>({});
 
   useEffect(() => {
     (async () => {
@@ -366,9 +426,29 @@ function ReservarComoHuesped({ slug, email, onCerrar }: { slug: string; email: s
       if (typeof n === "string") setNegocio(n);
       const { data: us } = await supabase.rpc("negocio_unidades_slug", { p_slug: slug });
       setUnidades((us as UnidadSlug[]) ?? []);
+      const { data: oc } = await supabase.rpc("unidad_ocupacion_slug", { p_slug: slug });
+      const mapa: Record<string, Rango[]> = {};
+      for (const o of (oc as { unidad_id: string; desde: string; hasta: string }[]) ?? []) {
+        (mapa[o.unidad_id] ??= []).push({ desde: o.desde, hasta: o.hasta });
+      }
+      setOcupacion(mapa);
       setCargando(false);
     })();
   }, [slug]);
+
+  // Selección de fechas en el calendario: 1º clic = check-in, 2º = check-out.
+  function pickFecha(iso: string) {
+    setError("");
+    if (!sel) return;
+    const ocup = ocupacion[sel.id] ?? [];
+    if (!checkIn || checkOut) { setCheckIn(iso); setCheckOut(""); return; }
+    if (iso <= checkIn) { setCheckIn(iso); setCheckOut(""); return; }
+    // Verificar que el tramo elegido no pise ninguna noche ocupada.
+    if (ocup.some((o) => solapan(checkIn, iso, o.desde, o.hasta))) {
+      setError("Hay fechas ocupadas en ese rango. Elegí otras."); setCheckOut(""); return;
+    }
+    setCheckOut(iso);
+  }
 
   const cantNoches = checkIn && checkOut && checkIn < checkOut ? Math.round((Date.parse(checkOut) - Date.parse(checkIn)) / 86400000) : 0;
   // Precio por noche mostrado en pesos (si la unidad está en USD, lo convierte al dólar oficial).
@@ -422,7 +502,7 @@ function ReservarComoHuesped({ slug, email, onCerrar }: { slug: string; email: s
               <div className="grid sm:grid-cols-2 gap-3">
                 {unidades.map((u) => (
                   <Fragment key={u.id}>
-                    <button onClick={() => setSel(sel?.id === u.id ? null : u)} className={`text-left card p-0 overflow-hidden transition ${sel?.id === u.id ? "ring-2 ring-teal-500" : "hover:border-teal-400"}`}>
+                    <button onClick={() => { setSel(sel?.id === u.id ? null : u); setCheckIn(""); setCheckOut(""); setError(""); }} className={`text-left card p-0 overflow-hidden transition ${sel?.id === u.id ? "ring-2 ring-teal-500" : "hover:border-teal-400"}`}>
                       {u.foto ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={u.foto} alt={u.nombre} className="w-full h-40 object-cover" />
@@ -444,10 +524,10 @@ function ReservarComoHuesped({ slug, email, onCerrar }: { slug: string; email: s
                     {sel?.id === u.id && (
                       <div className="sm:col-span-2 card p-4 space-y-3">
                         <div className="text-sm font-semibold text-slate-700 dark:text-slate-200">Reservar {u.nombre}</div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <label className="text-xs text-slate-500 dark:text-slate-400">Check-in<input type="date" value={checkIn} onChange={(e) => setCheckIn(e.target.value)} className="input mt-1" /></label>
-                          <label className="text-xs text-slate-500 dark:text-slate-400">Check-out<input type="date" value={checkOut} onChange={(e) => setCheckOut(e.target.value)} className="input mt-1" /></label>
-                        </div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          {!checkIn ? "Tocá el día de llegada en el calendario." : !checkOut ? "Ahora tocá el día de salida." : <>Del <b>{checkIn}</b> al <b>{checkOut}</b> · <button type="button" onClick={() => { setCheckIn(""); setCheckOut(""); }} className="text-teal-600 hover:underline">cambiar</button></>}
+                        </p>
+                        <MiniCalendario ocupados={ocupacion[u.id] ?? []} checkIn={checkIn} checkOut={checkOut} onPick={pickFecha} />
                         {labelTotal(u) && (
                           <div className="rounded-lg bg-teal-50 dark:bg-teal-500/10 border border-teal-200 dark:border-teal-500/30 px-3 py-2 text-sm text-teal-800 dark:text-teal-200">
                             Total estimado: <b>{labelTotal(u)}</b> <span className="text-teal-600/80 dark:text-teal-300/70">({cantNoches} {cantNoches === 1 ? "noche" : "noches"})</span>
