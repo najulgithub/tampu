@@ -105,7 +105,6 @@ export default function FormReserva({
     return moneda === "USD" ? Math.round(enMoneda * (c.tc || dolarOficial || 0)) : Math.round(enMoneda);
   }
   function agregarComision() {
-    if (comisiones.length >= 2) return;
     setComisiones((prev) => [...prev, { personalId: "", modo: "porcentaje", valor: 0, tc: moneda === "USD" ? (dolarOficial ?? undefined) : undefined }]);
   }
   function quitarComision(i: number) {
@@ -154,15 +153,17 @@ export default function FormReserva({
     onCerrar();
   }
 
-  // Mantiene en sync los gastos "Comisión {rol} — {nombre}" de cada línea (hasta 2 slots).
+  // Mantiene en sync los gastos "Comisión {rol} — {nombre}" de cada línea (sin tope).
   function sincronizarComisionesPersonal(reservaId: string) {
-    for (let i = 0; i < 2; i++) {
+    const lineas = comisiones.filter((c) => c.personalId);
+    const clavesUsadas = new Set<string>();
+    lineas.forEach((c, i) => {
       const clave = `personal|${reservaId}|${i}`;
       const existente = gastos.find((g) => g.claveOrigen === clave);
-      const c = comisiones[i];
-      const persona = c?.personalId ? personal.find((p) => p.id === c.personalId) : undefined;
-      const montoPesos = c && persona ? montoComisionPesos(c) : 0;
-      if (c && persona && montoPesos > 0) {
+      const persona = personal.find((p) => p.id === c.personalId);
+      const montoPesos = persona ? montoComisionPesos(c) : 0;
+      if (persona && montoPesos > 0) {
+        clavesUsadas.add(clave);
         const enUSD = moneda === "USD" && c.modo === "porcentaje";
         const descripcion = `Comisión ${persona.rol} — ${persona.nombre}` + (enUSD ? ` (US$${montoComisionMoneda(c).toLocaleString("es-AR")})` : "");
         const gdatos = {
@@ -175,7 +176,11 @@ export default function FormReserva({
       } else if (existente) {
         deleteGasto(existente.id);
       }
-    }
+    });
+    // Borrar gastos-comisión de slots que ya no existen (quedaron de una versión anterior).
+    gastos
+      .filter((g) => g.claveOrigen?.startsWith(`personal|${reservaId}|`) && !clavesUsadas.has(g.claveOrigen))
+      .forEach((g) => deleteGasto(g.id));
   }
 
   // Mantiene en sync el gasto "Comisión {canal}" de la unidad con el valor cargado.
@@ -287,7 +292,7 @@ export default function FormReserva({
         <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-3 space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Comisiones a personal</span>
-            {comisiones.length < 2 && personalActivo.length > 0 && (
+            {personalActivo.length > 0 && (
               <button type="button" onClick={agregarComision} className="text-xs font-medium text-teal-600 dark:text-teal-400 hover:underline">+ Agregar</button>
             )}
           </div>
