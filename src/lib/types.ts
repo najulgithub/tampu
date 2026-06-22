@@ -305,6 +305,7 @@ export interface Reserva {
   serviciosInquilino?: string[]; // servicios/impuestos que paga el inquilino (largo plazo)
   emailInquilino?: string; // email del inquilino para vincular su portal
   aumentos?: Aumento[]; // nuevos importes del alquiler vigentes desde un mes (ajustes aplicados)
+  comisiones?: ComisionPersonal[]; // hasta 2 comisiones a personal (recepción, gestión, limpieza)
 }
 
 // Un aumento fija el alquiler mensual a partir de un mes (yyyy-mm), inclusive.
@@ -402,6 +403,8 @@ export interface Gasto {
   // Proveedor que hizo el trabajo (opcional) y presupuesto del que surgió.
   proveedorId?: string;
   presupuestoId?: string;
+  // Persona (Personal) a la que corresponde esta comisión, para su cuenta corriente.
+  personalId?: string;
   // Puntuación del trabajo (1-5) y comentario, para el histórico del proveedor.
   rating?: number;
   ratingNota?: string;
@@ -438,6 +441,16 @@ export interface Personal {
   modo: ModoComision;   // default de la comisión
   valor: number;        // % (si modo="porcentaje") o monto fijo en pesos (si "fijo")
   activo: boolean;
+}
+
+// Línea de comisión asignada en una reserva (hasta 2). El % se calcula sobre el
+// neto (alquiler − comisión de plataforma). El monto fijo va en pesos. tc = tipo
+// de cambio usado cuando la reserva es en USD y la comisión es porcentual.
+export interface ComisionPersonal {
+  personalId: string;
+  modo: ModoComision;
+  valor: number;
+  tc?: number;
 }
 
 // ---------- Proveedores ----------

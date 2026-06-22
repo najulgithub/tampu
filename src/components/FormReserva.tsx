@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useStore } from "@/lib/store";
 import { CANALES, TIPOS_ALQUILER, TIPOS_ACTUALIZACION, MONEDAS, SIMBOLO_MONEDA, INDICES_AJUSTE, esLargoPlazo, SERVICIOS_DEFAULT } from "@/lib/types";
-import type { Canal, Reserva, TipoAlquiler, TipoActualizacion, Moneda, IndiceAjuste, ServicioComprobante } from "@/lib/types";
+import type { Canal, Reserva, TipoAlquiler, TipoActualizacion, Moneda, IndiceAjuste, ServicioComprobante, ComisionPersonal, ModoComision } from "@/lib/types";
 import { noches, formatearFecha, hoyISO, nombreMes } from "@/lib/fechas";
 import { mesesContrato, vencimientosMensuales } from "@/lib/ajustes";
 import { cuentaCorriente } from "@/lib/cuentaCorriente";
@@ -30,7 +30,7 @@ export default function FormReserva({
   sobreBloqueo?: boolean;   // permite superponerse con el bloqueo que se está convirtiendo
   onCerrar: () => void;
 }) {
-  const { addReserva, updateReserva, deleteReserva, conflicto, pagosDe, config, puedeEditar, getUnidad, gastos, addGasto, updateGasto, deleteGasto, dolarOficial } = useStore();
+  const { addReserva, updateReserva, deleteReserva, conflicto, pagosDe, config, puedeEditar, getUnidad, gastos, addGasto, updateGasto, deleteGasto, dolarOficial, personal } = useStore();
   const unidad = getUnidad(unidadId);
   const esEdicion = Boolean(reserva);
   const puedeEdit = puedeEditar("reservas");
@@ -58,6 +58,7 @@ export default function FormReserva({
   const [emailInquilino, setEmailInquilino] = useState(reserva?.emailInquilino ?? "");
   const [nuevoServicio, setNuevoServicio] = useState("");
   const [notas, setNotas] = useState(reserva?.notas ?? "");
+  const [comisiones, setComisiones] = useState<ComisionPersonal[]>(reserva?.comisiones ?? []);
 
   const toggleServicio = (s: string) =>
     setServiciosInquilino((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]));
@@ -88,6 +89,37 @@ export default function FormReserva({
   const totalPagos = reserva ? pagosDe(reserva.id).reduce((a, p) => a + p.monto, 0) : 0;
   const saldo = Math.max(0, totalEfectivo - sena - totalPagos);
 
+  // ----- Comisiones a Personal -----
+  const personalActivo = personal.filter((p) => p.activo);
+  // Neto sobre el que se calculan los %: alquiler − comisión de plataforma. En la moneda de la reserva.
+  const netoComision = Math.max(0, totalEfectivo - (esOTA ? comision : 0));
+  // Monto de una línea de comisión, en la moneda de la reserva (para % ) — para mostrar.
+  function montoComisionMoneda(c: ComisionPersonal): number {
+    if (c.modo === "fijo") return c.valor || 0; // ya en pesos
+    return Math.round((netoComision * (c.valor || 0)) / 100 * 100) / 100;
+  }
+  // Monto de una línea, ya convertido a pesos (lo que se guarda como gasto).
+  function montoComisionPesos(c: ComisionPersonal): number {
+    if (c.modo === "fijo") return Math.round(c.valor || 0);
+    const enMoneda = (netoComision * (c.valor || 0)) / 100;
+    return moneda === "USD" ? Math.round(enMoneda * (c.tc || dolarOficial || 0)) : Math.round(enMoneda);
+  }
+  function agregarComision() {
+    if (comisiones.length >= 2) return;
+    setComisiones((prev) => [...prev, { personalId: "", modo: "porcentaje", valor: 0, tc: moneda === "USD" ? (dolarOficial ?? undefined) : undefined }]);
+  }
+  function quitarComision(i: number) {
+    setComisiones((prev) => prev.filter((_, idx) => idx !== i));
+  }
+  function setLineaComision(i: number, cambios: Partial<ComisionPersonal>) {
+    setComisiones((prev) => prev.map((c, idx) => (idx === i ? { ...c, ...cambios } : c)));
+  }
+  // Al elegir persona, toma sus valores por defecto (modo + valor).
+  function elegirPersona(i: number, personalId: string) {
+    const p = personal.find((x) => x.id === personalId);
+    setLineaComision(i, p ? { personalId, modo: p.modo, valor: p.valor } : { personalId: "" });
+  }
+
   function guardar() {
     if (!valido) return;
     const datos = {
@@ -113,11 +145,37 @@ export default function FormReserva({
       serviciosInquilino: esLargo ? serviciosInquilino : [],
       emailInquilino: esLargo ? (emailInquilino.trim() || undefined) : undefined,
       comision: esOTA ? comision : undefined,
+      comisiones: comisiones.filter((c) => c.personalId),
       notas: notas.trim(),
     };
     const reservaId = esEdicion && reserva ? (updateReserva(reserva.id, datos), reserva.id) : addReserva(datos);
     sincronizarComision(reservaId);
+    sincronizarComisionesPersonal(reservaId);
     onCerrar();
+  }
+
+  // Mantiene en sync los gastos "Comisión {rol} — {nombre}" de cada línea (hasta 2 slots).
+  function sincronizarComisionesPersonal(reservaId: string) {
+    for (let i = 0; i < 2; i++) {
+      const clave = `personal|${reservaId}|${i}`;
+      const existente = gastos.find((g) => g.claveOrigen === clave);
+      const c = comisiones[i];
+      const persona = c?.personalId ? personal.find((p) => p.id === c.personalId) : undefined;
+      const montoPesos = c && persona ? montoComisionPesos(c) : 0;
+      if (c && persona && montoPesos > 0) {
+        const enUSD = moneda === "USD" && c.modo === "porcentaje";
+        const descripcion = `Comisión ${persona.rol} — ${persona.nombre}` + (enUSD ? ` (US$${montoComisionMoneda(c).toLocaleString("es-AR")})` : "");
+        const gdatos = {
+          ambito: "unidad" as const, refId: unidadId, fecha: checkIn || hoyISO(),
+          categoria: "Comisión" as const, descripcion,
+          monto: montoPesos, proveedor: persona.nombre, claveOrigen: clave, personalId: persona.id,
+        };
+        if (existente) updateGasto(existente.id, gdatos);
+        else addGasto(gdatos);
+      } else if (existente) {
+        deleteGasto(existente.id);
+      }
+    }
   }
 
   // Mantiene en sync el gasto "Comisión {canal}" de la unidad con el valor cargado.
@@ -224,6 +282,62 @@ export default function FormReserva({
             <span className="block text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">Al cobrar (Registrar pago) podés editar el tipo de cambio.</span>
           </div>
         )}
+
+        {/* Comisiones a Personal (recepción, gestión, limpieza). Hasta 2 por reserva. */}
+        <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-3 space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Comisiones a personal</span>
+            {comisiones.length < 2 && personalActivo.length > 0 && (
+              <button type="button" onClick={agregarComision} className="text-xs font-medium text-teal-600 dark:text-teal-400 hover:underline">+ Agregar</button>
+            )}
+          </div>
+
+          {personalActivo.length === 0 ? (
+            <p className="text-xs text-slate-400 dark:text-slate-500">Cargá personas en Gastos → Personal para poder asignarles comisiones.</p>
+          ) : comisiones.length === 0 ? (
+            <p className="text-xs text-slate-400 dark:text-slate-500">Sin comisiones. Sumá quién recibe, gestiona o limpia y cuánto se lleva.</p>
+          ) : (
+            <>
+              <p className="text-[11px] text-slate-400 dark:text-slate-500">Neto base: <b>{simbolo}{netoComision.toLocaleString("es-AR")}</b> (alquiler − comisión de plataforma)</p>
+              {comisiones.map((c, i) => (
+                <div key={i} className="rounded-md bg-slate-50 dark:bg-slate-900 p-2 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <select value={c.personalId} onChange={(e) => elegirPersona(i, e.target.value)} className="input flex-1">
+                      <option value="">— Elegí a la persona —</option>
+                      {personalActivo.map((p) => <option key={p.id} value={p.id}>{p.nombre} · {p.rol}</option>)}
+                    </select>
+                    <button type="button" onClick={() => quitarComision(i)} className="text-rose-500 hover:text-rose-600 text-sm px-1" aria-label="Quitar">✕</button>
+                  </div>
+                  {c.personalId && (
+                    <>
+                      <div className="flex items-center gap-2">
+                        <select value={c.modo} onChange={(e) => setLineaComision(i, { modo: e.target.value as ModoComision })} className="input w-28 shrink-0">
+                          <option value="porcentaje">% del neto</option>
+                          <option value="fijo">$ fijo</option>
+                        </select>
+                        <div className="relative w-24 shrink-0">
+                          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-xs">{c.modo === "porcentaje" ? "%" : "$"}</span>
+                          <input type="number" inputMode="decimal" min={0} step={c.modo === "porcentaje" ? 0.5 : 100} value={c.valor || ""} onChange={(e) => setLineaComision(i, { valor: Number(e.target.value) })} className="input pl-6" placeholder="0" />
+                        </div>
+                        {moneda === "USD" && c.modo === "porcentaje" && (
+                          <div className="relative flex-1">
+                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-[10px]">TC</span>
+                            <input type="number" inputMode="decimal" min={0} value={c.tc ?? ""} onChange={(e) => setLineaComision(i, { tc: Number(e.target.value) })} className="input pl-7" placeholder={dolarOficial ? dolarOficial.toLocaleString("es-AR") : "$"} />
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-right text-xs text-slate-600 dark:text-slate-300">
+                        = <b>${montoComisionPesos(c).toLocaleString("es-AR")}</b>
+                        {moneda === "USD" && c.modo === "porcentaje" && <span className="text-slate-400 dark:text-slate-500"> (US${montoComisionMoneda(c).toLocaleString("es-AR")})</span>}
+                      </div>
+                    </>
+                  )}
+                </div>
+              ))}
+              <p className="text-[11px] text-slate-400 dark:text-slate-500">Cada comisión se carga como gasto de la unidad y queda en la cuenta corriente de la persona.</p>
+            </>
+          )}
+        </div>
 
         <div className="grid grid-cols-2 gap-4">
           <Campo label="Moneda">

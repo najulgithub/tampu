@@ -51,7 +51,7 @@ const reservaDe = (r: any): Reserva => ({
   estado: r.estado ?? "confirmada", clienteId: r.cliente_id ?? undefined,
   vencimiento: r.vencimiento ?? undefined, diaVencimiento: r.dia_vencimiento ?? undefined,
   serviciosInquilino: r.servicios_inquilino ?? [], emailInquilino: r.email_inquilino ?? undefined,
-  aumentos: r.aumentos ?? [],
+  aumentos: r.aumentos ?? [], comisiones: r.comisiones ?? [],
 });
 const reservaDb = (r: Reserva) => ({
   id: r.id, unidad_id: r.unidadId, huesped: r.huesped, contacto: r.contacto, check_in: r.checkIn, check_out: r.checkOut,
@@ -61,7 +61,7 @@ const reservaDb = (r: Reserva) => ({
   estado: r.estado ?? "confirmada", cliente_id: r.clienteId ?? null,
   vencimiento: r.vencimiento ?? null, dia_vencimiento: r.diaVencimiento ?? null,
   servicios_inquilino: r.serviciosInquilino ?? [], email_inquilino: r.emailInquilino ?? null,
-  aumentos: r.aumentos ?? [],
+  aumentos: r.aumentos ?? [], comisiones: r.comisiones ?? [],
 });
 
 const servCompDe = (r: any): ServicioComprobante => ({
@@ -101,6 +101,7 @@ const gastoDe = (r: any): Gasto => ({
   monto: Number(r.monto), proveedor: r.proveedor ?? "", reparto: r.reparto ?? undefined, claveOrigen: r.clave_origen ?? undefined, pendiente: r.pendiente ?? false,
   pagadoPor: r.pagado_por === "inquilino" ? "inquilino" : "dueno", comprobante: r.comprobante ?? undefined,
   proveedorId: r.proveedor_id ?? undefined, presupuestoId: r.presupuesto_id ?? undefined,
+  personalId: r.personal_id ?? undefined,
   rating: r.rating ?? undefined, ratingNota: r.rating_nota ?? undefined,
 });
 const gastoDb = (g: Gasto) => ({
@@ -108,6 +109,7 @@ const gastoDb = (g: Gasto) => ({
   monto: g.monto, proveedor: g.proveedor, reparto: g.reparto ?? null, clave_origen: g.claveOrigen ?? null, pendiente: g.pendiente ?? false,
   pagado_por: g.pagadoPor ?? "dueno", comprobante: g.comprobante ?? null,
   proveedor_id: g.proveedorId ?? null, presupuesto_id: g.presupuestoId ?? null,
+  personal_id: g.personalId ?? null,
   rating: g.rating ?? null, rating_nota: g.ratingNota ?? null,
 });
 
@@ -636,11 +638,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const deleteReserva = useCallback((id: string) => {
     setReservas((prev) => prev.filter((r) => r.id !== id));
     setPagos((prev) => prev.filter((p) => p.reservaId !== id));
-    // Borrar también el gasto de comisión asociado, si existe.
+    // Borrar también los gastos de comisión asociados (plataforma + personal), si existen.
     const claveComision = `comision|${id}`;
-    setGastos((prev) => prev.filter((g) => g.claveOrigen !== claveComision));
+    const prefijoPersonal = `personal|${id}|`;
+    setGastos((prev) => prev.filter((g) => g.claveOrigen !== claveComision && !g.claveOrigen?.startsWith(prefijoPersonal)));
     supabase.from("pagos").delete().eq("reserva_id", id).then(() => {});
     supabase.from("gastos").delete().eq("clave_origen", claveComision).then(() => {});
+    supabase.from("gastos").delete().like("clave_origen", `${prefijoPersonal}%`).then(() => {});
     supabase.from("reservas").delete().eq("id", id).then(() => {});
   }, []);
 
