@@ -405,6 +405,9 @@ export interface Gasto {
   presupuestoId?: string;
   // Persona (Personal) a la que corresponde esta comisión, para su cuenta corriente.
   personalId?: string;
+  // Pago de la comisión a la persona (cuenta corriente): si ya se le pagó y cuándo.
+  pagado?: boolean;
+  pagadoFecha?: string;
   // Puntuación del trabajo (1-5) y comentario, para el histórico del proveedor.
   rating?: number;
   ratingNota?: string;

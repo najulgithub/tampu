@@ -102,6 +102,7 @@ const gastoDe = (r: any): Gasto => ({
   pagadoPor: r.pagado_por === "inquilino" ? "inquilino" : "dueno", comprobante: r.comprobante ?? undefined,
   proveedorId: r.proveedor_id ?? undefined, presupuestoId: r.presupuesto_id ?? undefined,
   personalId: r.personal_id ?? undefined,
+  pagado: r.pagado ?? false, pagadoFecha: r.pagado_fecha ?? undefined,
   rating: r.rating ?? undefined, ratingNota: r.rating_nota ?? undefined,
 });
 const gastoDb = (g: Gasto) => ({
@@ -110,6 +111,7 @@ const gastoDb = (g: Gasto) => ({
   pagado_por: g.pagadoPor ?? "dueno", comprobante: g.comprobante ?? null,
   proveedor_id: g.proveedorId ?? null, presupuesto_id: g.presupuestoId ?? null,
   personal_id: g.personalId ?? null,
+  pagado: g.pagado ?? false, pagado_fecha: g.pagadoFecha ?? null,
   rating: g.rating ?? null, rating_nota: g.ratingNota ?? null,
 });
 

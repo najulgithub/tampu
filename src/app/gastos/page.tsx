@@ -1050,10 +1050,14 @@ function textoComisionDefault(p: Personal): string {
 }
 
 function PersonalSeccion() {
-  const { personal, puedeEditar } = useStore();
+  const { personal, gastos, puedeEditar } = useStore();
   const puedeEdit = puedeEditar("gastos");
   const [abrir, setAbrir] = useState(false);
   const [editando, setEditando] = useState<Personal | undefined>();
+  const [verCuenta, setVerCuenta] = useState<Personal | undefined>();
+
+  // Saldo que se le debe a cada persona = comisiones (gastos con su personalId) sin pagar.
+  const debeDe = (id: string) => gastos.filter((g) => g.personalId === id && !g.pagado).reduce((a, g) => a + g.monto, 0);
 
   const orden = [...personal].sort((a, b) => Number(b.activo) - Number(a.activo) || a.nombre.localeCompare(b.nombre));
 
@@ -1071,26 +1075,117 @@ function PersonalSeccion() {
         </div>
       ) : (
         <div className="space-y-2">
-          {orden.map((p) => (
-            <button key={p.id} onClick={() => setEditando(p)} className={`w-full text-left flex items-center gap-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/70 shadow-sm p-3 hover:border-teal-400 dark:hover:border-teal-500 transition ${p.activo ? "" : "opacity-60"}`}>
-              <span className="shrink-0 w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 grid place-items-center text-sm font-semibold text-slate-600 dark:text-slate-200 uppercase">{p.nombre.trim().charAt(0) || "?"}</span>
-              <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate flex items-center gap-2">
-                  {p.nombre}
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${COLOR_ROL_PERSONAL[p.rol]}`}>{p.rol}</span>
-                  {!p.activo && <span className="text-[10px] text-slate-400">inactivo</span>}
+          {orden.map((p) => {
+            const debe = debeDe(p.id);
+            return (
+              <button key={p.id} onClick={() => setVerCuenta(p)} className={`w-full text-left flex items-center gap-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/70 shadow-sm p-3 hover:border-teal-400 dark:hover:border-teal-500 transition ${p.activo ? "" : "opacity-60"}`}>
+                <span className="shrink-0 w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 grid place-items-center text-sm font-semibold text-slate-600 dark:text-slate-200 uppercase">{p.nombre.trim().charAt(0) || "?"}</span>
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate flex items-center gap-2">
+                    {p.nombre}
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${COLOR_ROL_PERSONAL[p.rol]}`}>{p.rol}</span>
+                    {!p.activo && <span className="text-[10px] text-slate-400">inactivo</span>}
+                  </div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400 truncate">{textoComisionDefault(p)}</div>
                 </div>
-                <div className="text-xs text-slate-500 dark:text-slate-400 truncate">{p.telefono || "Sin teléfono"}</div>
-              </div>
-              <div className="shrink-0 text-right text-xs text-slate-500 dark:text-slate-400">{textoComisionDefault(p)}</div>
-            </button>
-          ))}
+                <div className="shrink-0 text-right">
+                  {debe > 0
+                    ? <><div className="text-sm font-semibold text-rose-600 dark:text-rose-400">${debe.toLocaleString("es-AR")}</div><div className="text-[10px] text-slate-400 dark:text-slate-500">a pagar</div></>
+                    : <div className="text-[11px] text-emerald-600 dark:text-emerald-400">al día</div>}
+                </div>
+              </button>
+            );
+          })}
         </div>
       )}
 
       {abrir && <FormPersonal onCerrar={() => setAbrir(false)} />}
       {editando && <FormPersonal persona={editando} onCerrar={() => setEditando(undefined)} />}
+      {verCuenta && <CuentaCorrientePersonal persona={verCuenta} onEditar={() => { setEditando(verCuenta); setVerCuenta(undefined); }} onCerrar={() => setVerCuenta(undefined)} />}
     </div>
+  );
+}
+
+function CuentaCorrientePersonal({ persona, onEditar, onCerrar }: { persona: Personal; onEditar: () => void; onCerrar: () => void }) {
+  const { gastos, reservas, getUnidad, updateGasto, puedeEditar } = useStore();
+  const puedeEdit = puedeEditar("gastos");
+
+  const movimientos = gastos
+    .filter((g) => g.personalId === persona.id)
+    .sort((a, b) => b.fecha.localeCompare(a.fecha));
+  const total = movimientos.reduce((a, g) => a + g.monto, 0);
+  const pagado = movimientos.filter((g) => g.pagado).reduce((a, g) => a + g.monto, 0);
+  const debe = total - pagado;
+
+  // Etiqueta de la reserva que originó la comisión (a partir de la clave personal|reservaId|i).
+  function refReserva(claveOrigen?: string): string {
+    const rid = claveOrigen?.startsWith("personal|") ? claveOrigen.split("|")[1] : undefined;
+    const r = rid ? reservas.find((x) => x.id === rid) : undefined;
+    if (!r) return "";
+    const u = getUnidad(r.unidadId);
+    return `${r.huesped}${u ? ` · ${u.nombre}` : ""}`;
+  }
+
+  function pagar(id: string, pagar: boolean) {
+    updateGasto(id, { pagado: pagar, pagadoFecha: pagar ? hoyISO() : undefined });
+  }
+  function pagarTodo() {
+    movimientos.filter((g) => !g.pagado).forEach((g) => updateGasto(g.id, { pagado: true, pagadoFecha: hoyISO() }));
+  }
+
+  return (
+    <Overlay titulo={persona.nombre} onCerrar={onCerrar}>
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${COLOR_ROL_PERSONAL[persona.rol]}`}>{persona.rol}</span>
+          {persona.telefono && <span>{persona.telefono}</span>}
+          {persona.alias && <span className="truncate">· {persona.alias}</span>}
+          <button onClick={onEditar} className="ml-auto text-teal-600 dark:text-teal-400 hover:underline shrink-0">Editar datos</button>
+        </div>
+
+        <div className="grid grid-cols-3 gap-2 text-center">
+          <div className="rounded-lg bg-slate-50 dark:bg-slate-900 p-2">
+            <div className="text-[11px] text-slate-400 dark:text-slate-500">Total</div>
+            <div className="text-sm font-semibold text-slate-700 dark:text-slate-200">${total.toLocaleString("es-AR")}</div>
+          </div>
+          <div className="rounded-lg bg-slate-50 dark:bg-slate-900 p-2">
+            <div className="text-[11px] text-slate-400 dark:text-slate-500">Pagado</div>
+            <div className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">${pagado.toLocaleString("es-AR")}</div>
+          </div>
+          <div className="rounded-lg bg-slate-50 dark:bg-slate-900 p-2">
+            <div className="text-[11px] text-slate-400 dark:text-slate-500">A pagar</div>
+            <div className="text-sm font-semibold text-rose-600 dark:text-rose-400">${debe.toLocaleString("es-AR")}</div>
+          </div>
+        </div>
+
+        {puedeEdit && debe > 0 && (
+          <button onClick={pagarTodo} className="btn-primario w-full">Registrar pago de todo lo pendiente (${debe.toLocaleString("es-AR")})</button>
+        )}
+
+        {movimientos.length === 0 ? (
+          <p className="text-sm text-slate-400 dark:text-slate-500 text-center py-6">Todavía no tiene comisiones. Asignale una en una reserva.</p>
+        ) : (
+          <div className="space-y-1.5 max-h-72 overflow-y-auto">
+            {movimientos.map((g) => (
+              <div key={g.id} className="flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-700/70 p-2">
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm text-slate-700 dark:text-slate-200 truncate">{refReserva(g.claveOrigen) || g.descripcion}</div>
+                  <div className="text-[11px] text-slate-400 dark:text-slate-500">
+                    {formatearFecha(g.fecha)} · ${g.monto.toLocaleString("es-AR")}
+                    {g.pagado && g.pagadoFecha && <span className="text-emerald-600 dark:text-emerald-400"> · pagado {formatearFecha(g.pagadoFecha)}</span>}
+                  </div>
+                </div>
+                {puedeEdit && (
+                  g.pagado
+                    ? <button onClick={() => pagar(g.id, false)} className="shrink-0 text-[11px] text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">deshacer</button>
+                    : <button onClick={() => pagar(g.id, true)} className="shrink-0 text-xs font-medium text-teal-600 dark:text-teal-400 hover:underline">marcar pagada</button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </Overlay>
   );
 }
 
