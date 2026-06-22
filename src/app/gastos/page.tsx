@@ -3,14 +3,14 @@
 import { useState } from "react";
 import { useStore } from "@/lib/store";
 import { hoyISO, formatearFecha } from "@/lib/fechas";
-import { CATEGORIAS_GASTO, FRECUENCIAS, COLOR_CATEGORIA, COLOR_FRECUENCIA, PAGADO_POR, RUBROS_PROVEEDOR, planPorUnidades, CATEGORIAS_INGRESO } from "@/lib/types";
-import type { AmbitoGasto, CategoriaGasto, Gasto, RepartoItem, GastoProgramado, Frecuencia, PagadoPor, Proveedor, Presupuesto, EstadoPresupuesto, Ingreso, CategoriaIngreso } from "@/lib/types";
+import { CATEGORIAS_GASTO, FRECUENCIAS, COLOR_CATEGORIA, COLOR_FRECUENCIA, PAGADO_POR, RUBROS_PROVEEDOR, planPorUnidades, CATEGORIAS_INGRESO, ROLES_PERSONAL } from "@/lib/types";
+import type { AmbitoGasto, CategoriaGasto, Gasto, RepartoItem, GastoProgramado, Frecuencia, PagadoPor, Proveedor, Presupuesto, EstadoPresupuesto, Ingreso, CategoriaIngreso, Personal, RolPersonal, ModoComision } from "@/lib/types";
 import { Overlay, Campo } from "@/components/ui";
 import InputMonto from "@/components/InputMonto";
 import { Monto } from "@/components/Monto";
 import { subirArchivo } from "@/lib/storage";
 
-type TabGasto = "mov" | "ing" | "prog" | "prov" | "pres";
+type TabGasto = "mov" | "ing" | "prog" | "prov" | "personal" | "pres";
 
 export default function Gastos() {
   const [tab, setTab] = useState<TabGasto>("mov");
@@ -19,6 +19,7 @@ export default function Gastos() {
     { v: "ing", label: "Otros ingresos" },
     { v: "prog", label: "Programados" },
     { v: "prov", label: "Proveedores" },
+    { v: "personal", label: "Personal" },
     { v: "pres", label: "Presupuestos" },
   ];
   return (
@@ -37,7 +38,7 @@ export default function Gastos() {
           </button>
         ))}
       </div>
-      {tab === "mov" ? <Movimientos /> : tab === "ing" ? <Ingresos /> : tab === "prog" ? <Programados /> : tab === "prov" ? <Proveedores /> : <Presupuestos />}
+      {tab === "mov" ? <Movimientos /> : tab === "ing" ? <Ingresos /> : tab === "prog" ? <Programados /> : tab === "prov" ? <Proveedores /> : tab === "personal" ? <PersonalSeccion /> : <Presupuestos />}
     </div>
   );
 }
@@ -1025,6 +1026,132 @@ function FormProveedor({ proveedor, onCerrar }: { proveedor?: Proveedor; onCerra
         <div className="flex justify-between items-center pt-2">
           {esEdicion ? (
             <button type="button" onClick={() => { if (proveedor && confirm("¿Eliminar este proveedor?")) { deleteProveedor(proveedor.id); onCerrar(); } }} className="text-sm text-rose-600 hover:text-rose-700 dark:text-rose-400">Eliminar</button>
+          ) : <span />}
+          <div className="flex gap-2">
+            <button type="button" onClick={onCerrar} className="btn-secundario">Cancelar</button>
+            <button type="submit" disabled={!valido} className="btn-primario">Guardar</button>
+          </div>
+        </div>
+      </form>
+    </Overlay>
+  );
+}
+
+// ==================== PERSONAL (comisiones por reserva) ====================
+const COLOR_ROL_PERSONAL: Record<RolPersonal, string> = {
+  Recepcionista: "bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300",
+  Gestor: "bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-300",
+  Limpieza: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
+  Otro: "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300",
+};
+function textoComisionDefault(p: Personal): string {
+  if (!p.valor) return "Sin comisión por defecto";
+  return p.modo === "porcentaje" ? `${p.valor}% del neto` : `$${p.valor.toLocaleString("es-AR")} fijo`;
+}
+
+function PersonalSeccion() {
+  const { personal, puedeEditar } = useStore();
+  const puedeEdit = puedeEditar("gastos");
+  const [abrir, setAbrir] = useState(false);
+  const [editando, setEditando] = useState<Personal | undefined>();
+
+  const orden = [...personal].sort((a, b) => Number(b.activo) - Number(a.activo) || a.nombre.localeCompare(b.nombre));
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-sm text-slate-500 dark:text-slate-400">{personal.length} {personal.length === 1 ? "persona" : "personas"}</p>
+        {puedeEdit && <button onClick={() => setAbrir(true)} className="rounded-lg bg-teal-600 text-white px-4 py-2 text-sm font-medium hover:bg-teal-700 transition">+ Persona</button>}
+      </div>
+      <p className="text-xs text-slate-400 dark:text-slate-500 mb-5">Gente que cobra una comisión por reserva (recepción, gestión, limpieza). Después la asignás en cada reserva.</p>
+
+      {orden.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-600 p-10 text-center text-slate-500 dark:text-slate-400">
+          Cargá a quien recibe a los huéspedes, gestiona o limpia, y cuánto se lleva por reserva.
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {orden.map((p) => (
+            <button key={p.id} onClick={() => setEditando(p)} className={`w-full text-left flex items-center gap-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/70 shadow-sm p-3 hover:border-teal-400 dark:hover:border-teal-500 transition ${p.activo ? "" : "opacity-60"}`}>
+              <span className="shrink-0 w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 grid place-items-center text-sm font-semibold text-slate-600 dark:text-slate-200 uppercase">{p.nombre.trim().charAt(0) || "?"}</span>
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate flex items-center gap-2">
+                  {p.nombre}
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${COLOR_ROL_PERSONAL[p.rol]}`}>{p.rol}</span>
+                  {!p.activo && <span className="text-[10px] text-slate-400">inactivo</span>}
+                </div>
+                <div className="text-xs text-slate-500 dark:text-slate-400 truncate">{p.telefono || "Sin teléfono"}</div>
+              </div>
+              <div className="shrink-0 text-right text-xs text-slate-500 dark:text-slate-400">{textoComisionDefault(p)}</div>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {abrir && <FormPersonal onCerrar={() => setAbrir(false)} />}
+      {editando && <FormPersonal persona={editando} onCerrar={() => setEditando(undefined)} />}
+    </div>
+  );
+}
+
+function FormPersonal({ persona, onCerrar }: { persona?: Personal; onCerrar: () => void }) {
+  const { addPersonal, updatePersonal, deletePersonal } = useStore();
+  const esEdicion = Boolean(persona);
+  const [nombre, setNombre] = useState(persona?.nombre ?? "");
+  const [rol, setRol] = useState<RolPersonal>(persona?.rol ?? "Recepcionista");
+  const [telefono, setTelefono] = useState(persona?.telefono ?? "");
+  const [alias, setAlias] = useState(persona?.alias ?? "");
+  const [notas, setNotas] = useState(persona?.notas ?? "");
+  const [modo, setModo] = useState<ModoComision>(persona?.modo ?? "porcentaje");
+  const [valor, setValor] = useState<number>(persona?.valor ?? 0);
+  const [activo, setActivo] = useState(persona?.activo ?? true);
+  const valido = nombre.trim().length > 0;
+
+  function guardar() {
+    if (!valido) return;
+    const datos = { nombre: nombre.trim(), rol, telefono: telefono.trim(), alias: alias.trim(), notas: notas.trim(), modo, valor: valor || 0, activo };
+    if (esEdicion && persona) updatePersonal(persona.id, datos);
+    else addPersonal(datos);
+    onCerrar();
+  }
+
+  return (
+    <Overlay titulo={esEdicion ? "Editar persona" : "Nueva persona"} onCerrar={onCerrar}>
+      <form onSubmit={(e) => { e.preventDefault(); guardar(); }} className="space-y-4">
+        <Campo label="Nombre">
+          <input autoFocus value={nombre} onChange={(e) => setNombre(e.target.value)} className="input" placeholder="Nombre y apellido" />
+        </Campo>
+        <Campo label="Rol">
+          <select value={rol} onChange={(e) => setRol(e.target.value as RolPersonal)} className="input">
+            {ROLES_PERSONAL.map((r) => <option key={r} value={r}>{r}</option>)}
+          </select>
+        </Campo>
+        <Campo label="Comisión por defecto">
+          <div className="flex gap-2">
+            <select value={modo} onChange={(e) => setModo(e.target.value as ModoComision)} className="input w-32 shrink-0">
+              <option value="porcentaje">% del neto</option>
+              <option value="fijo">Monto fijo</option>
+            </select>
+            <div className="relative flex-1">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">{modo === "porcentaje" ? "%" : "$"}</span>
+              <input type="number" inputMode="decimal" min={0} step={modo === "porcentaje" ? 0.5 : 100} value={valor || ""} onChange={(e) => setValor(Number(e.target.value))} className="input pl-7" placeholder="0" />
+            </div>
+          </div>
+          <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">{modo === "porcentaje" ? "Porcentaje sobre el neto (alquiler − comisión de plataforma). Lo podés ajustar en cada reserva." : "Importe fijo en pesos (ej. limpieza). Lo podés ajustar en cada reserva."}</p>
+        </Campo>
+        <div className="grid grid-cols-2 gap-4">
+          <Campo label="Teléfono"><input value={telefono} onChange={(e) => setTelefono(e.target.value)} className="input" placeholder="+54 9 223…" /></Campo>
+          <Campo label="Alias / CBU"><input value={alias} onChange={(e) => setAlias(e.target.value)} className="input" placeholder="para pagarle" /></Campo>
+        </div>
+        <Campo label="Notas"><textarea value={notas} onChange={(e) => setNotas(e.target.value)} className="input min-h-16" placeholder="Observaciones…" /></Campo>
+        <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+          <input type="checkbox" checked={activo} onChange={(e) => setActivo(e.target.checked)} />
+          Activo (aparece para asignar en reservas)
+        </label>
+
+        <div className="flex justify-between items-center pt-2">
+          {esEdicion ? (
+            <button type="button" onClick={() => { if (persona && confirm("¿Eliminar esta persona?")) { deletePersonal(persona.id); onCerrar(); } }} className="text-sm text-rose-600 hover:text-rose-700 dark:text-rose-400">Eliminar</button>
           ) : <span />}
           <div className="flex gap-2">
             <button type="button" onClick={onCerrar} className="btn-secundario">Cancelar</button>

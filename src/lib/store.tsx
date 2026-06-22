@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
-import type { Grupo, Unidad, Reserva, Gasto, GastoProgramado, Colaborador, Pago, MedioPago, Configuracion, ServicioComprobante, Proveedor, Presupuesto, Mensaje, Notificacion, AvisoSistema, Suscripcion, Ingreso, Bloqueo } from "./types";
+import type { Grupo, Unidad, Reserva, Gasto, GastoProgramado, Colaborador, Pago, MedioPago, Configuracion, ServicioComprobante, Proveedor, Presupuesto, Mensaje, Notificacion, AvisoSistema, Suscripcion, Ingreso, Bloqueo, Personal } from "./types";
 import { COLORES_UNIDAD, MEDIOS_PAGO_DEFAULT, CONFIG_DEFAULT } from "./types";
 import { solapan, hoyISO } from "./fechas";
 import { generarGastos } from "./programados";
@@ -149,6 +149,15 @@ const proveedorDb = (p: Proveedor) => ({
   notas: p.notas, visible_inquilino: p.visibleInquilino,
 });
 
+const personalDe = (r: any): Personal => ({
+  id: r.id, nombre: r.nombre, rol: r.rol ?? "Otro", telefono: r.telefono ?? "", alias: r.alias ?? "",
+  notas: r.notas ?? "", modo: r.modo ?? "porcentaje", valor: Number(r.valor ?? 0), activo: r.activo ?? true,
+});
+const personalDb = (p: Personal) => ({
+  id: p.id, nombre: p.nombre, rol: p.rol, telefono: p.telefono, alias: p.alias,
+  notas: p.notas, modo: p.modo, valor: p.valor, activo: p.activo,
+});
+
 const presupuestoDe = (r: any): Presupuesto => ({
   id: r.id, proveedorId: r.proveedor_id ?? "", ambito: r.ambito ?? "unidad", refId: r.ref_id ?? "",
   descripcion: r.descripcion ?? "", monto: Number(r.monto), fecha: r.fecha, estado: r.estado ?? "pendiente",
@@ -229,6 +238,10 @@ interface StoreCtx {
   deleteProveedor: (id: string) => void;
   ratingProveedor: (proveedorId: string) => { promedio: number; cantidad: number };
   trabajosDe: (proveedorId: string) => Gasto[];
+  personal: Personal[];
+  addPersonal: (p: Omit<Personal, "id">) => string;
+  updatePersonal: (id: string, cambios: Partial<Personal>) => void;
+  deletePersonal: (id: string) => void;
   presupuestos: Presupuesto[];
   presupuestosDe: (proveedorId: string) => Presupuesto[];
   addPresupuesto: (p: Omit<Presupuesto, "id">) => string;
@@ -285,6 +298,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [mediosPago, setMediosPago] = useState<MedioPago[]>([]);
   const [serviciosComprobantes, setServiciosComprobantes] = useState<ServicioComprobante[]>([]);
   const [proveedores, setProveedores] = useState<Proveedor[]>([]);
+  const [personal, setPersonal] = useState<Personal[]>([]);
   const [presupuestos, setPresupuestos] = useState<Presupuesto[]>([]);
   const [mensajes, setMensajes] = useState<Mensaje[]>([]);
   const [config, setConfig] = useState<Configuracion>(CONFIG_DEFAULT);
@@ -360,7 +374,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const cargarTodo = useCallback(async () => {
     setCargado(false);
-    const [g, u, r, ga, pr, co, pa, me, cf, sc, pv, ps, mn, nt, av, ad, su, in_, bl] = await Promise.all([
+    const [g, u, r, ga, pr, co, pa, me, cf, sc, pv, ps, mn, nt, av, ad, su, in_, bl, pe] = await Promise.all([
       supabase.from("grupos").select("*"),
       supabase.from("unidades").select("*"),
       supabase.from("reservas").select("*"),
@@ -380,6 +394,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       supabase.from("suscripciones").select("*").maybeSingle(),
       supabase.from("ingresos").select("*"),
       supabase.from("bloqueos").select("*"),
+      supabase.from("personal").select("*"),
     ]);
     const gr = (g.data ?? []).map(grupoDe);
     const un = (u.data ?? []).map(unidadDe);
@@ -407,6 +422,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setGastosProgramados(prog); setColaboradores(col); setPagos(pag); setMediosPago(med);
     setServiciosComprobantes((sc.data ?? []).map(servCompDe));
     setProveedores((pv.data ?? []).map(proveedorDe));
+    setPersonal((pe.data ?? []).map(personalDe));
     setPresupuestos((ps.data ?? []).map(presupuestoDe));
     setMensajes((mn.data ?? []).map(mensajeDe));
     setNotificaciones((nt.data ?? []).map(notifDe));
@@ -423,7 +439,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if (!userId) {
       cargadoPara.current = null;
       setGrupos([]); setUnidades([]); setReservas([]); setGastos([]); setGastosProgramados([]); setColaboradores([]); setPagos([]); setMediosPago([]);
-      setServiciosComprobantes([]); setProveedores([]); setPresupuestos([]); setMensajes([]);
+      setServiciosComprobantes([]); setProveedores([]); setPersonal([]); setPresupuestos([]); setMensajes([]);
       setNotificaciones([]); setAvisos([]); setEsAdmin(false); setSuscripcion(null);
       setIngresos([]); setBloqueos([]);
       setConfig(CONFIG_DEFAULT);
@@ -769,6 +785,31 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     supabase.from("proveedores").delete().eq("id", id).then(() => {});
   }, []);
 
+  // ---------- Personal ----------
+  const addPersonal = useCallback((p: Omit<Personal, "id">) => {
+    const nuevo: Personal = { ...p, id: nuevoId() };
+    setPersonal((prev) => [...prev, nuevo]);
+    supabase.from("personal").insert(personalDb(nuevo)).then(({ error }) => error && console.error(error));
+    return nuevo.id;
+  }, []);
+  const updatePersonal = useCallback((id: string, cambios: Partial<Personal>) => {
+    setPersonal((prev) => prev.map((p) => (p.id === id ? { ...p, ...cambios } : p)));
+    const db: Record<string, unknown> = {};
+    if ("nombre" in cambios) db.nombre = cambios.nombre;
+    if ("rol" in cambios) db.rol = cambios.rol;
+    if ("telefono" in cambios) db.telefono = cambios.telefono;
+    if ("alias" in cambios) db.alias = cambios.alias;
+    if ("notas" in cambios) db.notas = cambios.notas;
+    if ("modo" in cambios) db.modo = cambios.modo;
+    if ("valor" in cambios) db.valor = cambios.valor;
+    if ("activo" in cambios) db.activo = cambios.activo;
+    supabase.from("personal").update(db).eq("id", id).then(({ error }) => error && console.error(error));
+  }, []);
+  const deletePersonal = useCallback((id: string) => {
+    setPersonal((prev) => prev.filter((p) => p.id !== id));
+    supabase.from("personal").delete().eq("id", id).then(() => {});
+  }, []);
+
   const trabajosDe = useCallback(
     (proveedorId: string) => gastos.filter((g) => g.proveedorId === proveedorId).sort((a, b) => b.fecha.localeCompare(a.fecha)),
     [gastos]
@@ -943,6 +984,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     gastos, addGasto, updateGasto, deleteGasto, gastoDeUnidad,
     ingresos, addIngreso, updateIngreso, deleteIngreso,
     proveedores, addProveedor, updateProveedor, deleteProveedor, ratingProveedor, trabajosDe,
+    personal, addPersonal, updatePersonal, deletePersonal,
     presupuestos, presupuestosDe, addPresupuesto, updatePresupuesto, deletePresupuesto,
     mensajes, mensajesDe, enviarMensaje, marcarLeidos, enviarConsultaDueno, marcarLeidosConsulta,
     mensajesNoLeidos: mensajes.filter((m) => m.autor === "inquilino" && !m.leidoDueno).length,

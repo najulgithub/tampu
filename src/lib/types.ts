@@ -422,6 +422,24 @@ export interface Ingreso {
   reparto?: RepartoItem[]; // solo para ambito="grupo"
 }
 
+// ---------- Personal (comisiones por reserva) ----------
+// Gente que cobra una comisión por reserva (no se loguea, no es proveedor).
+export const ROLES_PERSONAL = ["Recepcionista", "Gestor", "Limpieza", "Otro"] as const;
+export type RolPersonal = (typeof ROLES_PERSONAL)[number];
+export type ModoComision = "porcentaje" | "fijo";
+
+export interface Personal {
+  id: string;
+  nombre: string;
+  rol: RolPersonal;
+  telefono: string;
+  alias: string;        // alias/CBU para pagarle
+  notas: string;
+  modo: ModoComision;   // default de la comisión
+  valor: number;        // % (si modo="porcentaje") o monto fijo en pesos (si "fijo")
+  activo: boolean;
+}
+
 // ---------- Proveedores ----------
 export const RUBROS_PROVEEDOR = ["Electricista", "Gasista", "Plomero", "Pintor", "Albañil", "Cerrajero", "Limpieza", "Jardinería", "Técnico (aires/electro)", "Vidriero", "Otro"];
 
