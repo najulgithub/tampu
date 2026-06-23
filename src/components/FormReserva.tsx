@@ -727,11 +727,12 @@ function SeccionPagos({ reserva, simbolo, total, sena }: { reserva: Reserva; sim
   // Cambiar la moneda del pago resetea el importe (50 USD no son 50 pesos).
   function cambiarModo(m: "ARS" | "USD") { if (m !== modo) { setModo(m); setMonto(0); } }
 
-  // Mostramos el tipo de cambio cuando hay dólares de por medio: pago en otra moneda
-  // que la reserva (cruzada) o reserva en USD (para ver la equivalencia en pesos).
-  const mostrarTC = cruzada || esUSD;
-  // Equivalente en pesos cuando el monto guardado está en dólares (reserva USD).
-  const equivPesos = esUSD && tc > 0 ? Math.round(montoReserva * tc) : null;
+  // El tipo de cambio editable solo tiene sentido cuando la moneda del pago difiere
+  // de la de la reserva (ej. pago en pesos una reserva USD: para saber cuántos USD cubre).
+  const mostrarTC = cruzada;
+  // Si pagás en USD una reserva USD, mostramos la equivalencia en pesos como referencia
+  // (al oficial), sin pedir nada.
+  const equivPesos = esUSD && !cruzada && tc > 0 ? Math.round(montoReserva * tc) : null;
 
   function registrar() {
     if (montoReserva <= 0) return;
