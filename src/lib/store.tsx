@@ -86,11 +86,13 @@ const pagoDe = (r: any): Pago => ({
   id: r.id, reservaId: r.reserva_id, fecha: r.fecha, monto: Number(r.monto), medio: r.medio,
   comprobante: r.comprobante ?? undefined, nota: r.nota ?? "", periodo: r.periodo ?? undefined, esSena: r.es_sena ?? false,
   montoArs: r.monto_ars != null ? Number(r.monto_ars) : undefined, tipoCambio: r.tipo_cambio != null ? Number(r.tipo_cambio) : undefined,
+  monedaPago: r.moneda_pago ?? undefined, montoIngresado: r.monto_ingresado != null ? Number(r.monto_ingresado) : undefined,
 });
 const pagoDb = (p: Pago) => ({
   id: p.id, reserva_id: p.reservaId, fecha: p.fecha, monto: p.monto, medio: p.medio,
   comprobante: p.comprobante ?? null, nota: p.nota, periodo: p.periodo ?? null, es_sena: p.esSena ?? false,
   monto_ars: p.montoArs ?? null, tipo_cambio: p.tipoCambio ?? null,
+  moneda_pago: p.monedaPago ?? null, monto_ingresado: p.montoIngresado ?? null,
 });
 
 const medioDe = (r: any): MedioPago => ({ id: r.id, nombre: r.nombre, activo: r.activo ?? true });

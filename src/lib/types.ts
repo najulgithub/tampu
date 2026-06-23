@@ -348,10 +348,15 @@ export interface Pago {
   nota: string;
   periodo?: string; // "yyyy-mm": mes/cuota al que se imputa (contratos largos). Vacío = imputación automática.
   esSena?: boolean; // marca este pago como la seña (con su fecha real)
-  // Reserva en USD cobrada en pesos: pesos efectivamente pagados y tipo de cambio usado.
-  // (el campo 'monto' guarda el equivalente en USD que descuenta del total)
-  montoArs?: number;
+  // Pago multimoneda: 'monto' siempre está en la moneda de la reserva (base del saldo).
+  // monedaPago = moneda en que entró la plata; montoIngresado = importe en esa moneda;
+  // tipoCambio = pesos por dólar usado si hubo conversión.
+  monedaPago?: Moneda;
+  montoIngresado?: number;
   tipoCambio?: number;
+  // Legado: reserva USD cobrada en pesos (pesos efectivamente pagados). Reemplazado
+  // por monedaPago/montoIngresado, se mantiene para leer pagos viejos.
+  montoArs?: number;
 }
 
 // Un gasto se imputa a una unidad puntual o a un grupo entero (gasto compartido).
