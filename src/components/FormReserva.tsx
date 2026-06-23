@@ -719,13 +719,19 @@ function SeccionPagos({ reserva, simbolo, total, sena }: { reserva: Reserva; sim
   else if (esUSD) montoReserva = tipoCambio > 0 ? r2(monto / tipoCambio) : 0; // entró en pesos, reserva USD
   else montoReserva = Math.round(monto * tipoCambio); // entró en dólares, reserva en pesos
 
+  // Mostramos el tipo de cambio cuando hay dólares de por medio: pago en otra moneda
+  // que la reserva (cruzada) o reserva en USD (para ver la equivalencia en pesos).
+  const mostrarTC = cruzada || (esUSD && modo !== "ARS");
+  // Equivalente en pesos cuando el monto guardado está en dólares (reserva USD).
+  const equivPesos = esUSD && tipoCambio > 0 ? Math.round(montoReserva * tipoCambio) : null;
+
   function registrar() {
     if (montoReserva <= 0) return;
     const datos = {
       reservaId: reserva.id, fecha, monto: montoReserva, medio, comprobante, nota: nota.trim(),
       periodo: !esSena && largo ? (periodo || undefined) : undefined, esSena,
       monedaPago: monedaPagoSel, montoIngresado,
-      tipoCambio: cruzada ? tipoCambio : undefined,
+      tipoCambio: tipoCambio > 0 && (cruzada || esUSD) ? tipoCambio : undefined,
       montoArs: undefined,
     };
     if (editId) updatePago(editId, datos);
@@ -850,7 +856,9 @@ function SeccionPagos({ reserva, simbolo, total, sena }: { reserva: Reserva; sim
                 // Legado: reserva USD cobrada en pesos.
                 <span className="text-slate-700 dark:text-slate-200 font-medium">${p.montoArs.toLocaleString("es-AR")} <span className="text-slate-400 dark:text-slate-500 font-normal">· US${p.monto.toLocaleString("es-AR")}</span></span>
               ) : (
-                <span className="text-slate-700 dark:text-slate-200 font-medium">{simbolo}{p.monto.toLocaleString("es-AR")}</span>
+                <span className="text-slate-700 dark:text-slate-200 font-medium">{simbolo}{p.monto.toLocaleString("es-AR")}
+                  {esUSD && p.tipoCambio ? <span className="text-slate-400 dark:text-slate-500 font-normal"> · ≈ ${Math.round(p.monto * p.tipoCambio).toLocaleString("es-AR")}</span> : null}
+                </span>
               )}
               {p.esSena && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400">seña</span>}
               {p.periodo && <span className="text-teal-600 dark:text-teal-400 capitalize">{labelPeriodo(p.periodo)}</span>}
@@ -890,18 +898,19 @@ function SeccionPagos({ reserva, simbolo, total, sena }: { reserva: Reserva; sim
             <button type="button" onClick={() => { setModo(reserva.moneda === "USD" ? "USD" : "ARS"); setMonto(largo && cc ? (cc.proxima?.saldo ?? saldo) : saldo); }} className="text-xs text-teal-600 dark:text-teal-400 hover:underline whitespace-nowrap">Saldar</button>
           </div>
 
-          {/* Tipo de cambio: solo cuando la moneda del pago difiere de la de la reserva. */}
-          {cruzada && (
+          {/* Tipo de cambio: cuando hay dólares de por medio (pago en otra moneda o reserva USD). */}
+          {mostrarTC && (
             <div className="flex items-center gap-2">
               <span className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">Dólar $</span>
               <input type="number" min={0} value={tipoCambio} onChange={(e) => setTipoCambio(Math.max(0, Number(e.target.value)))} className="input w-28 text-right" />
               <span className="text-[10px] text-slate-400 dark:text-slate-500">{dolarOficial ? "oficial sugerido, editable" : "cargá el valor"}</span>
             </div>
           )}
-          {(cruzada || modo === "%") && montoReserva > 0 && (
+          {(cruzada || modo === "%" || equivPesos != null) && montoReserva > 0 && (
             <p className="text-xs text-slate-500 dark:text-slate-400">
               = <b>{simbolo}{montoReserva.toLocaleString("es-AR")}</b> en la moneda de la reserva
               {cruzada && <> · entró <b>{SIMBOLO_MONEDA[monedaPagoSel]}{montoIngresado.toLocaleString("es-AR")}</b></>}
+              {equivPesos != null && <> · ≈ <b>${equivPesos.toLocaleString("es-AR")}</b> en pesos</>}
             </p>
           )}
 
