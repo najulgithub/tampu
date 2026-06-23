@@ -727,12 +727,9 @@ function SeccionPagos({ reserva, simbolo, total, sena }: { reserva: Reserva; sim
   // Cambiar la moneda del pago resetea el importe (50 USD no son 50 pesos).
   function cambiarModo(m: "ARS" | "USD") { if (m !== modo) { setModo(m); setMonto(0); } }
 
-  // El tipo de cambio editable solo tiene sentido cuando la moneda del pago difiere
-  // de la de la reserva (ej. pago en pesos una reserva USD: para saber cuántos USD cubre).
+  // El tipo de cambio (y cualquier conversión) solo tiene sentido cuando la moneda del
+  // pago difiere de la de la reserva. Si pagás en la misma moneda, no mostramos nada extra.
   const mostrarTC = cruzada;
-  // Si pagás en USD una reserva USD, mostramos la equivalencia en pesos como referencia
-  // (al oficial), sin pedir nada.
-  const equivPesos = esUSD && !cruzada && tc > 0 ? Math.round(montoReserva * tc) : null;
 
   function registrar() {
     if (montoReserva <= 0) return;
@@ -907,11 +904,9 @@ function SeccionPagos({ reserva, simbolo, total, sena }: { reserva: Reserva; sim
               <span className="text-[10px] text-slate-400 dark:text-slate-500">{dolarOficial ? "oficial sugerido, editable" : "cargá el valor"}</span>
             </div>
           )}
-          {(cruzada || equivPesos != null) && montoReserva > 0 && (
+          {cruzada && montoReserva > 0 && (
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              = <b>{simbolo}{montoReserva.toLocaleString("es-AR")}</b> en la moneda de la reserva
-              {cruzada && <> · entró <b>{SIMBOLO_MONEDA[monedaPagoSel]}{montoIngresado.toLocaleString("es-AR")}</b></>}
-              {equivPesos != null && <> · ≈ <b>${equivPesos.toLocaleString("es-AR")}</b> en pesos</>}
+              entró <b>{SIMBOLO_MONEDA[monedaPagoSel]}{montoIngresado.toLocaleString("es-AR")}</b> · cubre <b>{simbolo}{montoReserva.toLocaleString("es-AR")}</b> de la reserva
             </p>
           )}
 
