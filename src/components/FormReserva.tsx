@@ -411,9 +411,6 @@ export default function FormReserva({
             )}
             {usaTarifaDia ? (
               <>
-                <Campo label={`Seña (${simbolo})`}>
-                  <InputMonto value={sena} onChange={setSena} decimales={moneda === "USD"} />
-                </Campo>
                 <div className="rounded-lg bg-slate-50 dark:bg-slate-900 p-3 text-sm">
                   <div className="flex justify-between text-slate-600 dark:text-slate-300">
                     <span>{cantNoches} {cantNoches === 1 ? "noche" : "noches"} × {simbolo}{tarifaDia.toLocaleString("es-AR")}{conCochera && tieneCocheraTarifa ? " (con cochera)" : ""}</span>
@@ -429,14 +426,9 @@ export default function FormReserva({
               </>
             ) : (
               <>
-                <div className="grid grid-cols-2 gap-4">
-                  <Campo label={`Monto total (${simbolo})`}>
-                    <InputMonto value={montoTotal} onChange={setMontoTotal} decimales={moneda === "USD"} />
-                  </Campo>
-                  <Campo label={`Seña (${simbolo})`}>
-                    <InputMonto value={sena} onChange={setSena} decimales={moneda === "USD"} />
-                  </Campo>
-                </div>
+                <Campo label={`Monto total (${simbolo})`}>
+                  <InputMonto value={montoTotal} onChange={setMontoTotal} decimales={moneda === "USD"} />
+                </Campo>
                 {montoTotal > 0 && (
                   <p className="text-xs text-slate-500 dark:text-slate-400">
                     Saldo pendiente: <b className={saldo > 0 ? "text-amber-600" : "text-emerald-600"}>
@@ -510,7 +502,7 @@ export default function FormReserva({
 
         {!esEdicion && (
           <p className="text-xs text-slate-400 dark:text-slate-500 border-t border-slate-100 dark:border-slate-700 pt-3">
-            💡 Guardá la reserva y volvé a abrirla para registrar los pagos (cada uno con su fecha) y ver el saldo actualizado.
+            💡 Guardá la reserva y volvé a abrirla para registrar los pagos —incluida la seña (con el check «Es la seña»)— cada uno con su fecha, y ver el saldo actualizado.
           </p>
         )}
 
@@ -696,7 +688,8 @@ function SeccionPagos({ reserva, simbolo, total, sena }: { reserva: Reserva; sim
   const saldo = Math.max(0, total - pagado);
 
   const [abrir, setAbrir] = useState(false);
-  const [modo, setModo] = useState<"$" | "%">("$");
+  // En reservas USD se puede cargar el pago directo en dólares, en pesos o por %.
+  const [modo, setModo] = useState<"$" | "%" | "usd">(esUSD ? "usd" : "$");
   const [monto, setMonto] = useState(0);
   const [pct, setPct] = useState(0);
   const [medio, setMedio] = useState<string>(mediosPago[0]?.nombre ?? "Efectivo");
@@ -714,8 +707,14 @@ function SeccionPagos({ reserva, simbolo, total, sena }: { reserva: Reserva; sim
   // Para USD: el "$" del formulario representa PESOS; el monto guardado (pago.monto)
   // es el equivalente en USD (total en dólares - USD = saldo en dólares).
   const r2 = (n: number) => Math.round(n * 100) / 100;
-  const montoUsd = esUSD ? (modo === "%" ? r2((total * pct) / 100) : (tipoCambio > 0 ? r2(monto / tipoCambio) : 0)) : 0;
-  const montoArsCalc = esUSD ? (modo === "%" ? Math.round(montoUsd * tipoCambio) : monto) : 0;
+  // montoUsd = importe en dólares (lo que se guarda en pago.monto para reservas USD).
+  const montoUsd = esUSD
+    ? (modo === "%" ? r2((total * pct) / 100)
+      : modo === "usd" ? r2(monto)
+      : (tipoCambio > 0 ? r2(monto / tipoCambio) : 0))
+    : 0;
+  // montoArsCalc = equivalente en pesos. En modo "pesos" es lo tipeado; si no, se convierte al TC.
+  const montoArsCalc = esUSD ? (modo === "$" ? monto : Math.round(montoUsd * tipoCambio)) : 0;
   const montoEfectivo = esUSD ? montoUsd : (modo === "%" ? Math.round((total * pct) / 100) : monto);
 
   function registrar() {
@@ -870,10 +869,11 @@ function SeccionPagos({ reserva, simbolo, total, sena }: { reserva: Reserva; sim
                 <input type="number" min={0} value={tipoCambio} onChange={(e) => setTipoCambio(Math.max(0, Number(e.target.value)))} className="input w-28 text-right" />
                 <span className="text-[10px] text-slate-400 dark:text-slate-500">{dolarOficial ? "auto" : "cargá el valor"}</span>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <div className="flex rounded-md border border-slate-300 dark:border-slate-600 overflow-hidden text-xs">
-                  <button type="button" onClick={() => setModo("%")} className={modo === "%" ? "px-2 py-1 bg-teal-600 text-white" : "px-2 py-1 text-slate-500 dark:text-slate-400"}>%</button>
+                  <button type="button" onClick={() => setModo("usd")} className={modo === "usd" ? "px-2 py-1 bg-teal-600 text-white" : "px-2 py-1 text-slate-500 dark:text-slate-400"}>US$</button>
                   <button type="button" onClick={() => setModo("$")} className={modo === "$" ? "px-2 py-1 bg-teal-600 text-white" : "px-2 py-1 text-slate-500 dark:text-slate-400"}>pesos</button>
+                  <button type="button" onClick={() => setModo("%")} className={modo === "%" ? "px-2 py-1 bg-teal-600 text-white" : "px-2 py-1 text-slate-500 dark:text-slate-400"}>%</button>
                 </div>
                 {modo === "%" ? (
                   <div className="flex items-center gap-2 flex-1">
@@ -881,10 +881,10 @@ function SeccionPagos({ reserva, simbolo, total, sena }: { reserva: Reserva; sim
                     <span className="text-xs text-slate-400">% del total</span>
                   </div>
                 ) : (
-                  <InputMonto value={monto} onChange={setMonto} className="flex-1" />
+                  <InputMonto value={monto} onChange={setMonto} decimales={modo === "usd"} className="flex-1" />
                 )}
                 <button type="button" onClick={() => { setModo("%"); setPct(30); }} className="text-xs text-teal-600 dark:text-teal-400 hover:underline whitespace-nowrap">Seña 30%</button>
-                <button type="button" onClick={() => { setModo("$"); setMonto(Math.round(saldo * tipoCambio)); }} className="text-xs text-teal-600 dark:text-teal-400 hover:underline whitespace-nowrap">Saldar</button>
+                <button type="button" onClick={() => { setModo("usd"); setMonto(saldo); }} className="text-xs text-teal-600 dark:text-teal-400 hover:underline whitespace-nowrap">Saldar</button>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 = <b>US${montoUsd.toLocaleString("es-AR")}</b> · <b>${montoArsCalc.toLocaleString("es-AR")}</b> en pesos {tipoCambio > 0 && `(al dólar $${tipoCambio.toLocaleString("es-AR")})`}
