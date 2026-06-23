@@ -497,7 +497,7 @@ export default function FormReserva({
         )}
 
         {esEdicion && reserva && (
-          <SeccionPagos reserva={reserva} simbolo={simbolo} total={totalEfectivo} sena={sena} />
+          <SeccionPagos reserva={reserva} moneda={moneda} simbolo={simbolo} total={totalEfectivo} sena={sena} />
         )}
 
         {!esEdicion && (
@@ -658,9 +658,9 @@ function ServiciosTablero({ reserva, servicios, simbolo }: { reserva: Reserva; s
   );
 }
 
-function SeccionPagos({ reserva, simbolo, total, sena }: { reserva: Reserva; simbolo: string; total: number; sena: number }) {
+function SeccionPagos({ reserva, moneda, simbolo, total, sena }: { reserva: Reserva; moneda: Moneda; simbolo: string; total: number; sena: number }) {
   const { pagosDe, addPago, updatePago, deletePago, mediosPago, gastos, updateReserva, dolarOficial } = useStore();
-  const esUSD = reserva.moneda === "USD";
+  const esUSD = moneda === "USD"; // moneda en vivo del formulario (no la guardada)
   const pagos = pagosDe(reserva.id);
   const largo = esLargoPlazo(reserva.tipo);
   const hoy = hoyISO();
@@ -708,7 +708,7 @@ function SeccionPagos({ reserva, simbolo, total, sena }: { reserva: Reserva; sim
   // Tipo de cambio efectivo: lo que el usuario cargó, o el oficial como respaldo.
   const tc = tipoCambio || dolarOficial || 0;
   // ¿La moneda del pago difiere de la de la reserva? (requiere tipo de cambio)
-  const cruzada = modo !== reserva.moneda;
+  const cruzada = modo !== moneda;
   const montoIngresado = monto;        // lo que entró, en la moneda elegida
   const monedaPagoSel: Moneda = modo;  // moneda del pago
   // montoReserva = equivalente en la moneda de la reserva (lo que se guarda en pago.monto y arma el saldo).
@@ -749,7 +749,7 @@ function SeccionPagos({ reserva, simbolo, total, sena }: { reserva: Reserva; sim
   function editarPago(p: typeof pagos[number]) {
     setEditId(p.id);
     // Moneda en que entró: nueva (monedaPago), o inferida de pagos viejos (montoArs => pesos).
-    const mp: "ARS" | "USD" = (p.monedaPago as "ARS" | "USD") ?? (p.montoArs != null ? "ARS" : (reserva.moneda === "USD" ? "USD" : "ARS"));
+    const mp: "ARS" | "USD" = (p.monedaPago as "ARS" | "USD") ?? (p.montoArs != null ? "ARS" : (moneda === "USD" ? "USD" : "ARS"));
     setModo(mp);
     setMonto(p.montoIngresado ?? p.montoArs ?? p.monto);
     if (p.tipoCambio) setTipoCambio(p.tipoCambio);
@@ -764,7 +764,7 @@ function SeccionPagos({ reserva, simbolo, total, sena }: { reserva: Reserva; sim
 
   // Abre el formulario precargado para saldar una cuota puntual (en la moneda de la reserva).
   function pagarCuota(c: Cuota) {
-    setModo(reserva.moneda === "USD" ? "USD" : "ARS");
+    setModo(moneda === "USD" ? "USD" : "ARS");
     setMonto(c.saldo);
     setPeriodo(c.periodo);
     setAbrir(true);
@@ -773,7 +773,7 @@ function SeccionPagos({ reserva, simbolo, total, sena }: { reserva: Reserva; sim
   return (
     <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{largo ? "Cuenta corriente" : "Pagos"} <span className="text-[10px] font-normal text-slate-400 dark:text-slate-500">v2</span></span>
+        <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{largo ? "Cuenta corriente" : "Pagos"} <span className="text-[10px] font-normal text-slate-400 dark:text-slate-500">v3</span></span>
         {largo && cc ? (
           <span className={`text-sm font-semibold ${cc.saldoVencido > 0 ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"}`}>
             {cc.saldoVencido > 0 ? `Vencido ${simbolo}${cc.saldoVencido.toLocaleString("es-AR")}` : "Al día ✓"}
@@ -855,7 +855,7 @@ function SeccionPagos({ reserva, simbolo, total, sena }: { reserva: Reserva; sim
         <div className="space-y-1.5 mb-2">
           {pagos.map((p) => (
             <div key={p.id} className="flex items-center gap-2 text-xs bg-slate-50 dark:bg-slate-900 rounded-lg px-2.5 py-1.5">
-              {p.monedaPago && p.monedaPago !== reserva.moneda ? (
+              {p.monedaPago && p.monedaPago !== moneda ? (
                 // Entró en otra moneda: mostramos lo que entró y el equivalente en la moneda de la reserva.
                 <span className="text-slate-700 dark:text-slate-200 font-medium">{SIMBOLO_MONEDA[p.monedaPago]}{(p.montoIngresado ?? p.monto).toLocaleString("es-AR")} <span className="text-slate-400 dark:text-slate-500 font-normal">· {simbolo}{p.monto.toLocaleString("es-AR")}</span></span>
               ) : p.montoArs != null ? (
