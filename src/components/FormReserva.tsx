@@ -688,11 +688,10 @@ function SeccionPagos({ reserva, simbolo, total, sena }: { reserva: Reserva; sim
   const saldo = Math.max(0, total - pagado);
 
   const [abrir, setAbrir] = useState(false);
-  // Cada pago puede entrar en pesos o dólares (o por % del total), sin importar la
-  // moneda de la reserva. Arranca en la moneda de la reserva.
-  const [modo, setModo] = useState<"ARS" | "USD" | "%">(esUSD ? "USD" : "ARS");
+  // La moneda en que entra el pago (pesos o dólares) es independiente de la moneda
+  // de la reserva. Arranca en la de la reserva. El % y "Saldar" llenan el importe.
+  const [modo, setModo] = useState<"ARS" | "USD">(esUSD ? "USD" : "ARS");
   const [monto, setMonto] = useState(0);
-  const [pct, setPct] = useState(0);
   const [medio, setMedio] = useState<string>(mediosPago[0]?.nombre ?? "Efectivo");
   const [fecha, setFecha] = useState(hoy);
   const [periodo, setPeriodo] = useState<string>(cc?.proxima?.periodo ?? "");
@@ -707,21 +706,26 @@ function SeccionPagos({ reserva, simbolo, total, sena }: { reserva: Reserva; sim
 
   const r2 = (n: number) => Math.round(n * 100) / 100;
   // ¿La moneda del pago difiere de la de la reserva? (requiere tipo de cambio)
-  const cruzada = modo !== "%" && modo !== reserva.moneda;
-  // Importe que realmente entró, en la moneda elegida.
-  const montoIngresado = modo === "%" ? r2((total * pct) / 100) : monto;
-  // Moneda en que entró el pago (en % es la de la reserva).
-  const monedaPagoSel: Moneda = modo === "%" ? reserva.moneda : (modo as Moneda);
+  const cruzada = modo !== reserva.moneda;
+  const montoIngresado = monto;        // lo que entró, en la moneda elegida
+  const monedaPagoSel: Moneda = modo;  // moneda del pago
   // montoReserva = equivalente en la moneda de la reserva (lo que se guarda en pago.monto y arma el saldo).
   let montoReserva = 0;
-  if (modo === "%") montoReserva = esUSD ? r2((total * pct) / 100) : Math.round((total * pct) / 100);
-  else if (!cruzada) montoReserva = monto;
+  if (!cruzada) montoReserva = monto;
   else if (esUSD) montoReserva = tipoCambio > 0 ? r2(monto / tipoCambio) : 0; // entró en pesos, reserva USD
   else montoReserva = Math.round(monto * tipoCambio); // entró en dólares, reserva en pesos
 
+  // Convierte un importe expresado en la moneda de la reserva a la moneda elegida del pago.
+  function aMonedaPago(montoEnReserva: number): number {
+    if (!cruzada) return esUSD ? r2(montoEnReserva) : Math.round(montoEnReserva);
+    if (esUSD) return Math.round(montoEnReserva * tipoCambio);          // reserva USD → pesos
+    return tipoCambio > 0 ? r2(montoEnReserva / tipoCambio) : 0;        // reserva ARS → dólares
+  }
+  const saldoTarget = largo && cc ? (cc.proxima?.saldo ?? saldo) : saldo;
+
   // Mostramos el tipo de cambio cuando hay dólares de por medio: pago en otra moneda
   // que la reserva (cruzada) o reserva en USD (para ver la equivalencia en pesos).
-  const mostrarTC = cruzada || (esUSD && modo !== "ARS");
+  const mostrarTC = cruzada || esUSD;
   // Equivalente en pesos cuando el monto guardado está en dólares (reserva USD).
   const equivPesos = esUSD && tipoCambio > 0 ? Math.round(montoReserva * tipoCambio) : null;
 
@@ -736,7 +740,7 @@ function SeccionPagos({ reserva, simbolo, total, sena }: { reserva: Reserva; sim
     };
     if (editId) updatePago(editId, datos);
     else addPago(datos);
-    setEditId(null); setMonto(0); setPct(0); setComprobante(undefined); setNota(""); setEsSena(false); setAbrir(false);
+    setEditId(null); setMonto(0); setComprobante(undefined); setNota(""); setEsSena(false); setAbrir(false);
   }
 
   // Abre el formulario precargado para editar un pago existente.
@@ -884,18 +888,10 @@ function SeccionPagos({ reserva, simbolo, total, sena }: { reserva: Reserva; sim
             <div className="flex rounded-md border border-slate-300 dark:border-slate-600 overflow-hidden text-xs">
               <button type="button" onClick={() => setModo("ARS")} className={modo === "ARS" ? "px-2 py-1 bg-teal-600 text-white" : "px-2 py-1 text-slate-500 dark:text-slate-400"}>pesos</button>
               <button type="button" onClick={() => setModo("USD")} className={modo === "USD" ? "px-2 py-1 bg-teal-600 text-white" : "px-2 py-1 text-slate-500 dark:text-slate-400"}>US$</button>
-              <button type="button" onClick={() => setModo("%")} className={modo === "%" ? "px-2 py-1 bg-teal-600 text-white" : "px-2 py-1 text-slate-500 dark:text-slate-400"}>%</button>
             </div>
-            {modo === "%" ? (
-              <div className="flex items-center gap-2 flex-1">
-                <input type="number" min={0} max={100} value={pct} onChange={(e) => setPct(Math.max(0, Math.min(100, Number(e.target.value))))} className="input w-20 text-right" />
-                <span className="text-xs text-slate-400">% del total = {simbolo}{montoReserva.toLocaleString("es-AR")}</span>
-              </div>
-            ) : (
-              <InputMonto value={monto} onChange={setMonto} decimales={modo === "USD"} className="flex-1" />
-            )}
-            <button type="button" onClick={() => { setModo("%"); setPct(30); }} className="text-xs text-teal-600 dark:text-teal-400 hover:underline whitespace-nowrap">Seña 30%</button>
-            <button type="button" onClick={() => { setModo(reserva.moneda === "USD" ? "USD" : "ARS"); setMonto(largo && cc ? (cc.proxima?.saldo ?? saldo) : saldo); }} className="text-xs text-teal-600 dark:text-teal-400 hover:underline whitespace-nowrap">Saldar</button>
+            <InputMonto value={monto} onChange={setMonto} decimales={modo === "USD"} className="flex-1" />
+            <button type="button" onClick={() => setMonto(aMonedaPago(total * 0.3))} className="text-xs text-teal-600 dark:text-teal-400 hover:underline whitespace-nowrap">Seña 30%</button>
+            <button type="button" onClick={() => setMonto(aMonedaPago(saldoTarget))} className="text-xs text-teal-600 dark:text-teal-400 hover:underline whitespace-nowrap">Saldar</button>
           </div>
 
           {/* Tipo de cambio: cuando hay dólares de por medio (pago en otra moneda o reserva USD). */}
@@ -906,7 +902,7 @@ function SeccionPagos({ reserva, simbolo, total, sena }: { reserva: Reserva; sim
               <span className="text-[10px] text-slate-400 dark:text-slate-500">{dolarOficial ? "oficial sugerido, editable" : "cargá el valor"}</span>
             </div>
           )}
-          {(cruzada || modo === "%" || equivPesos != null) && montoReserva > 0 && (
+          {(cruzada || equivPesos != null) && montoReserva > 0 && (
             <p className="text-xs text-slate-500 dark:text-slate-400">
               = <b>{simbolo}{montoReserva.toLocaleString("es-AR")}</b> en la moneda de la reserva
               {cruzada && <> · entró <b>{SIMBOLO_MONEDA[monedaPagoSel]}{montoIngresado.toLocaleString("es-AR")}</b></>}
