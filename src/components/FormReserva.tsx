@@ -705,6 +705,8 @@ function SeccionPagos({ reserva, simbolo, total, sena }: { reserva: Reserva; sim
   useEffect(() => { if (tipoCambio === 0 && dolarOficial) setTipoCambio(dolarOficial); }, [dolarOficial, tipoCambio]);
 
   const r2 = (n: number) => Math.round(n * 100) / 100;
+  // Tipo de cambio efectivo: lo que el usuario cargó, o el oficial como respaldo.
+  const tc = tipoCambio || dolarOficial || 0;
   // ¿La moneda del pago difiere de la de la reserva? (requiere tipo de cambio)
   const cruzada = modo !== reserva.moneda;
   const montoIngresado = monto;        // lo que entró, en la moneda elegida
@@ -712,22 +714,24 @@ function SeccionPagos({ reserva, simbolo, total, sena }: { reserva: Reserva; sim
   // montoReserva = equivalente en la moneda de la reserva (lo que se guarda en pago.monto y arma el saldo).
   let montoReserva = 0;
   if (!cruzada) montoReserva = monto;
-  else if (esUSD) montoReserva = tipoCambio > 0 ? r2(monto / tipoCambio) : 0; // entró en pesos, reserva USD
-  else montoReserva = Math.round(monto * tipoCambio); // entró en dólares, reserva en pesos
+  else if (esUSD) montoReserva = tc > 0 ? r2(monto / tc) : 0; // entró en pesos, reserva USD
+  else montoReserva = Math.round(monto * tc); // entró en dólares, reserva en pesos
 
   // Convierte un importe expresado en la moneda de la reserva a la moneda elegida del pago.
   function aMonedaPago(montoEnReserva: number): number {
     if (!cruzada) return esUSD ? r2(montoEnReserva) : Math.round(montoEnReserva);
-    if (esUSD) return Math.round(montoEnReserva * tipoCambio);          // reserva USD → pesos
-    return tipoCambio > 0 ? r2(montoEnReserva / tipoCambio) : 0;        // reserva ARS → dólares
+    if (esUSD) return Math.round(montoEnReserva * tc);          // reserva USD → pesos
+    return tc > 0 ? r2(montoEnReserva / tc) : 0;                // reserva ARS → dólares
   }
   const saldoTarget = largo && cc ? (cc.proxima?.saldo ?? saldo) : saldo;
+  // Cambiar la moneda del pago resetea el importe (50 USD no son 50 pesos).
+  function cambiarModo(m: "ARS" | "USD") { if (m !== modo) { setModo(m); setMonto(0); } }
 
   // Mostramos el tipo de cambio cuando hay dólares de por medio: pago en otra moneda
   // que la reserva (cruzada) o reserva en USD (para ver la equivalencia en pesos).
   const mostrarTC = cruzada || esUSD;
   // Equivalente en pesos cuando el monto guardado está en dólares (reserva USD).
-  const equivPesos = esUSD && tipoCambio > 0 ? Math.round(montoReserva * tipoCambio) : null;
+  const equivPesos = esUSD && tc > 0 ? Math.round(montoReserva * tc) : null;
 
   function registrar() {
     if (montoReserva <= 0) return;
@@ -886,8 +890,8 @@ function SeccionPagos({ reserva, simbolo, total, sena }: { reserva: Reserva; sim
         <div className="space-y-2 border-t border-slate-100 dark:border-slate-700 pt-2">
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex rounded-md border border-slate-300 dark:border-slate-600 overflow-hidden text-xs">
-              <button type="button" onClick={() => setModo("ARS")} className={modo === "ARS" ? "px-2 py-1 bg-teal-600 text-white" : "px-2 py-1 text-slate-500 dark:text-slate-400"}>pesos</button>
-              <button type="button" onClick={() => setModo("USD")} className={modo === "USD" ? "px-2 py-1 bg-teal-600 text-white" : "px-2 py-1 text-slate-500 dark:text-slate-400"}>US$</button>
+              <button type="button" onClick={() => cambiarModo("ARS")} className={modo === "ARS" ? "px-2 py-1 bg-teal-600 text-white" : "px-2 py-1 text-slate-500 dark:text-slate-400"}>pesos</button>
+              <button type="button" onClick={() => cambiarModo("USD")} className={modo === "USD" ? "px-2 py-1 bg-teal-600 text-white" : "px-2 py-1 text-slate-500 dark:text-slate-400"}>US$</button>
             </div>
             <InputMonto value={monto} onChange={setMonto} decimales={modo === "USD"} className="flex-1" />
             <button type="button" onClick={() => setMonto(aMonedaPago(total * 0.3))} className="text-xs text-teal-600 dark:text-teal-400 hover:underline whitespace-nowrap">Seña 30%</button>

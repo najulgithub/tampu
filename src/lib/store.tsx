@@ -317,10 +317,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [dolarOficial, setDolarOficial] = useState<number | null>(null);
 
   // Cotización del dólar oficial (para reservas en USD cobradas en pesos).
+  // Cacheamos el último valor en localStorage para no quedar sin cotización si la API falla.
   useEffect(() => {
+    try {
+      const cache = localStorage.getItem("dolarOficial");
+      if (cache && Number(cache) > 0) setDolarOficial(Number(cache));
+    } catch {}
     fetch("https://dolarapi.com/v1/dolares/oficial")
       .then((r) => r.json())
-      .then((d) => { if (typeof d?.venta === "number") setDolarOficial(d.venta); })
+      .then((d) => {
+        if (typeof d?.venta === "number" && d.venta > 0) {
+          setDolarOficial(d.venta);
+          try { localStorage.setItem("dolarOficial", String(d.venta)); } catch {}
+        }
+      })
       .catch(() => {});
   }, []);
 
