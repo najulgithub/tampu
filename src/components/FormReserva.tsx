@@ -776,7 +776,7 @@ function SeccionPagos({ reserva, simbolo, total, sena }: { reserva: Reserva; sim
   return (
     <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{largo ? "Cuenta corriente" : "Pagos"}</span>
+        <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{largo ? "Cuenta corriente" : "Pagos"} <span className="text-[10px] font-normal text-slate-400 dark:text-slate-500">v2</span></span>
         {largo && cc ? (
           <span className={`text-sm font-semibold ${cc.saldoVencido > 0 ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"}`}>
             {cc.saldoVencido > 0 ? `Vencido ${simbolo}${cc.saldoVencido.toLocaleString("es-AR")}` : "Al día ✓"}
