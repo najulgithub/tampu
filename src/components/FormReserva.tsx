@@ -91,8 +91,12 @@ export default function FormReserva({
 
   // ----- Comisiones a Personal -----
   const personalActivo = personal.filter((p) => p.activo);
-  // Neto sobre el que se calculan los %: alquiler − comisión de plataforma. En la moneda de la reserva.
-  const netoComision = Math.max(0, totalEfectivo - (esOTA ? comision : 0));
+  // Importes fijos cargados (la limpieza). Están en pesos; para reservas USD se
+  // convierten al dólar oficial para poder restarlos del neto (que va en la moneda de la reserva).
+  const fijasPesos = comisiones.filter((c) => c.personalId && c.modo === "fijo").reduce((a, c) => a + (c.valor || 0), 0);
+  const fijasEnReserva = moneda === "USD" ? (dolarOficial && dolarOficial > 0 ? fijasPesos / dolarOficial : 0) : fijasPesos;
+  // Neto sobre el que se calculan los %: total − comisión de plataforma − importes fijos (limpieza).
+  const netoComision = Math.max(0, totalEfectivo - (esOTA ? comision : 0) - fijasEnReserva);
   // Monto de una línea de comisión, en la moneda de la reserva (para % ) — para mostrar.
   function montoComisionMoneda(c: ComisionPersonal): number {
     if (c.modo === "fijo") return c.valor || 0; // ya en pesos
@@ -303,7 +307,7 @@ export default function FormReserva({
             <p className="text-xs text-slate-400 dark:text-slate-500">Sin comisiones. Sumá quién recibe, gestiona o limpia y cuánto se lleva.</p>
           ) : (
             <>
-              <p className="text-[11px] text-slate-400 dark:text-slate-500">Neto base: <b>{simbolo}{netoComision.toLocaleString("es-AR")}</b> (alquiler − comisión de plataforma)</p>
+              <p className="text-[11px] text-slate-400 dark:text-slate-500">Neto base del %: <b>{simbolo}{netoComision.toLocaleString("es-AR")}</b> (total − comisión de plataforma − importes fijos/limpieza)</p>
               {comisiones.map((c, i) => (
                 <div key={i} className="rounded-md bg-slate-50 dark:bg-slate-900 p-2 space-y-2">
                   <div className="flex items-center gap-2">
