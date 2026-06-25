@@ -13,28 +13,29 @@ import { subirArchivo } from "@/lib/storage";
 type TabGasto = "mov" | "ing" | "prog" | "prov" | "personal" | "pres";
 
 export default function Gastos() {
+  const { t } = useStore();
   const [tab, setTab] = useState<TabGasto>("mov");
   const tabs: { v: TabGasto; label: string }[] = [
-    { v: "mov", label: "Movimientos" },
-    { v: "ing", label: "Otros ingresos" },
-    { v: "prog", label: "Programados" },
-    { v: "prov", label: "Proveedores" },
-    { v: "personal", label: "Personal" },
-    { v: "pres", label: "Presupuestos" },
+    { v: "mov", label: t("Movimientos") },
+    { v: "ing", label: t("Otros ingresos") },
+    { v: "prog", label: t("Programados") },
+    { v: "prov", label: t("Proveedores") },
+    { v: "personal", label: t("Personal") },
+    { v: "pres", label: t("Presupuestos") },
   ];
   return (
     <div>
-      <h1 className="font-display text-2xl font-semibold text-slate-800 dark:text-slate-100 mb-1">Gastos</h1>
+      <h1 className="font-display text-2xl font-semibold text-slate-800 dark:text-slate-100 mb-1">{t("Gastos")}</h1>
       <div className="flex gap-1 mb-5 border-b border-slate-200 dark:border-slate-700 overflow-x-auto">
-        {tabs.map((t) => (
+        {tabs.map((it) => (
           <button
-            key={t.v}
-            onClick={() => setTab(t.v)}
-            className={tab === t.v
+            key={it.v}
+            onClick={() => setTab(it.v)}
+            className={tab === it.v
               ? "px-4 py-2 text-sm font-medium text-teal-600 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-400 -mb-px whitespace-nowrap"
               : "px-4 py-2 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 whitespace-nowrap"}
           >
-            {t.label}
+            {it.label}
           </button>
         ))}
       </div>
@@ -45,6 +46,7 @@ export default function Gastos() {
 
 // Estrellas de puntuación (lectura o edición).
 function Estrellas({ valor, onChange, size = 16 }: { valor: number; onChange?: (n: number) => void; size?: number }) {
+  const { t } = useStore();
   return (
     <span className="inline-flex items-center gap-0.5">
       {[1, 2, 3, 4, 5].map((n) => (
@@ -55,7 +57,7 @@ function Estrellas({ valor, onChange, size = 16 }: { valor: number; onChange?: (
           onClick={() => onChange?.(n === valor ? 0 : n)}
           className={`${onChange ? "cursor-pointer" : "cursor-default"} leading-none`}
           style={{ fontSize: size }}
-          aria-label={`${n} estrellas`}
+          aria-label={`${n} ${t("estrellas")}`}
         >
           <span className={n <= valor ? "text-amber-400" : "text-slate-300 dark:text-slate-600"}>★</span>
         </button>
@@ -65,7 +67,7 @@ function Estrellas({ valor, onChange, size = 16 }: { valor: number; onChange?: (
 }
 
 function Movimientos() {
-  const { gastos, unidades, grupos, getUnidad, nombreGrupo, puedeEditar } = useStore();
+  const { gastos, unidades, grupos, getUnidad, nombreGrupo, puedeEditar, t } = useStore();
   const puedeEdit = puedeEditar("gastos");
   const [abrirNuevo, setAbrirNuevo] = useState(false);
   const [editando, setEditando] = useState<Gasto | undefined>();
@@ -73,10 +75,10 @@ function Movimientos() {
 
   const etiquetaAmbito = (g: Gasto) =>
     g.ambito === "general"
-      ? "Negocio (general)"
+      ? t("Negocio (general)")
       : g.ambito === "unidad"
-      ? getUnidad(g.refId)?.nombre ?? "Unidad eliminada"
-      : `${nombreGrupo(g.refId)} (grupo)`;
+      ? getUnidad(g.refId)?.nombre ?? t("Unidad eliminada")
+      : `${nombreGrupo(g.refId)} (${t("grupo")})`;
 
   // Para el filtro por unidad incluimos los gastos de grupo que la prorratean.
   const coincide = (g: Gasto) => {
@@ -108,7 +110,7 @@ function Movimientos() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <p className="text-sm text-slate-500 dark:text-slate-400">
-          {lista.length} {lista.length === 1 ? "gasto" : "gastos"} · Total{" "}
+          {lista.length} {lista.length === 1 ? t("gasto") : t("gastos")} · {t("Total")}{" "}
           <span className="font-medium text-slate-700 dark:text-slate-200">
             <Monto valor={total} />
           </span>
@@ -118,7 +120,7 @@ function Movimientos() {
             onClick={() => setAbrirNuevo(true)}
             className="rounded-lg bg-teal-600 text-white px-4 py-2 text-sm font-medium hover:bg-teal-700 transition"
           >
-            + Agregar gasto
+            + {t("Agregar gasto")}
           </button>
         )}
       </div>
@@ -126,13 +128,13 @@ function Movimientos() {
       {/* Filtro */}
       <div className="mb-4">
         <select value={filtro} onChange={(e) => setFiltro(e.target.value)} className="input max-w-xs">
-          <option value="">Todos los gastos</option>
-          <optgroup label="Unidades">
+          <option value="">{t("Todos los gastos")}</option>
+          <optgroup label={t("Unidades")}>
             {unidades.map((u) => (
               <option key={u.id} value={`u:${u.id}`}>{u.nombre}</option>
             ))}
           </optgroup>
-          <optgroup label="Grupos">
+          <optgroup label={t("Grupos")}>
             {grupos.map((g) => (
               <option key={g.id} value={`g:${g.id}`}>{g.nombre}</option>
             ))}
@@ -140,20 +142,20 @@ function Movimientos() {
         </select>
         {filtraUnidad && (
           <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
-            Mostrando la parte prorrateada de los gastos de grupo.
+            {t("Mostrando la parte prorrateada de los gastos de grupo.")}
           </p>
         )}
       </div>
 
       {pendientes.length > 0 && (
         <div className="mb-4 rounded-xl border border-amber-300/70 dark:border-amber-500/30 bg-amber-50/70 dark:bg-amber-500/10 px-4 py-2.5 text-sm text-amber-800 dark:text-amber-300">
-          ⏳ Tenés <b>{pendientes.length}</b> {pendientes.length === 1 ? "gasto variable esperando" : "gastos variables esperando"} que cargues el importe (luz, gas, expensas…). Tocá cada uno para completarlo.
+          ⏳ {t("Tenés")} <b>{pendientes.length}</b> {pendientes.length === 1 ? t("gasto variable esperando") : t("gastos variables esperando")} {t("que cargues el importe (luz, gas, expensas…). Tocá cada uno para completarlo.")}
         </div>
       )}
 
       {lista.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-600 p-10 text-center text-slate-500 dark:text-slate-400">
-          No hay gastos cargados {filtro && "para este filtro"}.
+          {t("No hay gastos cargados")} {filtro && t("para este filtro")}.
         </div>
       ) : (
         <div className="space-y-2">
@@ -164,29 +166,29 @@ function Movimientos() {
               className={`w-full text-left flex items-center gap-3 bg-white dark:bg-slate-800 rounded-xl border shadow-sm p-3 transition ${g.pendiente ? "border-amber-300 dark:border-amber-500/40 hover:border-amber-400" : "border-slate-200 dark:border-slate-700/70 hover:border-teal-400 dark:hover:border-teal-500"}`}
             >
               <span className={`shrink-0 text-xs px-2 py-1 rounded-full ${COLOR_CATEGORIA[g.categoria].bg} ${COLOR_CATEGORIA[g.categoria].texto}`}>
-                {g.categoria}
+                {t(g.categoria)}
               </span>
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">
-                  {g.descripcion || g.categoria}
-                  {g.pendiente && <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400">cargar importe</span>}
-                  {g.pagadoPor === "inquilino" && <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-400">pagó inquilino</span>}
+                  {g.descripcion || t(g.categoria)}
+                  {g.pendiente && <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400">{t("cargar importe")}</span>}
+                  {g.pagadoPor === "inquilino" && <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-400">{t("pagó inquilino")}</span>}
                 </div>
                 <div className="text-xs text-slate-500 dark:text-slate-400 truncate">
                   {etiquetaAmbito(g)} · {formatearFecha(g.fecha)}
                   {g.proveedor && ` · ${g.proveedor}`}
-                  {g.ambito === "grupo" && " · prorrateado"}
-                  {g.claveOrigen && " · auto"}
+                  {g.ambito === "grupo" && ` · ${t("prorrateado")}`}
+                  {g.claveOrigen && ` · ${t("auto")}`}
                   {g.comprobante && " · 📎"}
                 </div>
               </div>
               <div className="shrink-0 text-right">
                 <div className="text-sm font-medium text-slate-700 dark:text-slate-200">
-                  {g.pendiente ? <span className="text-amber-600 dark:text-amber-400">a cargar</span> : <Monto valor={montoVisible(g)} />}
+                  {g.pendiente ? <span className="text-amber-600 dark:text-amber-400">{t("a cargar")}</span> : <Monto valor={montoVisible(g)} />}
                 </div>
                 {filtraUnidad && g.ambito === "grupo" && (
                   <div className="text-xs text-slate-400 dark:text-slate-500">
-                    de <Monto valor={g.monto} />
+                    {t("de")} <Monto valor={g.monto} />
                   </div>
                 )}
               </div>
@@ -203,7 +205,7 @@ function Movimientos() {
 
 // ---------- Pestaña Otros ingresos ----------
 function Ingresos() {
-  const { ingresos, getUnidad, nombreGrupo, puedeEditar } = useStore();
+  const { ingresos, getUnidad, nombreGrupo, puedeEditar, t } = useStore();
   const puedeEdit = puedeEditar("gastos");
   const [abrir, setAbrir] = useState(false);
   const [editando, setEditando] = useState<Ingreso | undefined>();
@@ -213,28 +215,28 @@ function Ingresos() {
 
   const etiqueta = (i: Ingreso) =>
     i.ambito === "general"
-      ? "Negocio (general)"
+      ? t("Negocio (general)")
       : i.ambito === "unidad"
-      ? getUnidad(i.refId)?.nombre ?? "Unidad eliminada"
-      : `${nombreGrupo(i.refId)} (grupo)`;
+      ? getUnidad(i.refId)?.nombre ?? t("Unidad eliminada")
+      : `${nombreGrupo(i.refId)} (${t("grupo")})`;
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6 gap-3">
         <p className="text-sm text-slate-500 dark:text-slate-400">
-          Ingresos que no son alquiler: venta de muebles, electrodomésticos, reintegros… Suman en el informe económico.{" "}
-          {lista.length > 0 && <>Total <span className="font-medium text-slate-700 dark:text-slate-200"><Monto valor={total} /></span></>}
+          {t("Ingresos que no son alquiler: venta de muebles, electrodomésticos, reintegros… Suman en el informe económico.")}{" "}
+          {lista.length > 0 && <>{t("Total")} <span className="font-medium text-slate-700 dark:text-slate-200"><Monto valor={total} /></span></>}
         </p>
         {puedeEdit && (
           <button onClick={() => setAbrir(true)} className="rounded-lg bg-teal-600 text-white px-4 py-2 text-sm font-medium hover:bg-teal-700 transition shrink-0">
-            + Ingreso
+            + {t("Ingreso")}
           </button>
         )}
       </div>
 
       {lista.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-600 p-10 text-center text-slate-500 dark:text-slate-400">
-          No cargaste otros ingresos.
+          {t("No cargaste otros ingresos.")}
         </div>
       ) : (
         <div className="space-y-2">
@@ -244,10 +246,10 @@ function Ingresos() {
               onClick={() => setEditando(i)}
               className="w-full text-left flex items-center gap-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/70 shadow-sm p-3 hover:border-teal-400 dark:hover:border-teal-500 transition"
             >
-              <span className="shrink-0 text-xs px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">{i.categoria}</span>
+              <span className="shrink-0 text-xs px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">{t(i.categoria)}</span>
               <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">{i.descripcion || i.categoria}</div>
-                <div className="text-xs text-slate-500 dark:text-slate-400 truncate">{etiqueta(i)} · {formatearFecha(i.fecha)}{i.ambito === "grupo" && " · prorrateado"}</div>
+                <div className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">{i.descripcion || t(i.categoria)}</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400 truncate">{etiqueta(i)} · {formatearFecha(i.fecha)}{i.ambito === "grupo" && ` · ${t("prorrateado")}`}</div>
               </div>
               <div className="shrink-0 text-sm font-medium text-emerald-600 dark:text-emerald-400">+<Monto valor={i.monto} /></div>
             </button>
@@ -262,7 +264,7 @@ function Ingresos() {
 }
 
 function FormIngreso({ ingreso, onCerrar }: { ingreso?: Ingreso; onCerrar: () => void }) {
-  const { unidades, grupos, addIngreso, updateIngreso, deleteIngreso } = useStore();
+  const { unidades, grupos, addIngreso, updateIngreso, deleteIngreso, t } = useStore();
   const esEdicion = Boolean(ingreso);
   const [ambito, setAmbito] = useState<AmbitoGasto>(ingreso?.ambito ?? "unidad");
   const [refId, setRefId] = useState(ingreso?.refId ?? unidades[0]?.id ?? "");
@@ -301,56 +303,56 @@ function FormIngreso({ ingreso, onCerrar }: { ingreso?: Ingreso; onCerrar: () =>
   }
 
   return (
-    <Overlay titulo={esEdicion ? "Editar ingreso" : "Nuevo ingreso"} onCerrar={onCerrar}>
+    <Overlay titulo={esEdicion ? t("Editar ingreso") : t("Nuevo ingreso")} onCerrar={onCerrar}>
       <form onSubmit={(e) => { e.preventDefault(); guardar(); }} className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
-          <Campo label="Imputar a">
+          <Campo label={t("Imputar a")}>
             <select value={ambito} onChange={(e) => cambiarAmbito(e.target.value as AmbitoGasto)} className="input">
-              <option value="unidad">Una unidad</option>
-              <option value="grupo">Un grupo</option>
-              <option value="general">Todo el negocio</option>
+              <option value="unidad">{t("Una unidad")}</option>
+              <option value="grupo">{t("Un grupo")}</option>
+              <option value="general">{t("Todo el negocio")}</option>
             </select>
           </Campo>
           {ambito === "general" ? (
-            <Campo label="Reparto">
-              <p className="text-xs text-slate-400 dark:text-slate-500 pt-2.5">Se prorratea entre todas las unidades.</p>
+            <Campo label={t("Reparto")}>
+              <p className="text-xs text-slate-400 dark:text-slate-500 pt-2.5">{t("Se prorratea entre todas las unidades.")}</p>
             </Campo>
           ) : (
-            <Campo label={ambito === "unidad" ? "Unidad" : "Grupo"}>
+            <Campo label={ambito === "unidad" ? t("Unidad") : t("Grupo")}>
               <select value={refId} onChange={(e) => setRefId(e.target.value)} className="input">
-                {opciones.length === 0 && <option value="">— ninguno —</option>}
+                {opciones.length === 0 && <option value="">{t("— ninguno —")}</option>}
                 {opciones.map((o) => (<option key={o.id} value={o.id}>{o.nombre}</option>))}
               </select>
-              {ambito === "grupo" && <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Se reparte en partes iguales entre las unidades del grupo.</p>}
+              {ambito === "grupo" && <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">{t("Se reparte en partes iguales entre las unidades del grupo.")}</p>}
             </Campo>
           )}
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <Campo label="Fecha">
+          <Campo label={t("Fecha")}>
             <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} className="input" />
           </Campo>
-          <Campo label="Categoría">
+          <Campo label={t("Categoría")}>
             <select value={categoria} onChange={(e) => setCategoria(e.target.value as CategoriaIngreso)} className="input">
-              {CATEGORIAS_INGRESO.map((c) => (<option key={c} value={c}>{c}</option>))}
+              {CATEGORIAS_INGRESO.map((c) => (<option key={c} value={c}>{t(c)}</option>))}
             </select>
           </Campo>
         </div>
 
-        <Campo label="Descripción">
-          <input value={descripcion} onChange={(e) => setDescripcion(e.target.value)} className="input" placeholder="ej: Venta de heladera vieja" />
+        <Campo label={t("Descripción")}>
+          <input value={descripcion} onChange={(e) => setDescripcion(e.target.value)} className="input" placeholder={t("ej: Venta de heladera vieja")} />
         </Campo>
-        <Campo label="Monto ($)">
+        <Campo label={t("Monto ($)")}>
           <InputMonto value={monto} onChange={setMonto} />
         </Campo>
 
         <div className="flex justify-between items-center pt-2">
           {esEdicion ? (
-            <button type="button" onClick={() => { if (ingreso && confirm("¿Eliminar este ingreso?")) { deleteIngreso(ingreso.id); onCerrar(); } }} className="text-sm text-rose-600 hover:text-rose-700 dark:text-rose-400">Eliminar</button>
+            <button type="button" onClick={() => { if (ingreso && confirm(t("¿Eliminar este ingreso?"))) { deleteIngreso(ingreso.id); onCerrar(); } }} className="text-sm text-rose-600 hover:text-rose-700 dark:text-rose-400">{t("Eliminar")}</button>
           ) : <span />}
           <div className="flex gap-2">
-            <button type="button" onClick={onCerrar} className="btn-secundario">Cancelar</button>
-            <button type="submit" disabled={!valido} className="btn-primario">Guardar</button>
+            <button type="button" onClick={onCerrar} className="btn-secundario">{t("Cancelar")}</button>
+            <button type="submit" disabled={!valido} className="btn-primario">{t("Guardar")}</button>
           </div>
         </div>
       </form>
@@ -360,17 +362,17 @@ function FormIngreso({ ingreso, onCerrar }: { ingreso?: Ingreso; onCerrar: () =>
 
 // ---------- Pestaña Programados ----------
 function Programados() {
-  const { gastosProgramados, getUnidad, nombreGrupo, puedeEditar, unidades, suscripcion, addProgramado } = useStore();
+  const { gastosProgramados, getUnidad, nombreGrupo, puedeEditar, unidades, suscripcion, addProgramado, t } = useStore();
   const puedeEdit = puedeEditar("gastos");
   const [abrir, setAbrir] = useState(false);
   const [editando, setEditando] = useState<GastoProgramado | undefined>();
 
   const etiqueta = (p: GastoProgramado) =>
     p.ambito === "general"
-      ? "Negocio (general)"
+      ? t("Negocio (general)")
       : p.ambito === "unidad"
-      ? getUnidad(p.refId)?.nombre ?? "Unidad eliminada"
-      : `${nombreGrupo(p.refId)} (grupo)`;
+      ? getUnidad(p.refId)?.nombre ?? t("Unidad eliminada")
+      : `${nombreGrupo(p.refId)} (${t("grupo")})`;
 
   // ¿Ya está cargado el gasto de la suscripción a tampu?
   const yaEstaTampu = gastosProgramados.some((p) => p.proveedor === "tampu");
@@ -395,11 +397,11 @@ function Programados() {
     <div>
       <div className="flex items-center justify-between mb-6 gap-3">
         <p className="text-sm text-slate-500 dark:text-slate-400">
-          Gastos que se generan solos: por frecuencia o cuando se va un huésped.
+          {t("Gastos que se generan solos: por frecuencia o cuando se va un huésped.")}
         </p>
         {puedeEdit && (
           <button onClick={() => setAbrir(true)} className="rounded-lg bg-teal-600 text-white px-4 py-2 text-sm font-medium hover:bg-teal-700 transition shrink-0">
-            + Programar gasto
+            + {t("Programar gasto")}
           </button>
         )}
       </div>
@@ -407,18 +409,18 @@ function Programados() {
       {puedeEdit && !yaEstaTampu && precioTampu > 0 && (
         <div className="mb-5 flex items-center justify-between gap-3 rounded-xl border border-teal-200 dark:border-teal-500/30 bg-teal-50/60 dark:bg-teal-500/10 p-3">
           <div className="min-w-0">
-            <div className="text-sm font-medium text-slate-700 dark:text-slate-200">¿Sumás tu suscripción a tampu como gasto?</div>
-            <div className="text-xs text-slate-500 dark:text-slate-400">Mensual de ${precioTampu.toLocaleString("es-AR")}, prorrateado entre tus unidades.</div>
+            <div className="text-sm font-medium text-slate-700 dark:text-slate-200">{t("¿Sumás tu suscripción a tampu como gasto?")}</div>
+            <div className="text-xs text-slate-500 dark:text-slate-400">{t("Mensual de")} ${precioTampu.toLocaleString("es-AR")}, {t("prorrateado entre tus unidades.")}</div>
           </div>
           <button onClick={agregarTampu} className="shrink-0 rounded-lg bg-teal-600 text-white px-3 py-2 text-sm font-medium hover:bg-teal-700 transition">
-            Agregame como gasto
+            {t("Agregame como gasto")}
           </button>
         </div>
       )}
 
       {gastosProgramados.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-600 p-10 text-center text-slate-500 dark:text-slate-400">
-          No hay gastos programados.
+          {t("No hay gastos programados.")}
         </div>
       ) : (
         <div className="space-y-2">
@@ -429,17 +431,17 @@ function Programados() {
               className="w-full text-left flex items-center gap-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/70 shadow-sm p-3 hover:border-teal-400 dark:hover:border-teal-500 transition"
             >
               <span className={`shrink-0 text-xs px-2 py-1 rounded-full ${COLOR_FRECUENCIA[p.frecuencia].bg} ${COLOR_FRECUENCIA[p.frecuencia].texto}`}>
-                {p.frecuencia}
+                {t(p.frecuencia)}
               </span>
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">
-                  {p.descripcion || p.categoria}
-                  {!p.activo && <span className="text-xs text-slate-400 dark:text-slate-500"> · pausado</span>}
+                  {p.descripcion || t(p.categoria)}
+                  {!p.activo && <span className="text-xs text-slate-400 dark:text-slate-500"> · {t("pausado")}</span>}
                 </div>
-                <div className="text-xs text-slate-500 dark:text-slate-400 truncate">{etiqueta(p)} · {p.categoria}</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400 truncate">{etiqueta(p)} · {t(p.categoria)}</div>
               </div>
               <div className="shrink-0 text-sm font-medium text-slate-700 dark:text-slate-200">
-                {p.variable ? <span className="text-amber-600 dark:text-amber-400">Variable</span> : `$${p.monto.toLocaleString("es-AR")}`}
+                {p.variable ? <span className="text-amber-600 dark:text-amber-400">{t("Variable")}</span> : `$${p.monto.toLocaleString("es-AR")}`}
               </div>
             </button>
           ))}
@@ -453,7 +455,7 @@ function Programados() {
 }
 
 function FormProgramado({ programado, onCerrar }: { programado?: GastoProgramado; onCerrar: () => void }) {
-  const { unidades, grupos, addProgramado, updateProgramado, deleteProgramado } = useStore();
+  const { unidades, grupos, addProgramado, updateProgramado, deleteProgramado, t } = useStore();
   const esEdicion = Boolean(programado);
 
   const [ambito, setAmbito] = useState<AmbitoGasto>(programado?.ambito ?? "unidad");
@@ -481,22 +483,22 @@ function FormProgramado({ programado, onCerrar }: { programado?: GastoProgramado
   }
 
   return (
-    <Overlay titulo={esEdicion ? "Editar gasto programado" : "Programar gasto"} onCerrar={onCerrar}>
+    <Overlay titulo={esEdicion ? t("Editar gasto programado") : t("Programar gasto")} onCerrar={onCerrar}>
       <form onSubmit={(e) => { e.preventDefault(); guardar(); }} className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
-          <Campo label="Imputar a">
+          <Campo label={t("Imputar a")}>
             <select value={ambito} onChange={(e) => { const a = e.target.value as AmbitoGasto; setAmbito(a); setRefId(a === "general" ? "" : (a === "unidad" ? unidades[0]?.id : grupos[0]?.id) ?? ""); }} className="input">
-              <option value="unidad">Una unidad</option>
-              <option value="grupo">Un grupo</option>
-              <option value="general">Todo el negocio</option>
+              <option value="unidad">{t("Una unidad")}</option>
+              <option value="grupo">{t("Un grupo")}</option>
+              <option value="general">{t("Todo el negocio")}</option>
             </select>
           </Campo>
           {ambito === "general" ? (
-            <Campo label="Reparto">
-              <p className="text-xs text-slate-400 dark:text-slate-500 pt-2.5">Se prorratea entre todas las unidades.</p>
+            <Campo label={t("Reparto")}>
+              <p className="text-xs text-slate-400 dark:text-slate-500 pt-2.5">{t("Se prorratea entre todas las unidades.")}</p>
             </Campo>
           ) : (
-            <Campo label={ambito === "unidad" ? "Unidad" : "Grupo"}>
+            <Campo label={ambito === "unidad" ? t("Unidad") : t("Grupo")}>
               <select value={refId} onChange={(e) => setRefId(e.target.value)} className="input">
                 {opciones.map((o) => (<option key={o.id} value={o.id}>{o.nombre}</option>))}
               </select>
@@ -505,13 +507,13 @@ function FormProgramado({ programado, onCerrar }: { programado?: GastoProgramado
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <Campo label="Frecuencia">
+          <Campo label={t("Frecuencia")}>
             <select value={frecuencia} onChange={(e) => setFrecuencia(e.target.value as Frecuencia)} className="input">
-              {FRECUENCIAS.map((f) => (<option key={f} value={f}>{f}</option>))}
+              {FRECUENCIAS.map((f) => (<option key={f} value={f}>{t(f)}</option>))}
             </select>
           </Campo>
           {!porEvento && (
-            <Campo label="Desde">
+            <Campo label={t("Desde")}>
               <input type="date" value={fechaInicio} onChange={(e) => setFechaInicio(e.target.value)} className="input" />
             </Campo>
           )}
@@ -519,55 +521,55 @@ function FormProgramado({ programado, onCerrar }: { programado?: GastoProgramado
 
         {porEvento && (
           <p className="text-xs text-slate-400 dark:text-slate-500">
-            Se generará un gasto automáticamente en cada check-out de {ambito === "unidad" ? "la unidad" : "las unidades del grupo"}.
+            {t("Se generará un gasto automáticamente en cada check-out de")} {ambito === "unidad" ? t("la unidad") : t("las unidades del grupo")}.
           </p>
         )}
 
         {!porEvento && (
           <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 px-3 py-2">
             <input type="checkbox" checked={variable} onChange={(e) => setVariable(e.target.checked)} />
-            <span>Importe variable (luz, gas, expensas…) — lo cargo cada mes</span>
+            <span>{t("Importe variable (luz, gas, expensas…) — lo cargo cada mes")}</span>
           </label>
         )}
 
         <div className="grid grid-cols-2 gap-4">
-          <Campo label="Categoría">
+          <Campo label={t("Categoría")}>
             <select value={categoria} onChange={(e) => setCategoria(e.target.value as CategoriaGasto)} className="input">
-              {CATEGORIAS_GASTO.map((c) => (<option key={c} value={c}>{c}</option>))}
+              {CATEGORIAS_GASTO.map((c) => (<option key={c} value={c}>{t(c)}</option>))}
             </select>
           </Campo>
           {esVariable ? (
-            <Campo label="Monto">
-              <p className="text-xs text-slate-400 dark:text-slate-500 pt-2.5">Se carga cada mes.</p>
+            <Campo label={t("Monto")}>
+              <p className="text-xs text-slate-400 dark:text-slate-500 pt-2.5">{t("Se carga cada mes.")}</p>
             </Campo>
           ) : (
-            <Campo label="Monto ($)">
+            <Campo label={t("Monto ($)")}>
               <InputMonto value={monto} onChange={setMonto} />
             </Campo>
           )}
         </div>
 
-        <Campo label="Descripción">
-          <input value={descripcion} onChange={(e) => setDescripcion(e.target.value)} className="input" placeholder="ej: Expensas mensuales" />
+        <Campo label={t("Descripción")}>
+          <input value={descripcion} onChange={(e) => setDescripcion(e.target.value)} className="input" placeholder={t("ej: Expensas mensuales")} />
         </Campo>
-        <Campo label="Proveedor">
-          <input value={proveedor} onChange={(e) => setProveedor(e.target.value)} className="input" placeholder="opcional" />
+        <Campo label={t("Proveedor")}>
+          <input value={proveedor} onChange={(e) => setProveedor(e.target.value)} className="input" placeholder={t("opcional")} />
         </Campo>
 
         <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
           <input type="checkbox" checked={activo} onChange={(e) => setActivo(e.target.checked)} />
-          Activo
+          {t("Activo")}
         </label>
 
         <div className="flex justify-between items-center pt-2">
           {esEdicion ? (
-            <button type="button" onClick={() => { if (programado && confirm("¿Eliminar este programado y los gastos que generó?")) { deleteProgramado(programado.id); onCerrar(); } }} className="text-sm text-rose-600 hover:text-rose-700 dark:text-rose-400">
-              Eliminar
+            <button type="button" onClick={() => { if (programado && confirm(t("¿Eliminar este programado y los gastos que generó?"))) { deleteProgramado(programado.id); onCerrar(); } }} className="text-sm text-rose-600 hover:text-rose-700 dark:text-rose-400">
+              {t("Eliminar")}
             </button>
           ) : <span />}
           <div className="flex gap-2">
-            <button type="button" onClick={onCerrar} className="btn-secundario">Cancelar</button>
-            <button type="submit" disabled={!valido} className="btn-primario">Guardar</button>
+            <button type="button" onClick={onCerrar} className="btn-secundario">{t("Cancelar")}</button>
+            <button type="submit" disabled={!valido} className="btn-primario">{t("Guardar")}</button>
           </div>
         </div>
       </form>
@@ -576,7 +578,7 @@ function FormProgramado({ programado, onCerrar }: { programado?: GastoProgramado
 }
 
 function FormGasto({ gasto, onCerrar, presupuesto }: { gasto?: Gasto; onCerrar: () => void; presupuesto?: Presupuesto }) {
-  const { unidades, grupos, addGasto, updateGasto, deleteGasto, proveedores } = useStore();
+  const { unidades, grupos, addGasto, updateGasto, deleteGasto, proveedores, t } = useStore();
   const esEdicion = Boolean(gasto);
 
   const [ambito, setAmbito] = useState<AmbitoGasto>(gasto?.ambito ?? presupuesto?.ambito ?? "unidad");
@@ -686,28 +688,28 @@ function FormGasto({ gasto, onCerrar, presupuesto }: { gasto?: Gasto; onCerrar: 
   }
 
   return (
-    <Overlay titulo={esEdicion ? "Editar gasto" : "Nuevo gasto"} onCerrar={onCerrar}>
+    <Overlay titulo={esEdicion ? t("Editar gasto") : t("Nuevo gasto")} onCerrar={onCerrar}>
       <form onSubmit={(e) => { e.preventDefault(); guardar(); }} className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
-          <Campo label="Imputar a">
+          <Campo label={t("Imputar a")}>
             <select value={ambito} onChange={(e) => cambiarAmbito(e.target.value as AmbitoGasto)} className="input">
-              <option value="unidad">Una unidad</option>
-              <option value="grupo">Un grupo</option>
-              <option value="general">Todo el negocio</option>
+              <option value="unidad">{t("Una unidad")}</option>
+              <option value="grupo">{t("Un grupo")}</option>
+              <option value="general">{t("Todo el negocio")}</option>
             </select>
           </Campo>
           {ambito === "general" ? (
-            <Campo label="Reparto">
-              <p className="text-xs text-slate-400 dark:text-slate-500 pt-2.5">Se prorratea entre todas las unidades.</p>
+            <Campo label={t("Reparto")}>
+              <p className="text-xs text-slate-400 dark:text-slate-500 pt-2.5">{t("Se prorratea entre todas las unidades.")}</p>
             </Campo>
           ) : (
-            <Campo label={ambito === "unidad" ? "Unidad" : "Grupo"}>
+            <Campo label={ambito === "unidad" ? t("Unidad") : t("Grupo")}>
               <select
                 value={refId}
                 onChange={(e) => (ambito === "grupo" ? cambiarGrupo(e.target.value) : setRefId(e.target.value))}
                 className="input"
               >
-                {opciones.length === 0 && <option value="">— ninguno —</option>}
+                {opciones.length === 0 && <option value="">{t("— ninguno —")}</option>}
                 {opciones.map((o) => (
                   <option key={o.id} value={o.id}>{o.nombre}</option>
                 ))}
@@ -717,48 +719,48 @@ function FormGasto({ gasto, onCerrar, presupuesto }: { gasto?: Gasto; onCerrar: 
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <Campo label="Fecha">
+          <Campo label={t("Fecha")}>
             <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} className="input" />
           </Campo>
-          <Campo label="Categoría">
+          <Campo label={t("Categoría")}>
             <select value={categoria} onChange={(e) => setCategoria(e.target.value as CategoriaGasto)} className="input">
               {CATEGORIAS_GASTO.map((c) => (
-                <option key={c} value={c}>{c}</option>
+                <option key={c} value={c}>{t(c)}</option>
               ))}
             </select>
           </Campo>
         </div>
 
-        <Campo label="Descripción">
-          <input value={descripcion} onChange={(e) => setDescripcion(e.target.value)} className="input" placeholder="ej: Pintura general" />
+        <Campo label={t("Descripción")}>
+          <input value={descripcion} onChange={(e) => setDescripcion(e.target.value)} className="input" placeholder={t("ej: Pintura general")} />
         </Campo>
 
         <div className="grid grid-cols-2 gap-4">
-          <Campo label="Monto ($)">
+          <Campo label={t("Monto ($)")}>
             <InputMonto value={monto} onChange={setMonto} />
           </Campo>
-          <Campo label="Proveedor">
-            <input value={proveedor} onChange={(e) => setProveedor(e.target.value)} className="input" placeholder="opcional" />
+          <Campo label={t("Proveedor")}>
+            <input value={proveedor} onChange={(e) => setProveedor(e.target.value)} className="input" placeholder={t("opcional")} />
           </Campo>
         </div>
 
-        <Campo label="¿Quién lo pagó?">
+        <Campo label={t("¿Quién lo pagó?")}>
           <select value={pagadoPor} onChange={(e) => setPagadoPor(e.target.value as PagadoPor)} className="input">
-            {PAGADO_POR.map((p) => (<option key={p.valor} value={p.valor}>{p.label}</option>))}
+            {PAGADO_POR.map((p) => (<option key={p.valor} value={p.valor}>{t(p.label)}</option>))}
           </select>
           {pagadoPor === "inquilino" && (
             <p className="text-xs text-violet-600 dark:text-violet-400 mt-1">
               {ambito === "unidad"
-                ? "Se le acreditará al inquilino contra el alquiler del mes del gasto."
-                : "El crédito al inquilino solo aplica a gastos de una unidad puntual."}
+                ? t("Se le acreditará al inquilino contra el alquiler del mes del gasto.")
+                : t("El crédito al inquilino solo aplica a gastos de una unidad puntual.")}
             </p>
           )}
         </Campo>
 
-        <Campo label="Comprobante / factura">
+        <Campo label={t("Comprobante / factura")}>
           <div className="flex items-center gap-2">
             <label className="btn-secundario cursor-pointer text-xs">
-              {comprobante ? "Cambiar" : "Adjuntar imagen"}
+              {comprobante ? t("Cambiar") : t("Adjuntar imagen")}
               <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
                 const f = e.target.files?.[0];
                 if (f) setComprobante(await subirArchivo(f, "comprobantes"));
@@ -767,20 +769,20 @@ function FormGasto({ gasto, onCerrar, presupuesto }: { gasto?: Gasto; onCerrar: 
             </label>
             {comprobante && (
               <>
-                <a href={comprobante} target="_blank" rel="noreferrer" className="text-xs text-teal-600 dark:text-teal-400 hover:underline">ver</a>
-                <button type="button" onClick={() => setComprobante(undefined)} className="text-xs text-slate-400 hover:text-rose-600">quitar</button>
+                <a href={comprobante} target="_blank" rel="noreferrer" className="text-xs text-teal-600 dark:text-teal-400 hover:underline">{t("ver")}</a>
+                <button type="button" onClick={() => setComprobante(undefined)} className="text-xs text-slate-400 hover:text-rose-600">{t("quitar")}</button>
               </>
             )}
           </div>
           {comprobante && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={comprobante} alt="Comprobante" className="mt-2 rounded-lg max-h-32 ring-1 ring-black/5" />
+            <img src={comprobante} alt={t("Comprobante")} className="mt-2 rounded-lg max-h-32 ring-1 ring-black/5" />
           )}
         </Campo>
 
-        <Campo label="Proveedor (opcional)">
+        <Campo label={t("Proveedor (opcional)")}>
           <select value={proveedorId} onChange={(e) => setProveedorId(e.target.value)} className="input">
-            <option value="">— ninguno —</option>
+            <option value="">{t("— ninguno —")}</option>
             {proveedores.map((p) => <option key={p.id} value={p.id}>{p.nombre}{p.rubro ? ` · ${p.rubro}` : ""}</option>)}
           </select>
         </Campo>
@@ -788,10 +790,10 @@ function FormGasto({ gasto, onCerrar, presupuesto }: { gasto?: Gasto; onCerrar: 
         {proveedorId && (
           <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Puntuación del trabajo</span>
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{t("Puntuación del trabajo")}</span>
               <Estrellas valor={rating} onChange={setRating} size={22} />
             </div>
-            <input value={ratingNota} onChange={(e) => setRatingNota(e.target.value)} placeholder="¿Cómo fue el trabajo? (opcional)" className="input mt-2" />
+            <input value={ratingNota} onChange={(e) => setRatingNota(e.target.value)} placeholder={t("¿Cómo fue el trabajo? (opcional)")} className="input mt-2" />
           </div>
         )}
 
@@ -799,7 +801,7 @@ function FormGasto({ gasto, onCerrar, presupuesto }: { gasto?: Gasto; onCerrar: 
         {ambito === "grupo" && (
           <div className="rounded-xl border border-slate-200 dark:border-slate-700/70 shadow-sm p-3">
             <div className="flex items-center justify-between mb-2 gap-2">
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Reparto por unidad</span>
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{t("Reparto por unidad")}</span>
               {/* Toggle %/$ */}
               <div className="flex rounded-md border border-slate-300 dark:border-slate-600 overflow-hidden text-xs">
                 <button
@@ -821,7 +823,7 @@ function FormGasto({ gasto, onCerrar, presupuesto }: { gasto?: Gasto; onCerrar: 
 
             {unidadesDelGrupo.length === 0 ? (
               <p className="text-xs text-slate-400 dark:text-slate-500">
-                Este grupo no tiene unidades. Asigná unidades al grupo primero.
+                {t("Este grupo no tiene unidades. Asigná unidades al grupo primero.")}
               </p>
             ) : (
               <div className="space-y-2">
@@ -862,16 +864,16 @@ function FormGasto({ gasto, onCerrar, presupuesto }: { gasto?: Gasto; onCerrar: 
                 <div className="flex items-center justify-between pt-1">
                   <div className="flex gap-3">
                     <button type="button" onClick={() => setPct(equalSplitFor(refId))} className="text-xs text-teal-600 dark:text-teal-400 hover:underline">
-                      Partes iguales
+                      {t("Partes iguales")}
                     </button>
                     <button type="button" onClick={distribuirResto} className="text-xs text-teal-600 dark:text-teal-400 hover:underline">
-                      Distribuir resto
+                      {t("Distribuir resto")}
                     </button>
                   </div>
                   <span className={`text-xs ${Math.abs(sumaPct - 100) < 0.01 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
                     {modoReparto === "monto"
                       ? `$${Math.round((monto * sumaPct) / 100).toLocaleString("es-AR")} / $${monto.toLocaleString("es-AR")}`
-                      : `Suma: ${sumaPct.toFixed(2)}%`}
+                      : `${t("Suma:")} ${sumaPct.toFixed(2)}%`}
                     {Math.abs(sumaPct - 100) >= 0.01 && " ⚠"}
                   </span>
                 </div>
@@ -885,21 +887,21 @@ function FormGasto({ gasto, onCerrar, presupuesto }: { gasto?: Gasto; onCerrar: 
             <button
               type="button"
               onClick={() => {
-                if (gasto && confirm("¿Eliminar este gasto?")) {
+                if (gasto && confirm(t("¿Eliminar este gasto?"))) {
                   deleteGasto(gasto.id);
                   onCerrar();
                 }
               }}
               className="text-sm text-rose-600 hover:text-rose-700 dark:text-rose-400"
             >
-              Eliminar
+              {t("Eliminar")}
             </button>
           ) : (
             <span />
           )}
           <div className="flex gap-2">
-            <button type="button" onClick={onCerrar} className="btn-secundario">Cancelar</button>
-            <button type="submit" disabled={!valido} className="btn-primario">Guardar</button>
+            <button type="button" onClick={onCerrar} className="btn-secundario">{t("Cancelar")}</button>
+            <button type="submit" disabled={!valido} className="btn-primario">{t("Guardar")}</button>
           </div>
         </div>
       </form>
@@ -909,7 +911,7 @@ function FormGasto({ gasto, onCerrar, presupuesto }: { gasto?: Gasto; onCerrar: 
 
 // ==================== PROVEEDORES ====================
 function Proveedores() {
-  const { proveedores, ratingProveedor, trabajosDe, puedeEditar } = useStore();
+  const { proveedores, ratingProveedor, trabajosDe, puedeEditar, t } = useStore();
   const puedeEdit = puedeEditar("gastos");
   const [abrir, setAbrir] = useState(false);
   const [editando, setEditando] = useState<Proveedor | undefined>();
@@ -919,13 +921,13 @@ function Proveedores() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <p className="text-sm text-slate-500 dark:text-slate-400">{proveedores.length} {proveedores.length === 1 ? "proveedor" : "proveedores"}</p>
-        {puedeEdit && <button onClick={() => setAbrir(true)} className="rounded-lg bg-teal-600 text-white px-4 py-2 text-sm font-medium hover:bg-teal-700 transition">+ Proveedor</button>}
+        <p className="text-sm text-slate-500 dark:text-slate-400">{proveedores.length} {proveedores.length === 1 ? t("proveedor") : t("proveedores")}</p>
+        {puedeEdit && <button onClick={() => setAbrir(true)} className="rounded-lg bg-teal-600 text-white px-4 py-2 text-sm font-medium hover:bg-teal-700 transition">+ {t("Proveedor")}</button>}
       </div>
 
       {orden.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-600 p-10 text-center text-slate-500 dark:text-slate-400">
-          Cargá tus electricistas, gasistas, pintores… para tener sus contactos y el histórico de trabajos.
+          {t("Cargá tus electricistas, gasistas, pintores… para tener sus contactos y el histórico de trabajos.")}
         </div>
       ) : (
         <div className="space-y-2">
@@ -941,18 +943,18 @@ function Proveedores() {
                     {p.rubro && <span className="text-xs text-slate-400 dark:text-slate-500"> · {p.rubro}</span>}
                   </div>
                   <div className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                    {[p.telefono, p.email].filter(Boolean).join(" · ") || "Sin contacto"}
-                    {!p.visibleInquilino && " · oculto al inquilino"}
+                    {[p.telefono, p.email].filter(Boolean).join(" · ") || t("Sin contacto")}
+                    {!p.visibleInquilino && ` · ${t("oculto al inquilino")}`}
                   </div>
                 </div>
                 <div className="shrink-0 text-right">
                   {rt.cantidad > 0 ? (
                     <>
                       <Estrellas valor={Math.round(rt.promedio)} size={13} />
-                      <div className="text-[11px] text-slate-400 dark:text-slate-500">{rt.promedio.toFixed(1)} · {trabajos} {trabajos === 1 ? "trabajo" : "trabajos"}</div>
+                      <div className="text-[11px] text-slate-400 dark:text-slate-500">{rt.promedio.toFixed(1)} · {trabajos} {trabajos === 1 ? t("trabajo") : t("trabajos")}</div>
                     </>
                   ) : (
-                    <div className="text-[11px] text-slate-400 dark:text-slate-500">{trabajos > 0 ? `${trabajos} sin puntuar` : "sin trabajos"}</div>
+                    <div className="text-[11px] text-slate-400 dark:text-slate-500">{trabajos > 0 ? `${trabajos} ${t("sin puntuar")}` : t("sin trabajos")}</div>
                   )}
                 </div>
               </button>
@@ -968,7 +970,7 @@ function Proveedores() {
 }
 
 function FormProveedor({ proveedor, onCerrar }: { proveedor?: Proveedor; onCerrar: () => void }) {
-  const { addProveedor, updateProveedor, deleteProveedor, trabajosDe } = useStore();
+  const { addProveedor, updateProveedor, deleteProveedor, trabajosDe, t } = useStore();
   const esEdicion = Boolean(proveedor);
   const [nombre, setNombre] = useState(proveedor?.nombre ?? "");
   const [rubro, setRubro] = useState(proveedor?.rubro ?? "");
@@ -989,34 +991,34 @@ function FormProveedor({ proveedor, onCerrar }: { proveedor?: Proveedor; onCerra
   }
 
   return (
-    <Overlay titulo={esEdicion ? "Editar proveedor" : "Nuevo proveedor"} onCerrar={onCerrar}>
+    <Overlay titulo={esEdicion ? t("Editar proveedor") : t("Nuevo proveedor")} onCerrar={onCerrar}>
       <form onSubmit={(e) => { e.preventDefault(); guardar(); }} className="space-y-4">
-        <Campo label="Nombre">
-          <input autoFocus value={nombre} onChange={(e) => setNombre(e.target.value)} className="input" placeholder="Nombre o empresa" />
+        <Campo label={t("Nombre")}>
+          <input autoFocus value={nombre} onChange={(e) => setNombre(e.target.value)} className="input" placeholder={t("Nombre o empresa")} />
         </Campo>
-        <Campo label="Rubro / oficio">
-          <input value={rubro} onChange={(e) => setRubro(e.target.value)} className="input" placeholder="Electricista, Gasista…" list="rubros-list" />
+        <Campo label={t("Rubro / oficio")}>
+          <input value={rubro} onChange={(e) => setRubro(e.target.value)} className="input" placeholder={t("Electricista, Gasista…")} list="rubros-list" />
           <datalist id="rubros-list">{RUBROS_PROVEEDOR.map((r) => <option key={r} value={r} />)}</datalist>
         </Campo>
         <div className="grid grid-cols-2 gap-4">
-          <Campo label="Teléfono"><input value={telefono} onChange={(e) => setTelefono(e.target.value)} className="input" placeholder="+54 9 223…" /></Campo>
-          <Campo label="Email"><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="input" placeholder="opcional" /></Campo>
+          <Campo label={t("Teléfono")}><input value={telefono} onChange={(e) => setTelefono(e.target.value)} className="input" placeholder="+54 9 223…" /></Campo>
+          <Campo label={t("Email")}><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="input" placeholder={t("opcional")} /></Campo>
         </div>
-        <Campo label="Notas"><textarea value={notas} onChange={(e) => setNotas(e.target.value)} className="input min-h-16" placeholder="Zona, horarios, observaciones…" /></Campo>
+        <Campo label={t("Notas")}><textarea value={notas} onChange={(e) => setNotas(e.target.value)} className="input min-h-16" placeholder={t("Zona, horarios, observaciones…")} /></Campo>
         <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
           <input type="checkbox" checked={visibleInquilino} onChange={(e) => setVisibleInquilino(e.target.checked)} />
-          Visible para los inquilinos (en Contactos)
+          {t("Visible para los inquilinos (en Contactos)")}
         </label>
 
         {esEdicion && trabajos.length > 0 && (
           <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">
-            <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Histórico de trabajos</span>
+            <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{t("Histórico de trabajos")}</span>
             <div className="mt-2 space-y-1.5 max-h-40 overflow-y-auto">
               {trabajos.map((g) => (
                 <div key={g.id} className="flex items-center gap-2 text-xs">
                   <span className="text-slate-400 dark:text-slate-500 w-20 shrink-0">{formatearFecha(g.fecha)}</span>
-                  <span className="text-slate-600 dark:text-slate-300 flex-1 truncate">{g.descripcion || g.categoria}</span>
-                  {g.rating ? <Estrellas valor={g.rating} size={12} /> : <span className="text-slate-300 dark:text-slate-600 text-[11px]">sin puntuar</span>}
+                  <span className="text-slate-600 dark:text-slate-300 flex-1 truncate">{g.descripcion || t(g.categoria)}</span>
+                  {g.rating ? <Estrellas valor={g.rating} size={12} /> : <span className="text-slate-300 dark:text-slate-600 text-[11px]">{t("sin puntuar")}</span>}
                 </div>
               ))}
             </div>
@@ -1025,11 +1027,11 @@ function FormProveedor({ proveedor, onCerrar }: { proveedor?: Proveedor; onCerra
 
         <div className="flex justify-between items-center pt-2">
           {esEdicion ? (
-            <button type="button" onClick={() => { if (proveedor && confirm("¿Eliminar este proveedor?")) { deleteProveedor(proveedor.id); onCerrar(); } }} className="text-sm text-rose-600 hover:text-rose-700 dark:text-rose-400">Eliminar</button>
+            <button type="button" onClick={() => { if (proveedor && confirm(t("¿Eliminar este proveedor?"))) { deleteProveedor(proveedor.id); onCerrar(); } }} className="text-sm text-rose-600 hover:text-rose-700 dark:text-rose-400">{t("Eliminar")}</button>
           ) : <span />}
           <div className="flex gap-2">
-            <button type="button" onClick={onCerrar} className="btn-secundario">Cancelar</button>
-            <button type="submit" disabled={!valido} className="btn-primario">Guardar</button>
+            <button type="button" onClick={onCerrar} className="btn-secundario">{t("Cancelar")}</button>
+            <button type="submit" disabled={!valido} className="btn-primario">{t("Guardar")}</button>
           </div>
         </div>
       </form>
@@ -1044,13 +1046,13 @@ const COLOR_ROL_PERSONAL: Record<RolPersonal, string> = {
   Limpieza: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
   Otro: "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300",
 };
-function textoComisionDefault(p: Personal): string {
-  if (!p.valor) return "Sin comisión por defecto";
-  return p.modo === "porcentaje" ? `${p.valor}% del neto` : `$${p.valor.toLocaleString("es-AR")} fijo`;
+function textoComisionDefault(p: Personal, t: (s: string) => string): string {
+  if (!p.valor) return t("Sin comisión por defecto");
+  return p.modo === "porcentaje" ? `${p.valor}${t("% del neto")}` : `$${p.valor.toLocaleString("es-AR")} ${t("fijo")}`;
 }
 
 function PersonalSeccion() {
-  const { personal, gastos, puedeEditar } = useStore();
+  const { personal, gastos, puedeEditar, t } = useStore();
   const puedeEdit = puedeEditar("gastos");
   const [abrir, setAbrir] = useState(false);
   const [editando, setEditando] = useState<Personal | undefined>();
@@ -1064,14 +1066,14 @@ function PersonalSeccion() {
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
-        <p className="text-sm text-slate-500 dark:text-slate-400">{personal.length} {personal.length === 1 ? "persona" : "personas"}</p>
-        {puedeEdit && <button onClick={() => setAbrir(true)} className="rounded-lg bg-teal-600 text-white px-4 py-2 text-sm font-medium hover:bg-teal-700 transition">+ Persona</button>}
+        <p className="text-sm text-slate-500 dark:text-slate-400">{personal.length} {personal.length === 1 ? t("persona") : t("personas")}</p>
+        {puedeEdit && <button onClick={() => setAbrir(true)} className="rounded-lg bg-teal-600 text-white px-4 py-2 text-sm font-medium hover:bg-teal-700 transition">+ {t("Persona")}</button>}
       </div>
-      <p className="text-xs text-slate-400 dark:text-slate-500 mb-5">Gente que cobra una comisión por reserva (recepción, gestión, limpieza). Después la asignás en cada reserva.</p>
+      <p className="text-xs text-slate-400 dark:text-slate-500 mb-5">{t("Gente que cobra una comisión por reserva (recepción, gestión, limpieza). Después la asignás en cada reserva.")}</p>
 
       {orden.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-600 p-10 text-center text-slate-500 dark:text-slate-400">
-          Cargá a quien recibe a los huéspedes, gestiona o limpia, y cuánto se lleva por reserva.
+          {t("Cargá a quien recibe a los huéspedes, gestiona o limpia, y cuánto se lleva por reserva.")}
         </div>
       ) : (
         <div className="space-y-2">
@@ -1083,15 +1085,15 @@ function PersonalSeccion() {
                 <div className="min-w-0 flex-1">
                   <div className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate flex items-center gap-2">
                     {p.nombre}
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${COLOR_ROL_PERSONAL[p.rol]}`}>{p.rol}</span>
-                    {!p.activo && <span className="text-[10px] text-slate-400">inactivo</span>}
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${COLOR_ROL_PERSONAL[p.rol]}`}>{t(p.rol)}</span>
+                    {!p.activo && <span className="text-[10px] text-slate-400">{t("inactivo")}</span>}
                   </div>
-                  <div className="text-xs text-slate-500 dark:text-slate-400 truncate">{textoComisionDefault(p)}</div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400 truncate">{textoComisionDefault(p, t)}</div>
                 </div>
                 <div className="shrink-0 text-right">
                   {debe > 0
-                    ? <><div className="text-sm font-semibold text-rose-600 dark:text-rose-400">${debe.toLocaleString("es-AR")}</div><div className="text-[10px] text-slate-400 dark:text-slate-500">a pagar</div></>
-                    : <div className="text-[11px] text-emerald-600 dark:text-emerald-400">al día</div>}
+                    ? <><div className="text-sm font-semibold text-rose-600 dark:text-rose-400">${debe.toLocaleString("es-AR")}</div><div className="text-[10px] text-slate-400 dark:text-slate-500">{t("a pagar")}</div></>
+                    : <div className="text-[11px] text-emerald-600 dark:text-emerald-400">{t("al día")}</div>}
                 </div>
               </button>
             );
@@ -1107,7 +1109,7 @@ function PersonalSeccion() {
 }
 
 function CuentaCorrientePersonal({ persona, onEditar, onCerrar }: { persona: Personal; onEditar: () => void; onCerrar: () => void }) {
-  const { gastos, reservas, getUnidad, updateGasto, puedeEditar } = useStore();
+  const { gastos, reservas, getUnidad, updateGasto, puedeEditar, t } = useStore();
   const puedeEdit = puedeEditar("gastos");
 
   const movimientos = gastos
@@ -1137,33 +1139,33 @@ function CuentaCorrientePersonal({ persona, onEditar, onCerrar }: { persona: Per
     <Overlay titulo={persona.nombre} onCerrar={onCerrar}>
       <div className="space-y-4">
         <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
-          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${COLOR_ROL_PERSONAL[persona.rol]}`}>{persona.rol}</span>
+          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${COLOR_ROL_PERSONAL[persona.rol]}`}>{t(persona.rol)}</span>
           {persona.telefono && <span>{persona.telefono}</span>}
           {persona.alias && <span className="truncate">· {persona.alias}</span>}
-          <button onClick={onEditar} className="ml-auto text-teal-600 dark:text-teal-400 hover:underline shrink-0">Editar datos</button>
+          <button onClick={onEditar} className="ml-auto text-teal-600 dark:text-teal-400 hover:underline shrink-0">{t("Editar datos")}</button>
         </div>
 
         <div className="grid grid-cols-3 gap-2 text-center">
           <div className="rounded-lg bg-slate-50 dark:bg-slate-900 p-2">
-            <div className="text-[11px] text-slate-400 dark:text-slate-500">Total</div>
+            <div className="text-[11px] text-slate-400 dark:text-slate-500">{t("Total")}</div>
             <div className="text-sm font-semibold text-slate-700 dark:text-slate-200">${total.toLocaleString("es-AR")}</div>
           </div>
           <div className="rounded-lg bg-slate-50 dark:bg-slate-900 p-2">
-            <div className="text-[11px] text-slate-400 dark:text-slate-500">Pagado</div>
+            <div className="text-[11px] text-slate-400 dark:text-slate-500">{t("Pagado")}</div>
             <div className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">${pagado.toLocaleString("es-AR")}</div>
           </div>
           <div className="rounded-lg bg-slate-50 dark:bg-slate-900 p-2">
-            <div className="text-[11px] text-slate-400 dark:text-slate-500">A pagar</div>
+            <div className="text-[11px] text-slate-400 dark:text-slate-500">{t("A pagar")}</div>
             <div className="text-sm font-semibold text-rose-600 dark:text-rose-400">${debe.toLocaleString("es-AR")}</div>
           </div>
         </div>
 
         {puedeEdit && debe > 0 && (
-          <button onClick={pagarTodo} className="btn-primario w-full">Registrar pago de todo lo pendiente (${debe.toLocaleString("es-AR")})</button>
+          <button onClick={pagarTodo} className="btn-primario w-full">{t("Registrar pago de todo lo pendiente")} (${debe.toLocaleString("es-AR")})</button>
         )}
 
         {movimientos.length === 0 ? (
-          <p className="text-sm text-slate-400 dark:text-slate-500 text-center py-6">Todavía no tiene comisiones. Asignale una en una reserva.</p>
+          <p className="text-sm text-slate-400 dark:text-slate-500 text-center py-6">{t("Todavía no tiene comisiones. Asignale una en una reserva.")}</p>
         ) : (
           <div className="space-y-1.5 max-h-72 overflow-y-auto">
             {movimientos.map((g) => (
@@ -1172,13 +1174,13 @@ function CuentaCorrientePersonal({ persona, onEditar, onCerrar }: { persona: Per
                   <div className="text-sm text-slate-700 dark:text-slate-200 truncate">{refReserva(g.claveOrigen) || g.descripcion}</div>
                   <div className="text-[11px] text-slate-400 dark:text-slate-500">
                     {formatearFecha(g.fecha)} · ${g.monto.toLocaleString("es-AR")}
-                    {g.pagado && g.pagadoFecha && <span className="text-emerald-600 dark:text-emerald-400"> · pagado {formatearFecha(g.pagadoFecha)}</span>}
+                    {g.pagado && g.pagadoFecha && <span className="text-emerald-600 dark:text-emerald-400"> · {t("pagado")} {formatearFecha(g.pagadoFecha)}</span>}
                   </div>
                 </div>
                 {puedeEdit && (
                   g.pagado
-                    ? <button onClick={() => pagar(g.id, false)} className="shrink-0 text-[11px] text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">deshacer</button>
-                    : <button onClick={() => pagar(g.id, true)} className="shrink-0 text-xs font-medium text-teal-600 dark:text-teal-400 hover:underline">marcar pagada</button>
+                    ? <button onClick={() => pagar(g.id, false)} className="shrink-0 text-[11px] text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">{t("deshacer")}</button>
+                    : <button onClick={() => pagar(g.id, true)} className="shrink-0 text-xs font-medium text-teal-600 dark:text-teal-400 hover:underline">{t("marcar pagada")}</button>
                 )}
               </div>
             ))}
@@ -1190,7 +1192,7 @@ function CuentaCorrientePersonal({ persona, onEditar, onCerrar }: { persona: Per
 }
 
 function FormPersonal({ persona, onCerrar }: { persona?: Personal; onCerrar: () => void }) {
-  const { addPersonal, updatePersonal, deletePersonal } = useStore();
+  const { addPersonal, updatePersonal, deletePersonal, t } = useStore();
   const esEdicion = Boolean(persona);
   const [nombre, setNombre] = useState(persona?.nombre ?? "");
   const [rol, setRol] = useState<RolPersonal>(persona?.rol ?? "Recepcionista");
@@ -1211,46 +1213,46 @@ function FormPersonal({ persona, onCerrar }: { persona?: Personal; onCerrar: () 
   }
 
   return (
-    <Overlay titulo={esEdicion ? "Editar persona" : "Nueva persona"} onCerrar={onCerrar}>
+    <Overlay titulo={esEdicion ? t("Editar persona") : t("Nueva persona")} onCerrar={onCerrar}>
       <form onSubmit={(e) => { e.preventDefault(); guardar(); }} className="space-y-4">
-        <Campo label="Nombre">
-          <input autoFocus value={nombre} onChange={(e) => setNombre(e.target.value)} className="input" placeholder="Nombre y apellido" />
+        <Campo label={t("Nombre")}>
+          <input autoFocus value={nombre} onChange={(e) => setNombre(e.target.value)} className="input" placeholder={t("Nombre y apellido")} />
         </Campo>
-        <Campo label="Rol">
+        <Campo label={t("Rol")}>
           <select value={rol} onChange={(e) => setRol(e.target.value as RolPersonal)} className="input">
-            {ROLES_PERSONAL.map((r) => <option key={r} value={r}>{r}</option>)}
+            {ROLES_PERSONAL.map((r) => <option key={r} value={r}>{t(r)}</option>)}
           </select>
         </Campo>
-        <Campo label="Comisión por defecto">
+        <Campo label={t("Comisión por defecto")}>
           <div className="flex gap-2">
             <select value={modo} onChange={(e) => setModo(e.target.value as ModoComision)} className="input w-32 shrink-0">
-              <option value="porcentaje">% del neto</option>
-              <option value="fijo">Monto fijo</option>
+              <option value="porcentaje">{t("% del neto")}</option>
+              <option value="fijo">{t("Monto fijo")}</option>
             </select>
             <div className="relative flex-1">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">{modo === "porcentaje" ? "%" : "$"}</span>
               <input type="number" inputMode="decimal" min={0} step={modo === "porcentaje" ? 0.5 : 100} value={valor || ""} onChange={(e) => setValor(Number(e.target.value))} className="input pl-7" placeholder="0" />
             </div>
           </div>
-          <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">{modo === "porcentaje" ? "Porcentaje sobre el neto (alquiler − comisión de plataforma). Lo podés ajustar en cada reserva." : "Importe fijo en pesos (ej. limpieza). Lo podés ajustar en cada reserva."}</p>
+          <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">{modo === "porcentaje" ? t("Porcentaje sobre el neto (alquiler − comisión de plataforma). Lo podés ajustar en cada reserva.") : t("Importe fijo en pesos (ej. limpieza). Lo podés ajustar en cada reserva.")}</p>
         </Campo>
         <div className="grid grid-cols-2 gap-4">
-          <Campo label="Teléfono"><input value={telefono} onChange={(e) => setTelefono(e.target.value)} className="input" placeholder="+54 9 223…" /></Campo>
-          <Campo label="Alias / CBU"><input value={alias} onChange={(e) => setAlias(e.target.value)} className="input" placeholder="para pagarle" /></Campo>
+          <Campo label={t("Teléfono")}><input value={telefono} onChange={(e) => setTelefono(e.target.value)} className="input" placeholder="+54 9 223…" /></Campo>
+          <Campo label={t("Alias / CBU")}><input value={alias} onChange={(e) => setAlias(e.target.value)} className="input" placeholder={t("para pagarle")} /></Campo>
         </div>
-        <Campo label="Notas"><textarea value={notas} onChange={(e) => setNotas(e.target.value)} className="input min-h-16" placeholder="Observaciones…" /></Campo>
+        <Campo label={t("Notas")}><textarea value={notas} onChange={(e) => setNotas(e.target.value)} className="input min-h-16" placeholder={t("Observaciones…")} /></Campo>
         <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
           <input type="checkbox" checked={activo} onChange={(e) => setActivo(e.target.checked)} />
-          Activo (aparece para asignar en reservas)
+          {t("Activo (aparece para asignar en reservas)")}
         </label>
 
         <div className="flex justify-between items-center pt-2">
           {esEdicion ? (
-            <button type="button" onClick={() => { if (persona && confirm("¿Eliminar esta persona?")) { deletePersonal(persona.id); onCerrar(); } }} className="text-sm text-rose-600 hover:text-rose-700 dark:text-rose-400">Eliminar</button>
+            <button type="button" onClick={() => { if (persona && confirm(t("¿Eliminar esta persona?"))) { deletePersonal(persona.id); onCerrar(); } }} className="text-sm text-rose-600 hover:text-rose-700 dark:text-rose-400">{t("Eliminar")}</button>
           ) : <span />}
           <div className="flex gap-2">
-            <button type="button" onClick={onCerrar} className="btn-secundario">Cancelar</button>
-            <button type="submit" disabled={!valido} className="btn-primario">Guardar</button>
+            <button type="button" onClick={onCerrar} className="btn-secundario">{t("Cancelar")}</button>
+            <button type="submit" disabled={!valido} className="btn-primario">{t("Guardar")}</button>
           </div>
         </div>
       </form>
@@ -1266,50 +1268,50 @@ const COLOR_ESTADO_PRES: Record<EstadoPresupuesto, string> = {
 };
 
 function Presupuestos() {
-  const { presupuestos, proveedores, updatePresupuesto, puedeEditar } = useStore();
+  const { presupuestos, proveedores, updatePresupuesto, puedeEditar, t } = useStore();
   const puedeEdit = puedeEditar("gastos");
   const [abrir, setAbrir] = useState(false);
   const [editando, setEditando] = useState<Presupuesto | undefined>();
   const [convertir, setConvertir] = useState<Presupuesto | undefined>();
 
   const orden = [...presupuestos].sort((a, b) => b.fecha.localeCompare(a.fecha));
-  const nombreProv = (id: string) => proveedores.find((p) => p.id === id)?.nombre ?? "Sin proveedor";
+  const nombreProv = (id: string) => proveedores.find((p) => p.id === id)?.nombre ?? t("Sin proveedor");
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <p className="text-sm text-slate-500 dark:text-slate-400">Cargá presupuestos, aprobalos y convertilos en gasto.</p>
-        {puedeEdit && <button onClick={() => setAbrir(true)} className="rounded-lg bg-teal-600 text-white px-4 py-2 text-sm font-medium hover:bg-teal-700 transition">+ Presupuesto</button>}
+        <p className="text-sm text-slate-500 dark:text-slate-400">{t("Cargá presupuestos, aprobalos y convertilos en gasto.")}</p>
+        {puedeEdit && <button onClick={() => setAbrir(true)} className="rounded-lg bg-teal-600 text-white px-4 py-2 text-sm font-medium hover:bg-teal-700 transition">+ {t("Presupuesto")}</button>}
       </div>
 
       {orden.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-600 p-10 text-center text-slate-500 dark:text-slate-400">No hay presupuestos cargados.</div>
+        <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-600 p-10 text-center text-slate-500 dark:text-slate-400">{t("No hay presupuestos cargados.")}</div>
       ) : (
         <div className="space-y-2">
           {orden.map((p) => (
             <div key={p.id} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/70 shadow-sm p-3">
               <div className="flex items-center gap-3">
                 <button onClick={() => setEditando(p)} className="min-w-0 flex-1 text-left">
-                  <div className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">{p.descripcion || "Presupuesto"}</div>
+                  <div className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">{p.descripcion || t("Presupuesto")}</div>
                   <div className="text-xs text-slate-500 dark:text-slate-400 truncate">{nombreProv(p.proveedorId)} · {formatearFecha(p.fecha)}{p.comprobante && " · 📎"}</div>
                 </button>
                 <div className="shrink-0 text-right">
                   <div className="text-sm font-semibold text-slate-700 dark:text-slate-200">${p.monto.toLocaleString("es-AR")}</div>
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${COLOR_ESTADO_PRES[p.estado]}`}>{p.estado}</span>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${COLOR_ESTADO_PRES[p.estado]}`}>{t(p.estado)}</span>
                 </div>
               </div>
               <div className="flex gap-2 mt-2 justify-end">
                 {p.estado === "pendiente" && (
                   <>
-                    <button onClick={() => updatePresupuesto(p.id, { estado: "rechazado" })} className="text-xs text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400">Rechazar</button>
-                    <button onClick={() => updatePresupuesto(p.id, { estado: "aprobado" })} className="text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:underline">Aprobar</button>
+                    <button onClick={() => updatePresupuesto(p.id, { estado: "rechazado" })} className="text-xs text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400">{t("Rechazar")}</button>
+                    <button onClick={() => updatePresupuesto(p.id, { estado: "aprobado" })} className="text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:underline">{t("Aprobar")}</button>
                   </>
                 )}
                 {p.estado === "aprobado" && (
-                  <button onClick={() => setConvertir(p)} className="text-xs font-medium text-teal-600 dark:text-teal-400 hover:underline">Convertir en gasto</button>
+                  <button onClick={() => setConvertir(p)} className="text-xs font-medium text-teal-600 dark:text-teal-400 hover:underline">{t("Convertir en gasto")}</button>
                 )}
                 {p.estado === "rechazado" && (
-                  <button onClick={() => updatePresupuesto(p.id, { estado: "pendiente" })} className="text-xs text-slate-500 dark:text-slate-400 hover:underline">Reabrir</button>
+                  <button onClick={() => updatePresupuesto(p.id, { estado: "pendiente" })} className="text-xs text-slate-500 dark:text-slate-400 hover:underline">{t("Reabrir")}</button>
                 )}
               </div>
             </div>
@@ -1325,7 +1327,7 @@ function Presupuestos() {
 }
 
 function FormPresupuesto({ presupuesto, onCerrar }: { presupuesto?: Presupuesto; onCerrar: () => void }) {
-  const { proveedores, unidades, grupos, addPresupuesto, updatePresupuesto, deletePresupuesto } = useStore();
+  const { proveedores, unidades, grupos, addPresupuesto, updatePresupuesto, deletePresupuesto, t } = useStore();
   const esEdicion = Boolean(presupuesto);
   const [proveedorId, setProveedorId] = useState(presupuesto?.proveedorId ?? proveedores[0]?.id ?? "");
   const [ambito, setAmbito] = useState<AmbitoGasto>(presupuesto?.ambito ?? "unidad");
@@ -1347,53 +1349,53 @@ function FormPresupuesto({ presupuesto, onCerrar }: { presupuesto?: Presupuesto;
   }
 
   return (
-    <Overlay titulo={esEdicion ? "Editar presupuesto" : "Nuevo presupuesto"} onCerrar={onCerrar}>
+    <Overlay titulo={esEdicion ? t("Editar presupuesto") : t("Nuevo presupuesto")} onCerrar={onCerrar}>
       <form onSubmit={(e) => { e.preventDefault(); guardar(); }} className="space-y-4">
-        <Campo label="Proveedor">
+        <Campo label={t("Proveedor")}>
           <select value={proveedorId} onChange={(e) => setProveedorId(e.target.value)} className="input">
-            <option value="">— sin asignar —</option>
+            <option value="">{t("— sin asignar —")}</option>
             {proveedores.map((p) => <option key={p.id} value={p.id}>{p.nombre}{p.rubro ? ` · ${p.rubro}` : ""}</option>)}
           </select>
         </Campo>
         <div className="grid grid-cols-2 gap-4">
-          <Campo label="Para">
+          <Campo label={t("Para")}>
             <select value={ambito} onChange={(e) => { setAmbito(e.target.value as AmbitoGasto); setRefId((e.target.value === "unidad" ? unidades[0]?.id : grupos[0]?.id) ?? ""); }} className="input">
-              <option value="unidad">Una unidad</option>
-              <option value="grupo">Un grupo</option>
+              <option value="unidad">{t("Una unidad")}</option>
+              <option value="grupo">{t("Un grupo")}</option>
             </select>
           </Campo>
-          <Campo label={ambito === "unidad" ? "Unidad" : "Grupo"}>
+          <Campo label={ambito === "unidad" ? t("Unidad") : t("Grupo")}>
             <select value={refId} onChange={(e) => setRefId(e.target.value)} className="input">
               {opciones.map((o) => <option key={o.id} value={o.id}>{o.nombre}</option>)}
             </select>
           </Campo>
         </div>
-        <Campo label="Descripción"><input value={descripcion} onChange={(e) => setDescripcion(e.target.value)} className="input" placeholder="ej: Cambio de caldera" /></Campo>
+        <Campo label={t("Descripción")}><input value={descripcion} onChange={(e) => setDescripcion(e.target.value)} className="input" placeholder={t("ej: Cambio de caldera")} /></Campo>
         <div className="grid grid-cols-2 gap-4">
-          <Campo label="Monto ($)"><InputMonto value={monto} onChange={setMonto} /></Campo>
-          <Campo label="Fecha"><input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} className="input" /></Campo>
+          <Campo label={t("Monto ($)")}><InputMonto value={monto} onChange={setMonto} /></Campo>
+          <Campo label={t("Fecha")}><input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} className="input" /></Campo>
         </div>
-        <Campo label="Presupuesto (imagen)">
+        <Campo label={t("Presupuesto (imagen)")}>
           <div className="flex items-center gap-2">
             <label className="btn-secundario cursor-pointer text-xs">
-              {comprobante ? "Cambiar" : "Adjuntar"}
+              {comprobante ? t("Cambiar") : t("Adjuntar")}
               <input type="file" accept="image/*" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; if (f) setComprobante(await subirArchivo(f, "comprobantes")); e.target.value = ""; }} />
             </label>
             {comprobante && <>
-              <a href={comprobante} target="_blank" rel="noreferrer" className="text-xs text-teal-600 dark:text-teal-400 hover:underline">ver</a>
-              <button type="button" onClick={() => setComprobante(undefined)} className="text-xs text-slate-400 hover:text-rose-600">quitar</button>
+              <a href={comprobante} target="_blank" rel="noreferrer" className="text-xs text-teal-600 dark:text-teal-400 hover:underline">{t("ver")}</a>
+              <button type="button" onClick={() => setComprobante(undefined)} className="text-xs text-slate-400 hover:text-rose-600">{t("quitar")}</button>
             </>}
           </div>
         </Campo>
-        <Campo label="Nota"><input value={nota} onChange={(e) => setNota(e.target.value)} className="input" placeholder="opcional" /></Campo>
+        <Campo label={t("Nota")}><input value={nota} onChange={(e) => setNota(e.target.value)} className="input" placeholder={t("opcional")} /></Campo>
 
         <div className="flex justify-between items-center pt-2">
           {esEdicion ? (
-            <button type="button" onClick={() => { if (presupuesto && confirm("¿Eliminar este presupuesto?")) { deletePresupuesto(presupuesto.id); onCerrar(); } }} className="text-sm text-rose-600 hover:text-rose-700 dark:text-rose-400">Eliminar</button>
+            <button type="button" onClick={() => { if (presupuesto && confirm(t("¿Eliminar este presupuesto?"))) { deletePresupuesto(presupuesto.id); onCerrar(); } }} className="text-sm text-rose-600 hover:text-rose-700 dark:text-rose-400">{t("Eliminar")}</button>
           ) : <span />}
           <div className="flex gap-2">
-            <button type="button" onClick={onCerrar} className="btn-secundario">Cancelar</button>
-            <button type="submit" disabled={!valido} className="btn-primario">Guardar</button>
+            <button type="button" onClick={onCerrar} className="btn-secundario">{t("Cancelar")}</button>
+            <button type="submit" disabled={!valido} className="btn-primario">{t("Guardar")}</button>
           </div>
         </div>
       </form>

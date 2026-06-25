@@ -30,7 +30,7 @@ export default function FormReserva({
   sobreBloqueo?: boolean;   // permite superponerse con el bloqueo que se está convirtiendo
   onCerrar: () => void;
 }) {
-  const { addReserva, updateReserva, deleteReserva, conflicto, pagosDe, config, puedeEditar, getUnidad, gastos, addGasto, updateGasto, deleteGasto, dolarOficial, personal } = useStore();
+  const { addReserva, updateReserva, deleteReserva, conflicto, pagosDe, config, puedeEditar, getUnidad, gastos, addGasto, updateGasto, deleteGasto, dolarOficial, personal, t } = useStore();
   const unidad = getUnidad(unidadId);
   const esEdicion = Boolean(reserva);
   const puedeEdit = puedeEditar("reservas");
@@ -211,7 +211,7 @@ export default function FormReserva({
   }
 
   return (
-    <Overlay titulo={esEdicion ? "Editar reserva" : "Nueva reserva"} onCerrar={onCerrar}>
+    <Overlay titulo={esEdicion ? t("Editar reserva") : t("Nueva reserva")} onCerrar={onCerrar}>
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -219,110 +219,109 @@ export default function FormReserva({
         }}
         className="space-y-4"
       >
-        <Campo label="Huésped">
-          <input value={huesped} onChange={(e) => setHuesped(e.target.value)} className="input" autoFocus placeholder="Nombre y apellido" />
+        <Campo label={t("Huésped")}>
+          <input value={huesped} onChange={(e) => setHuesped(e.target.value)} className="input" autoFocus placeholder={t("Nombre y apellido")} />
         </Campo>
-        <Campo label="Contacto (tel / email)">
+        <Campo label={t("Contacto (tel / email)")}>
           <input value={contacto} onChange={(e) => setContacto(e.target.value)} className="input" placeholder="+54 9 223…" />
         </Campo>
 
         <div className="grid grid-cols-2 gap-4">
-          <Campo label="Check-in">
+          <Campo label={t("Check-in")}>
             <input type="date" value={checkIn} onChange={(e) => setCheckIn(e.target.value)} className="input" />
           </Campo>
-          <Campo label="Check-out">
+          <Campo label={t("Check-out")}>
             <input type="date" value={checkOut} onChange={(e) => setCheckOut(e.target.value)} className="input" />
           </Campo>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <Campo label="Hora check-in">
+          <Campo label={t("Hora check-in")}>
             <input type="time" value={horaCheckIn} onChange={(e) => setHoraCheckIn(e.target.value)} className="input" />
           </Campo>
-          <Campo label="Hora check-out">
+          <Campo label={t("Hora check-out")}>
             <input type="time" value={horaCheckOut} onChange={(e) => setHoraCheckOut(e.target.value)} className="input" />
           </Campo>
         </div>
 
         {checkIn && checkOut && checkIn >= checkOut && (
-          <p className="text-sm text-amber-600">El check-out debe ser posterior al check-in.</p>
+          <p className="text-sm text-amber-600">{t("El check-out debe ser posterior al check-in.")}</p>
         )}
         {fechasOk && (
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            {cantNoches} {cantNoches === 1 ? "noche" : "noches"}
+            {cantNoches} {cantNoches === 1 ? t("noche") : t("noches")}
           </p>
         )}
         {choque && (
           <div className="rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-sm p-3">
-            ⚠ Se superpone con la reserva de <b>{choque.huesped}</b> (
-            {formatearFecha(choque.checkIn)} → {formatearFecha(choque.checkOut)}). No se puede
-            guardar para evitar un <b>doble booking</b>.
+            ⚠ {t("Se superpone con la reserva de")} <b>{choque.huesped}</b> (
+            {formatearFecha(choque.checkIn)} → {formatearFecha(choque.checkOut)}). {t("No se puede guardar para evitar un")} <b>{t("doble booking")}</b>.
           </div>
         )}
 
         <div className="grid grid-cols-2 gap-4">
-          <Campo label="Canal">
+          <Campo label={t("Canal")}>
             <select value={canal} onChange={(e) => setCanal(e.target.value as Canal)} className="input">
               {CANALES.map((c) => (
-                <option key={c} value={c}>{c}</option>
+                <option key={c} value={c}>{t(c)}</option>
               ))}
             </select>
           </Campo>
-          <Campo label="Tipo">
+          <Campo label={t("Tipo")}>
             <select value={tipo} onChange={(e) => setTipo(e.target.value as TipoAlquiler)} className="input">
-              {TIPOS_ALQUILER.map((t) => (
-                <option key={t.valor} value={t.valor}>{t.label}</option>
+              {TIPOS_ALQUILER.map((ta) => (
+                <option key={ta.valor} value={ta.valor}>{t(ta.label)}</option>
               ))}
             </select>
           </Campo>
         </div>
 
         {esOTA && (
-          <Campo label={`Comisión ${canal} (${simbolo})`}>
+          <Campo label={`${t("Comisión")} ${canal} (${simbolo})`}>
             <InputMonto value={comision} onChange={setComision} decimales={moneda === "USD"} />
-            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Se carga como gasto de la unidad (concepto «Comisión {canal}»).</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">{t("Se carga como gasto de la unidad (concepto «Comisión")} {canal}»).</p>
           </Campo>
         )}
 
         {moneda === "USD" && (
           <div className="rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-3 py-2 text-xs text-slate-600 dark:text-slate-300">
-            💵 Dólar oficial hoy: <b>{dolarOficial ? `$${dolarOficial.toLocaleString("es-AR")}` : "—"}</b>
-            {dolarOficial && totalEfectivo > 0 && <> · Total ≈ <b>${Math.round(totalEfectivo * dolarOficial).toLocaleString("es-AR")}</b></>}
-            <span className="block text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">Al cobrar (Registrar pago) podés editar el tipo de cambio.</span>
+            💵 {t("Dólar oficial hoy:")} <b>{dolarOficial ? `$${dolarOficial.toLocaleString("es-AR")}` : "—"}</b>
+            {dolarOficial && totalEfectivo > 0 && <> · {t("Total ≈")} <b>${Math.round(totalEfectivo * dolarOficial).toLocaleString("es-AR")}</b></>}
+            <span className="block text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">{t("Al cobrar (Registrar pago) podés editar el tipo de cambio.")}</span>
           </div>
         )}
 
         {/* Comisiones a Personal (recepción, gestión, limpieza). Hasta 2 por reserva. */}
         <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-3 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Comisiones a personal</span>
+            <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{t("Comisiones a personal")}</span>
             {personalActivo.length > 0 && (
-              <button type="button" onClick={agregarComision} className="text-xs font-medium text-teal-600 dark:text-teal-400 hover:underline">+ Agregar</button>
+              <button type="button" onClick={agregarComision} className="text-xs font-medium text-teal-600 dark:text-teal-400 hover:underline">{t("+ Agregar")}</button>
             )}
           </div>
 
           {personalActivo.length === 0 ? (
-            <p className="text-xs text-slate-400 dark:text-slate-500">Cargá personas en Gastos → Personal para poder asignarles comisiones.</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500">{t("Cargá personas en Gastos → Personal para poder asignarles comisiones.")}</p>
           ) : comisiones.length === 0 ? (
-            <p className="text-xs text-slate-400 dark:text-slate-500">Sin comisiones. Sumá quién recibe, gestiona o limpia y cuánto se lleva.</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500">{t("Sin comisiones. Sumá quién recibe, gestiona o limpia y cuánto se lleva.")}</p>
           ) : (
             <>
-              <p className="text-[11px] text-slate-400 dark:text-slate-500">Neto base del %: <b>{simbolo}{netoComision.toLocaleString("es-AR")}</b> (total − comisión de plataforma − importes fijos/limpieza)</p>
+              <p className="text-[11px] text-slate-400 dark:text-slate-500">{t("Neto base del %:")} <b>{simbolo}{netoComision.toLocaleString("es-AR")}</b> {t("(total − comisión de plataforma − importes fijos/limpieza)")}</p>
               {comisiones.map((c, i) => (
                 <div key={i} className="rounded-md bg-slate-50 dark:bg-slate-900 p-2 space-y-2">
                   <div className="flex items-center gap-2">
                     <select value={c.personalId} onChange={(e) => elegirPersona(i, e.target.value)} className="input flex-1">
-                      <option value="">— Elegí a la persona —</option>
+                      <option value="">{t("— Elegí a la persona —")}</option>
                       {personalActivo.map((p) => <option key={p.id} value={p.id}>{p.nombre} · {p.rol}</option>)}
                     </select>
-                    <button type="button" onClick={() => quitarComision(i)} className="text-rose-500 hover:text-rose-600 text-sm px-1" aria-label="Quitar">✕</button>
+                    <button type="button" onClick={() => quitarComision(i)} className="text-rose-500 hover:text-rose-600 text-sm px-1" aria-label={t("Quitar")}>✕</button>
                   </div>
                   {c.personalId && (
                     <>
                       <div className="flex items-center gap-2">
                         <select value={c.modo} onChange={(e) => setLineaComision(i, { modo: e.target.value as ModoComision })} className="input w-28 shrink-0">
-                          <option value="porcentaje">% del neto</option>
-                          <option value="fijo">$ fijo</option>
+                          <option value="porcentaje">{t("% del neto")}</option>
+                          <option value="fijo">{t("$ fijo")}</option>
                         </select>
                         <div className="relative w-24 shrink-0">
                           <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-xs">{c.modo === "porcentaje" ? "%" : "$"}</span>
@@ -343,24 +342,24 @@ export default function FormReserva({
                   )}
                 </div>
               ))}
-              <p className="text-[11px] text-slate-400 dark:text-slate-500">Cada comisión se carga como gasto de la unidad y queda en la cuenta corriente de la persona.</p>
+              <p className="text-[11px] text-slate-400 dark:text-slate-500">{t("Cada comisión se carga como gasto de la unidad y queda en la cuenta corriente de la persona.")}</p>
             </>
           )}
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <Campo label="Moneda">
+          <Campo label={t("Moneda")}>
             <select value={moneda} onChange={(e) => setMoneda(e.target.value as Moneda)} className="input">
               {MONEDAS.map((m) => (
-                <option key={m.valor} value={m.valor}>{m.label}</option>
+                <option key={m.valor} value={m.valor}>{t(m.label)}</option>
               ))}
             </select>
           </Campo>
           {esLargo && config.ajusteInflacion && (
-            <Campo label="Actualización">
+            <Campo label={t("Actualización")}>
               <select value={actualizacion} onChange={(e) => setActualizacion(e.target.value as TipoActualizacion)} className="input">
                 {TIPOS_ACTUALIZACION.map((a) => (
-                  <option key={a} value={a}>{a}</option>
+                  <option key={a} value={a}>{t(a)}</option>
                 ))}
               </select>
             </Campo>
@@ -369,7 +368,7 @@ export default function FormReserva({
 
         {esLargo && config.ajusteInflacion && actualizacion !== "Sin actualización" && (
           <div className="grid grid-cols-2 gap-4">
-            <Campo label="Índice de ajuste">
+            <Campo label={t("Índice de ajuste")}>
               <select value={indice} onChange={(e) => setIndice(e.target.value as IndiceAjuste)} className="input">
                 {INDICES_AJUSTE.map((i) => (
                   <option key={i} value={i}>{i}</option>
@@ -377,7 +376,7 @@ export default function FormReserva({
               </select>
             </Campo>
             {indice === "Manual" && (
-              <Campo label="% por período">
+              <Campo label={t("% por período")}>
                 <input
                   type="number" min={0} step="0.1"
                   value={porcentajeManual}
@@ -392,16 +391,16 @@ export default function FormReserva({
         {esLargo ? (
           <>
             <div className="grid grid-cols-2 gap-4">
-              <Campo label={`Alquiler mensual (${simbolo})`}>
+              <Campo label={`${t("Alquiler mensual")} (${simbolo})`}>
                 <InputMonto value={montoMensual} onChange={setMontoMensual} decimales={moneda === "USD"} />
               </Campo>
-              <Campo label={`Depósito (${simbolo})`}>
+              <Campo label={`${t("Depósito")} (${simbolo})`}>
                 <InputMonto value={sena} onChange={setSena} decimales={moneda === "USD"} />
               </Campo>
             </div>
             {montoMensual > 0 && cantMeses > 0 && (
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Total del contrato: <b>{simbolo}{totalContrato.toLocaleString("es-AR")}</b> ({cantMeses} meses × {simbolo}{montoMensual.toLocaleString("es-AR")})
+                {t("Total del contrato:")} <b>{simbolo}{totalContrato.toLocaleString("es-AR")}</b> ({cantMeses} {t("meses ×")} {simbolo}{montoMensual.toLocaleString("es-AR")})
               </p>
             )}
           </>
@@ -410,19 +409,19 @@ export default function FormReserva({
             {tieneCocheraTarifa && (
               <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
                 <input type="checkbox" checked={conCochera} onChange={(e) => setConCochera(e.target.checked)} />
-                Incluye cochera (🅿 ${(unidad!.precioDiaCochera ?? 0).toLocaleString("es-AR")}/día vs ${(unidad?.precioDia ?? 0).toLocaleString("es-AR")}/día)
+                {t("Incluye cochera")} (🅿 ${(unidad!.precioDiaCochera ?? 0).toLocaleString("es-AR")}/{t("día")} vs ${(unidad?.precioDia ?? 0).toLocaleString("es-AR")}/{t("día")})
               </label>
             )}
             {usaTarifaDia ? (
               <>
                 <div className="rounded-lg bg-slate-50 dark:bg-slate-900 p-3 text-sm">
                   <div className="flex justify-between text-slate-600 dark:text-slate-300">
-                    <span>{cantNoches} {cantNoches === 1 ? "noche" : "noches"} × {simbolo}{tarifaDia.toLocaleString("es-AR")}{conCochera && tieneCocheraTarifa ? " (con cochera)" : ""}</span>
+                    <span>{cantNoches} {cantNoches === 1 ? t("noche") : t("noches")} × {simbolo}{tarifaDia.toLocaleString("es-AR")}{conCochera && tieneCocheraTarifa ? ` ${t("(con cochera)")}` : ""}</span>
                     <b className="text-slate-800 dark:text-slate-100">{simbolo}{totalPorDia.toLocaleString("es-AR")}</b>
                   </div>
                   {totalPorDia > 0 && (
                     <div className="flex justify-between mt-1 text-xs text-slate-400 dark:text-slate-500">
-                      <span>Saldo pendiente</span>
+                      <span>{t("Saldo pendiente")}</span>
                       <b className={saldo > 0 ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"}>{simbolo}{saldo.toLocaleString("es-AR")}</b>
                     </div>
                   )}
@@ -430,12 +429,12 @@ export default function FormReserva({
               </>
             ) : (
               <>
-                <Campo label={`Monto total (${simbolo})`}>
+                <Campo label={`${t("Monto total")} (${simbolo})`}>
                   <InputMonto value={montoTotal} onChange={setMontoTotal} decimales={moneda === "USD"} />
                 </Campo>
                 {montoTotal > 0 && (
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Saldo pendiente: <b className={saldo > 0 ? "text-amber-600" : "text-emerald-600"}>
+                    {t("Saldo pendiente:")} <b className={saldo > 0 ? "text-amber-600" : "text-emerald-600"}>
                       {simbolo}{saldo.toLocaleString("es-AR")}
                     </b>
                   </p>
@@ -446,27 +445,27 @@ export default function FormReserva({
         )}
 
         {esLargo ? (
-          <Campo label="Día de vencimiento mensual">
+          <Campo label={t("Día de vencimiento mensual")}>
             <select
               value={diaVencimiento}
               onChange={(e) => setDiaVencimiento(e.target.value ? Number(e.target.value) : "")}
               className="input"
             >
-              <option value="">Sin vencimiento fijo</option>
+              <option value="">{t("Sin vencimiento fijo")}</option>
               {Array.from({ length: 28 }, (_, i) => i + 1).map((d) => (
-                <option key={d} value={d}>Día {d} de cada mes</option>
+                <option key={d} value={d}>{t("Día")} {d} {t("de cada mes")}</option>
               ))}
             </select>
           </Campo>
         ) : (
-          <Campo label="Vencimiento del saldo (opcional)">
+          <Campo label={t("Vencimiento del saldo (opcional)")}>
             <input type="date" value={vencimiento} onChange={(e) => setVencimiento(e.target.value)} className="input" />
           </Campo>
         )}
 
         {esLargo && (
           <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-3 space-y-2">
-            <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Servicios a cargo del inquilino</span>
+            <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{t("Servicios a cargo del inquilino")}</span>
             <div className="flex flex-wrap gap-1.5">
               {Array.from(new Set([...SERVICIOS_DEFAULT, ...serviciosInquilino])).map((s) => {
                 const activo = serviciosInquilino.includes(s);
@@ -475,7 +474,7 @@ export default function FormReserva({
                     type="button" key={s} onClick={() => toggleServicio(s)}
                     className={`text-xs px-2.5 py-1 rounded-full border transition ${activo ? "bg-teal-600 text-white border-teal-600" : "border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:border-teal-400"}`}
                   >
-                    {activo ? "✓ " : ""}{s}
+                    {activo ? "✓ " : ""}{t(s)}
                   </button>
                 );
               })}
@@ -483,15 +482,15 @@ export default function FormReserva({
             <div className="flex gap-2">
               <input
                 value={nuevoServicio} onChange={(e) => setNuevoServicio(e.target.value)}
-                placeholder="Agregar otro servicio…" className="input flex-1"
+                placeholder={t("Agregar otro servicio…")} className="input flex-1"
                 onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); const n = nuevoServicio.trim(); if (n && !serviciosInquilino.includes(n)) setServiciosInquilino((p) => [...p, n]); setNuevoServicio(""); } }}
               />
             </div>
-            <Campo label="Email del inquilino (para su portal)">
+            <Campo label={t("Email del inquilino (para su portal)")}>
               <input type="email" value={emailInquilino} onChange={(e) => setEmailInquilino(e.target.value)} className="input" placeholder="inquilino@email.com" />
             </Campo>
             <p className="text-xs text-slate-400 dark:text-slate-500">
-              Con este email, el inquilino entra al portal (con el link/QR de tu negocio) y carga los comprobantes de estos servicios cada mes.
+              {t("Con este email, el inquilino entra al portal (con el link/QR de tu negocio) y carga los comprobantes de estos servicios cada mes.")}
             </p>
           </div>
         )}
@@ -506,14 +505,14 @@ export default function FormReserva({
 
         {!esEdicion && (
           <p className="text-xs text-slate-400 dark:text-slate-500 border-t border-slate-100 dark:border-slate-700 pt-3">
-            💡 Guardá la reserva y volvé a abrirla para registrar los pagos —incluida la seña (con el check «Es la seña»)— cada uno con su fecha, y ver el saldo actualizado.
+            💡 {t("Guardá la reserva y volvé a abrirla para registrar los pagos —incluida la seña (con el check «Es la seña»)— cada uno con su fecha, y ver el saldo actualizado.")}
           </p>
         )}
 
         {esEdicion && reserva && <ChatReserva reservaId={reserva.id} />}
 
-        <Campo label="Notas">
-          <textarea value={notas} onChange={(e) => setNotas(e.target.value)} className="input min-h-20" placeholder="Horario de llegada, pedidos especiales, garante…" />
+        <Campo label={t("Notas")}>
+          <textarea value={notas} onChange={(e) => setNotas(e.target.value)} className="input min-h-20" placeholder={t("Horario de llegada, pedidos especiales, garante…")} />
         </Campo>
 
         <div className="flex justify-between items-center pt-2">
@@ -521,21 +520,21 @@ export default function FormReserva({
             <button
               type="button"
               onClick={() => {
-                if (reserva && confirm("¿Eliminar esta reserva?")) {
+                if (reserva && confirm(t("¿Eliminar esta reserva?"))) {
                   deleteReserva(reserva.id);
                   onCerrar();
                 }
               }}
               className="text-sm text-rose-600 hover:text-rose-700"
             >
-              Eliminar
+              {t("Eliminar")}
             </button>
           ) : (
             <span />
           )}
           <div className="flex gap-2">
-            <button type="button" onClick={onCerrar} className="btn-secundario">Cerrar</button>
-            {puedeEdit && <button type="submit" disabled={!valido} className="btn-primario">Guardar</button>}
+            <button type="button" onClick={onCerrar} className="btn-secundario">{t("Cerrar")}</button>
+            {puedeEdit && <button type="submit" disabled={!valido} className="btn-primario">{t("Guardar")}</button>}
           </div>
         </div>
       </form>
@@ -556,23 +555,23 @@ const labelPeriodo = (p: string) => {
 
 // Chat con el inquilino (lado dueño).
 function ChatReserva({ reservaId }: { reservaId: string }) {
-  const { mensajesDe, enviarMensaje } = useStore();
+  const { mensajesDe, enviarMensaje, t } = useStore();
   const msgs = mensajesDe(reservaId);
   const [texto, setTexto] = useState("");
 
   function enviar() {
-    const t = texto.trim();
-    if (!t) return;
-    enviarMensaje(reservaId, t);
+    const txt = texto.trim();
+    if (!txt) return;
+    enviarMensaje(reservaId, txt);
     setTexto("");
   }
 
   return (
     <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">
-      <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Mensajes con el inquilino</span>
+      <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{t("Mensajes con el inquilino")}</span>
       <div className="mt-2 space-y-1.5 max-h-48 overflow-y-auto">
         {msgs.length === 0 ? (
-          <p className="text-xs text-slate-400 dark:text-slate-500">Sin mensajes. Escribile por el canal de la app (no hace falta WhatsApp).</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500">{t("Sin mensajes. Escribile por el canal de la app (no hace falta WhatsApp).")}</p>
         ) : msgs.map((m) => (
           <div key={m.id} className={`flex ${m.autor === "dueno" ? "justify-end" : "justify-start"}`}>
             <span className={`text-xs px-2.5 py-1.5 rounded-2xl max-w-[80%] ${m.autor === "dueno" ? "bg-teal-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200"}`}>{m.texto}</span>
@@ -580,8 +579,8 @@ function ChatReserva({ reservaId }: { reservaId: string }) {
         ))}
       </div>
       <div className="flex gap-2 mt-2">
-        <input value={texto} onChange={(e) => setTexto(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); enviar(); } }} className="input flex-1" placeholder="Escribir mensaje…" />
-        <button type="button" onClick={enviar} disabled={!texto.trim()} className="btn-primario disabled:opacity-50">Enviar</button>
+        <input value={texto} onChange={(e) => setTexto(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); enviar(); } }} className="input flex-1" placeholder={t("Escribir mensaje…")} />
+        <button type="button" onClick={enviar} disabled={!texto.trim()} className="btn-primario disabled:opacity-50">{t("Enviar")}</button>
       </div>
     </div>
   );
@@ -590,7 +589,7 @@ function ChatReserva({ reservaId }: { reservaId: string }) {
 // Tablero mensual de comprobantes de servicios (lado dueño). Puede ver y también
 // cargar en nombre del inquilino. El inquilino carga lo mismo desde su portal.
 function ServiciosTablero({ reserva, servicios, simbolo }: { reserva: Reserva; servicios: string[]; simbolo: string }) {
-  const { serviciosDe, guardarServicioComprobante, deleteServicioComprobante } = useStore();
+  const { serviciosDe, guardarServicioComprobante, deleteServicioComprobante, t } = useStore();
   const comps = serviciosDe(reserva.id);
   const hoyMes = hoyISO().slice(0, 7);
   const [ver, setVer] = useState<ServicioComprobante | null>(null);
@@ -606,8 +605,8 @@ function ServiciosTablero({ reserva, servicios, simbolo }: { reserva: Reserva; s
   return (
     <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Comprobantes de servicios</span>
-        <span className="text-xs text-slate-400 dark:text-slate-500">verde = cargado</span>
+        <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{t("Comprobantes de servicios")}</span>
+        <span className="text-xs text-slate-400 dark:text-slate-500">{t("verde = cargado")}</span>
       </div>
       <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
         {meses.map((ini) => {
@@ -625,13 +624,13 @@ function ServiciosTablero({ reserva, servicios, simbolo }: { reserva: Reserva; s
                   if (c?.comprobante) {
                     return (
                       <button type="button" key={s} onClick={() => setVer(c)} className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400">
-                        ✓ {s}
+                        ✓ {t(s)}
                       </button>
                     );
                   }
                   return (
                     <label key={s} className="text-[11px] px-2 py-0.5 rounded-full border border-dashed border-slate-300 dark:border-slate-600 text-slate-400 dark:text-slate-500 cursor-pointer hover:border-teal-400 hover:text-teal-500">
-                      + {s}
+                      + {t(s)}
                       <input type="file" accept="image/*" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; if (f) await subir(periodo, s, f); e.target.value = ""; }} />
                     </label>
                   );
@@ -643,17 +642,17 @@ function ServiciosTablero({ reserva, servicios, simbolo }: { reserva: Reserva; s
       </div>
 
       {ver && (
-        <Overlay titulo={`${ver.servicio} · ${ver.periodo}`} onCerrar={() => setVer(null)}>
-          {ver.monto > 0 && <p className="text-sm text-slate-500 dark:text-slate-400 mb-2">Monto: {simbolo}{ver.monto.toLocaleString("es-AR")}</p>}
+        <Overlay titulo={`${t(ver.servicio)} · ${ver.periodo}`} onCerrar={() => setVer(null)}>
+          {ver.monto > 0 && <p className="text-sm text-slate-500 dark:text-slate-400 mb-2">{t("Monto:")} {simbolo}{ver.monto.toLocaleString("es-AR")}</p>}
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          {ver.comprobante && <img src={ver.comprobante} alt="Comprobante" className="w-full rounded-lg" />}
+          {ver.comprobante && <img src={ver.comprobante} alt={t("Comprobante")} className="w-full rounded-lg" />}
           <div className="flex justify-end pt-3">
             <button
               type="button"
               onClick={() => { deleteServicioComprobante(reserva.id, ver.periodo, ver.servicio); setVer(null); }}
               className="text-sm text-rose-600 hover:text-rose-700 dark:text-rose-400"
             >
-              Quitar comprobante
+              {t("Quitar comprobante")}
             </button>
           </div>
         </Overlay>
@@ -663,7 +662,7 @@ function ServiciosTablero({ reserva, servicios, simbolo }: { reserva: Reserva; s
 }
 
 function SeccionPagos({ reserva, moneda, simbolo, total, sena }: { reserva: Reserva; moneda: Moneda; simbolo: string; total: number; sena: number }) {
-  const { pagosDe, addPago, updatePago, deletePago, mediosPago, gastos, updateReserva, dolarOficial } = useStore();
+  const { pagosDe, addPago, updatePago, deletePago, mediosPago, gastos, updateReserva, dolarOficial, t } = useStore();
   const esUSD = moneda === "USD"; // moneda en vivo del formulario (no la guardada)
   const pagos = pagosDe(reserva.id);
   const largo = esLargoPlazo(reserva.tipo);
@@ -777,28 +776,28 @@ function SeccionPagos({ reserva, moneda, simbolo, total, sena }: { reserva: Rese
   return (
     <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{largo ? "Cuenta corriente" : "Pagos"}</span>
+        <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{largo ? t("Cuenta corriente") : t("Pagos")}</span>
         {largo && cc ? (
           <span className={`text-sm font-semibold ${cc.saldoVencido > 0 ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"}`}>
-            {cc.saldoVencido > 0 ? `Vencido ${simbolo}${cc.saldoVencido.toLocaleString("es-AR")}` : "Al día ✓"}
+            {cc.saldoVencido > 0 ? `${t("Vencido")} ${simbolo}${cc.saldoVencido.toLocaleString("es-AR")}` : t("Al día ✓")}
           </span>
         ) : (
           <span className={`text-sm font-semibold ${saldo > 0 ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"}`}>
-            {saldo > 0 ? `Saldo ${simbolo}${saldo.toLocaleString("es-AR")}` : "Pagado ✓"}
+            {saldo > 0 ? `${t("Saldo")} ${simbolo}${saldo.toLocaleString("es-AR")}` : t("Pagado ✓")}
           </span>
         )}
       </div>
 
       {largo && cc ? (
         <div className="text-xs text-slate-400 dark:text-slate-500 mb-2">
-          Devengado {simbolo}{cc.devengado.toLocaleString("es-AR")} · Cobrado {simbolo}{cc.totalPagado.toLocaleString("es-AR")}
-          {cc.totalCredito > 0 && <span className="text-violet-500 dark:text-violet-400"> · crédito inquilino {simbolo}{cc.totalCredito.toLocaleString("es-AR")}</span>}
-          {sena > 0 && ` · depósito ${simbolo}${sena.toLocaleString("es-AR")}`}
+          {t("Devengado")} {simbolo}{cc.devengado.toLocaleString("es-AR")} · {t("Cobrado")} {simbolo}{cc.totalPagado.toLocaleString("es-AR")}
+          {cc.totalCredito > 0 && <span className="text-violet-500 dark:text-violet-400"> · {t("crédito inquilino")} {simbolo}{cc.totalCredito.toLocaleString("es-AR")}</span>}
+          {sena > 0 && ` · ${t("depósito")} ${simbolo}${sena.toLocaleString("es-AR")}`}
         </div>
       ) : (
         <div className="text-xs text-slate-400 dark:text-slate-500 mb-2">
-          Total {simbolo}{total.toLocaleString("es-AR")} · Pagado {simbolo}{pagado.toLocaleString("es-AR")}
-          {sena > 0 && ` (seña ${simbolo}${sena.toLocaleString("es-AR")})`}
+          {t("Total")} {simbolo}{total.toLocaleString("es-AR")} · {t("Pagado")} {simbolo}{pagado.toLocaleString("es-AR")}
+          {sena > 0 && ` (${t("seña")} ${simbolo}${sena.toLocaleString("es-AR")})`}
         </div>
       )}
 
@@ -814,9 +813,9 @@ function SeccionPagos({ reserva, moneda, simbolo, total, sena }: { reserva: Rese
             >
               <span className="w-16 shrink-0 capitalize text-slate-600 dark:text-slate-300">{labelPeriodo(c.periodo)}</span>
               <span className="text-slate-500 dark:text-slate-400 tabular-nums">{simbolo}{c.monto.toLocaleString("es-AR")}</span>
-              {c.credito > 0 && <span className="text-violet-500 dark:text-violet-400 tabular-nums">gasto −{simbolo}{c.credito.toLocaleString("es-AR")}</span>}
-              {c.pagado > 0 && c.estado !== "pagada" && <span className="text-slate-400 dark:text-slate-500 tabular-nums">pagó {simbolo}{c.pagado.toLocaleString("es-AR")}</span>}
-              <span className={`ml-auto shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium ${COLOR_ESTADO_CUOTA[c.estado]}`}>{c.estado}</span>
+              {c.credito > 0 && <span className="text-violet-500 dark:text-violet-400 tabular-nums">{t("gasto")} −{simbolo}{c.credito.toLocaleString("es-AR")}</span>}
+              {c.pagado > 0 && c.estado !== "pagada" && <span className="text-slate-400 dark:text-slate-500 tabular-nums">{t("pagó")} {simbolo}{c.pagado.toLocaleString("es-AR")}</span>}
+              <span className={`ml-auto shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium ${COLOR_ESTADO_CUOTA[c.estado]}`}>{t(c.estado)}</span>
             </button>
           ))}
         </div>
@@ -827,25 +826,25 @@ function SeccionPagos({ reserva, moneda, simbolo, total, sena }: { reserva: Rese
         <div className="mb-2">
           {!abrirAum ? (
             <button type="button" onClick={() => { setAumDesde(cc.proxima?.periodo ?? hoy.slice(0, 7)); setAbrirAum(true); }} className="text-xs text-teal-600 dark:text-teal-400 hover:underline">
-              + Aplicar aumento
+              {t("+ Aplicar aumento")}
             </button>
           ) : (
             <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 dark:border-slate-700 pt-2">
-              <span className="text-xs text-slate-500 dark:text-slate-400">Desde</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400">{t("Desde")}</span>
               <select value={aumDesde} onChange={(e) => setAumDesde(e.target.value)} className="input w-auto py-1 text-xs">
                 {cc.cuotas.map((c) => <option key={c.periodo} value={c.periodo}>{labelPeriodo(c.periodo)}</option>)}
               </select>
-              <span className="text-xs text-slate-500 dark:text-slate-400">nuevo importe</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400">{t("nuevo importe")}</span>
               <InputMonto value={aumMonto} onChange={setAumMonto} className="w-32" />
-              <button type="button" onClick={aplicarAumento} disabled={aumMonto <= 0} className="btn-primario text-xs disabled:opacity-50">Aplicar</button>
-              <button type="button" onClick={() => setAbrirAum(false)} className="btn-secundario text-xs">Cancelar</button>
+              <button type="button" onClick={aplicarAumento} disabled={aumMonto <= 0} className="btn-primario text-xs disabled:opacity-50">{t("Aplicar")}</button>
+              <button type="button" onClick={() => setAbrirAum(false)} className="btn-secundario text-xs">{t("Cancelar")}</button>
             </div>
           )}
           {aumentos.length > 0 && (
             <div className="mt-1.5 flex flex-wrap gap-1.5">
               {aumentos.map((a) => (
                 <span key={a.desde} className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">
-                  desde {labelPeriodo(a.desde)}: {simbolo}{a.monto.toLocaleString("es-AR")}
+                  {t("desde")} {labelPeriodo(a.desde)}: {simbolo}{a.monto.toLocaleString("es-AR")}
                   <button type="button" onClick={() => { const next = aumentos.filter((x) => x.desde !== a.desde); setAumentos(next); updateReserva(reserva.id, { aumentos: next }); }} className="ml-1 text-slate-400 hover:text-rose-500">×</button>
                 </span>
               ))}
@@ -870,14 +869,14 @@ function SeccionPagos({ reserva, moneda, simbolo, total, sena }: { reserva: Rese
                   {esUSD && p.tipoCambio ? <span className="text-slate-400 dark:text-slate-500 font-normal"> · ≈ ${Math.round(p.monto * p.tipoCambio).toLocaleString("es-AR")}</span> : null}
                 </span>
               )}
-              {p.esSena && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400">seña</span>}
+              {p.esSena && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400">{t("seña")}</span>}
               {p.periodo && <span className="text-teal-600 dark:text-teal-400 capitalize">{labelPeriodo(p.periodo)}</span>}
               <span className="text-slate-500 dark:text-slate-400">{p.medio}</span>
               <span className="text-slate-400 dark:text-slate-500">{formatearFecha(p.fecha)}</span>
               {p.comprobante && (
-                <a href={p.comprobante} target="_blank" rel="noreferrer" className="text-teal-600 dark:text-teal-400 hover:underline">comprobante</a>
+                <a href={p.comprobante} target="_blank" rel="noreferrer" className="text-teal-600 dark:text-teal-400 hover:underline">{t("comprobante")}</a>
               )}
-              <button type="button" onClick={() => editarPago(p)} className="ml-auto text-slate-400 hover:text-teal-600 dark:hover:text-teal-400">editar</button>
+              <button type="button" onClick={() => editarPago(p)} className="ml-auto text-slate-400 hover:text-teal-600 dark:hover:text-teal-400">{t("editar")}</button>
               <button type="button" onClick={() => deletePago(p.id)} className="text-slate-400 hover:text-rose-600 dark:hover:text-rose-400">×</button>
             </div>
           ))}
@@ -886,41 +885,41 @@ function SeccionPagos({ reserva, moneda, simbolo, total, sena }: { reserva: Rese
 
       {!abrir ? (
         <button type="button" onClick={() => setAbrir(true)} className="text-sm text-teal-600 dark:text-teal-400 hover:underline">
-          + Registrar pago
+          {t("+ Registrar pago")}
         </button>
       ) : (
         <div className="space-y-2 border-t border-slate-100 dark:border-slate-700 pt-2">
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex rounded-md border border-slate-300 dark:border-slate-600 overflow-hidden text-xs">
-              <button type="button" onClick={() => cambiarModo("ARS")} className={modo === "ARS" ? "px-2 py-1 bg-teal-600 text-white" : "px-2 py-1 text-slate-500 dark:text-slate-400"}>pesos</button>
-              <button type="button" onClick={() => cambiarModo("USD")} className={modo === "USD" ? "px-2 py-1 bg-teal-600 text-white" : "px-2 py-1 text-slate-500 dark:text-slate-400"}>US$</button>
+              <button type="button" onClick={() => cambiarModo("ARS")} className={modo === "ARS" ? "px-2 py-1 bg-teal-600 text-white" : "px-2 py-1 text-slate-500 dark:text-slate-400"}>{t("pesos")}</button>
+              <button type="button" onClick={() => cambiarModo("USD")} className={modo === "USD" ? "px-2 py-1 bg-teal-600 text-white" : "px-2 py-1 text-slate-500 dark:text-slate-400"}>{t("US$")}</button>
             </div>
             <InputMonto value={monto} onChange={setMonto} decimales={modo === "USD"} className="flex-1" />
-            <button type="button" onClick={() => setMonto(aMonedaPago(total * 0.3))} className="text-xs text-teal-600 dark:text-teal-400 hover:underline whitespace-nowrap">Seña 30%</button>
-            <button type="button" onClick={() => setMonto(aMonedaPago(saldoTarget))} className="text-xs text-teal-600 dark:text-teal-400 hover:underline whitespace-nowrap">Saldar</button>
+            <button type="button" onClick={() => setMonto(aMonedaPago(total * 0.3))} className="text-xs text-teal-600 dark:text-teal-400 hover:underline whitespace-nowrap">{t("Seña 30%")}</button>
+            <button type="button" onClick={() => setMonto(aMonedaPago(saldoTarget))} className="text-xs text-teal-600 dark:text-teal-400 hover:underline whitespace-nowrap">{t("Saldar")}</button>
           </div>
 
           {/* Tipo de cambio: cuando hay dólares de por medio (pago en otra moneda o reserva USD). */}
           {mostrarTC && (
             <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">Dólar $</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">{t("Dólar $")}</span>
               <input type="number" min={0} value={tipoCambio} onChange={(e) => setTipoCambio(Math.max(0, Number(e.target.value)))} className="input w-28 text-right" />
-              <span className="text-[10px] text-slate-400 dark:text-slate-500">{dolarOficial ? "oficial sugerido, editable" : "cargá el valor"}</span>
+              <span className="text-[10px] text-slate-400 dark:text-slate-500">{dolarOficial ? t("oficial sugerido, editable") : t("cargá el valor")}</span>
             </div>
           )}
           {cruzada && montoReserva > 0 && (
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              entró <b>{SIMBOLO_MONEDA[monedaPagoSel]}{montoIngresado.toLocaleString("es-AR")}</b> · cubre <b>{simbolo}{montoReserva.toLocaleString("es-AR")}</b> de la reserva
+              {t("entró")} <b>{SIMBOLO_MONEDA[monedaPagoSel]}{montoIngresado.toLocaleString("es-AR")}</b> · {t("cubre")} <b>{simbolo}{montoReserva.toLocaleString("es-AR")}</b> {t("de la reserva")}
             </p>
           )}
 
           {largo && cc && (
             <label className="block">
-              <span className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Imputar al mes</span>
+              <span className="block text-xs text-slate-500 dark:text-slate-400 mb-1">{t("Imputar al mes")}</span>
               <select value={periodo} onChange={(e) => setPeriodo(e.target.value)} className="input">
-                <option value="">Automático (el más antiguo impago)</option>
+                <option value="">{t("Automático (el más antiguo impago)")}</option>
                 {cc.cuotas.map((c) => (
-                  <option key={c.periodo} value={c.periodo}>{labelPeriodo(c.periodo)} · saldo {simbolo}{c.saldo.toLocaleString("es-AR")}</option>
+                  <option key={c.periodo} value={c.periodo}>{labelPeriodo(c.periodo)} · {t("saldo")} {simbolo}{c.saldo.toLocaleString("es-AR")}</option>
                 ))}
               </select>
             </label>
@@ -933,26 +932,26 @@ function SeccionPagos({ reserva, moneda, simbolo, total, sena }: { reserva: Rese
 
           <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
             <input type="checkbox" checked={esSena} onChange={(e) => setEsSena(e.target.checked)} />
-            Es la seña (queda registrada con su fecha)
+            {t("Es la seña (queda registrada con su fecha)")}
           </label>
 
           <div className="flex items-center gap-2">
             <label className="btn-secundario cursor-pointer text-xs">
-              {comprobante ? "Comprobante ✓" : "Adjuntar comprobante"}
+              {comprobante ? t("Comprobante ✓") : t("Adjuntar comprobante")}
               <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
                 const f = e.target.files?.[0];
                 if (f) setComprobante(await subirArchivo(f, "comprobantes"));
                 e.target.value = "";
               }} />
             </label>
-            {comprobante && <button type="button" onClick={() => setComprobante(undefined)} className="text-xs text-slate-400 hover:text-rose-600">quitar</button>}
+            {comprobante && <button type="button" onClick={() => setComprobante(undefined)} className="text-xs text-slate-400 hover:text-rose-600">{t("quitar")}</button>}
           </div>
 
-          <input value={nota} onChange={(e) => setNota(e.target.value)} placeholder="Nota (opcional)" className="input" />
+          <input value={nota} onChange={(e) => setNota(e.target.value)} placeholder={t("Nota (opcional)")} className="input" />
 
           <div className="flex justify-end gap-2">
-            <button type="button" onClick={() => { setAbrir(false); setEditId(null); }} className="btn-secundario">Cancelar</button>
-            <button type="button" onClick={registrar} disabled={montoReserva <= 0} className="btn-primario">{editId ? "Guardar" : "Registrar"}</button>
+            <button type="button" onClick={() => { setAbrir(false); setEditId(null); }} className="btn-secundario">{t("Cancelar")}</button>
+            <button type="button" onClick={registrar} disabled={montoReserva <= 0} className="btn-primario">{editId ? t("Guardar") : t("Registrar")}</button>
           </div>
         </div>
       )}

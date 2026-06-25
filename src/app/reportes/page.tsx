@@ -33,7 +33,7 @@ interface Metricas {
 const pesos = (n: number) => "$" + Math.round(n).toLocaleString("es-AR");
 
 export default function Reportes() {
-  const { unidades, reservas, gastos, ingresos, grupos, getGrupo, getUnidad, pagos, saldoDe, config, puedeEditar } = useStore();
+  const { unidades, reservas, gastos, ingresos, grupos, getGrupo, getUnidad, pagos, saldoDe, config, puedeEditar, t } = useStore();
   const puedeVerReportes = puedeEditar("reportes");
   const reservaPorId = new Map(reservas.map((r) => [r.id, r]));
   // Reservas cuya seña ya está registrada como un pago (con fecha): no imputar también el campo 'sena'.
@@ -62,35 +62,35 @@ export default function Reportes() {
 
   const nUnidades = Math.max(1, unidades.length);
   function gastosUnidad(uid: string): number {
-    let t = 0;
+    let acc = 0;
     for (const g of gastos) {
       if (g.fecha < desde || g.fecha > hasta) continue;
       if (g.pagadoPor === "inquilino") continue; // lo pagó el inquilino (se descuenta del alquiler), no es egreso del dueño
-      if (g.ambito === "unidad" && g.refId === uid) t += g.monto;
+      if (g.ambito === "unidad" && g.refId === uid) acc += g.monto;
       else if (g.ambito === "grupo" && g.reparto) {
         const it = g.reparto.find((r) => r.unidadId === uid);
-        if (it) t += (g.monto * it.porcentaje) / 100;
+        if (it) acc += (g.monto * it.porcentaje) / 100;
       } else if (g.ambito === "general") {
-        t += g.monto / nUnidades; // gasto del negocio: se reparte en partes iguales entre todas las unidades
+        acc += g.monto / nUnidades; // gasto del negocio: se reparte en partes iguales entre todas las unidades
       }
     }
-    return Math.round(t);
+    return Math.round(acc);
   }
 
   // Otros ingresos (venta de muebles, etc.) imputados a la unidad (mismo prorrateo que gastos).
   function otrosIngresosUnidad(uid: string): number {
-    let t = 0;
+    let acc = 0;
     for (const i of ingresos) {
       if (i.fecha < desde || i.fecha > hasta) continue;
-      if (i.ambito === "unidad" && i.refId === uid) t += i.monto;
+      if (i.ambito === "unidad" && i.refId === uid) acc += i.monto;
       else if (i.ambito === "grupo" && i.reparto) {
         const it = i.reparto.find((r) => r.unidadId === uid);
-        if (it) t += (i.monto * it.porcentaje) / 100;
+        if (it) acc += (i.monto * it.porcentaje) / 100;
       } else if (i.ambito === "general") {
-        t += i.monto / nUnidades;
+        acc += i.monto / nUnidades;
       }
     }
-    return Math.round(t);
+    return Math.round(acc);
   }
 
   const incluyeTemporal = negocio === "todos" || negocio === "temporal";
@@ -161,7 +161,7 @@ export default function Reportes() {
       if (r.moneda === "USD" || !incluyeTipo(esLargoPlazo(r.tipo))) continue;
       if (r.sena > 0 && r.checkIn >= desde && r.checkIn <= hasta && !reservasConSenaPago.has(r.id)) senas += r.sena;
     }
-    if (senas > 0) map.set("Seña", senas);
+    if (senas > 0) map.set(t("Seña"), senas);
     return [...map.entries()]
       .map(([label, valor], i) => ({ label, valor, color: PALETA[i % PALETA.length] }))
       .filter((d) => d.valor > 0)
@@ -184,9 +184,9 @@ export default function Reportes() {
   if (!puedeVerReportes) {
     return (
       <div>
-        <h1 className="font-display text-2xl font-semibold text-slate-800 dark:text-slate-100 mb-2">Reportes</h1>
+        <h1 className="font-display text-2xl font-semibold text-slate-800 dark:text-slate-100 mb-2">{t("Reportes")}</h1>
         <div className="card p-10 text-center text-slate-500 dark:text-slate-400">
-          No tenés acceso a los reportes. La información económica es sensible; pedile al propietario que te habilite el permiso "Ver reportes".
+          {t("No tenés acceso a los reportes. La información económica es sensible; pedile al propietario que te habilite el permiso \"Ver reportes\".")}
         </div>
       </div>
     );
@@ -196,25 +196,25 @@ export default function Reportes() {
     <div>
       <div className="flex flex-wrap items-end justify-between gap-4 mb-6">
         <div>
-          <h1 className="font-display text-2xl font-semibold text-slate-800 dark:text-slate-100">Reportes</h1>
+          <h1 className="font-display text-2xl font-semibold text-slate-800 dark:text-slate-100">{t("Reportes")}</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400">
             {tab === "cobranzas"
-              ? "Lo que falta cobrar, por inquilino."
+              ? t("Lo que falta cobrar, por inquilino.")
               : tab === "cronograma"
-              ? "Previsión de cobranzas: vencimientos por fecha."
+              ? t("Previsión de cobranzas: vencimientos por fecha.")
               : tab === "timeline"
-              ? "Línea de tiempo: reservas y eventos por unidad."
-              : "Ingresos = lo cobrado (pagos + seña), por unidad y grupo."}
+              ? t("Línea de tiempo: reservas y eventos por unidad.")
+              : t("Ingresos = lo cobrado (pagos + seña), por unidad y grupo.")}
           </p>
         </div>
         {(tab === "economico" || tab === "ocupacion" || tab === "timeline") && (
           <div className="flex items-end gap-2">
             <label className="text-xs text-slate-500 dark:text-slate-400">
-              Desde
+              {t("Desde")}
               <input type="date" value={desde} onChange={(e) => setDesde(e.target.value)} className="input mt-1" />
             </label>
             <label className="text-xs text-slate-500 dark:text-slate-400">
-              Hasta
+              {t("Hasta")}
               <input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} className="input mt-1" />
             </label>
           </div>
@@ -224,22 +224,22 @@ export default function Reportes() {
       {/* Tabs + toggle de vista */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-5 border-b border-slate-200 dark:border-slate-700">
         <div className="flex gap-1 overflow-x-auto -mb-px">
-          <TabBtn activo={tab === "economico"} onClick={() => setTab("economico")}>Económico</TabBtn>
-          <TabBtn activo={tab === "ocupacion"} onClick={() => setTab("ocupacion")}>Ocupación</TabBtn>
-          <TabBtn activo={tab === "cobranzas"} onClick={() => setTab("cobranzas")}>Por cobrar</TabBtn>
-          <TabBtn activo={tab === "cronograma"} onClick={() => setTab("cronograma")}>Cronograma</TabBtn>
-          <TabBtn activo={tab === "timeline"} onClick={() => setTab("timeline")}>Timeline</TabBtn>
+          <TabBtn activo={tab === "economico"} onClick={() => setTab("economico")}>{t("Económico")}</TabBtn>
+          <TabBtn activo={tab === "ocupacion"} onClick={() => setTab("ocupacion")}>{t("Ocupación")}</TabBtn>
+          <TabBtn activo={tab === "cobranzas"} onClick={() => setTab("cobranzas")}>{t("Por cobrar")}</TabBtn>
+          <TabBtn activo={tab === "cronograma"} onClick={() => setTab("cronograma")}>{t("Cronograma")}</TabBtn>
+          <TabBtn activo={tab === "timeline"} onClick={() => setTab("timeline")}>{t("Timeline")}</TabBtn>
         </div>
         {(tab === "economico" || tab === "ocupacion") && (
           <div className="flex items-center gap-2 pb-2">
             {vista === "grafico" && (
               <select value={tipoGrafico} onChange={(e) => setTipoGrafico(e.target.value as TipoGrafico)} className="input py-1 text-xs w-auto">
-                <option value="dona">Dona</option>
-                <option value="barras">Barras</option>
+                <option value="dona">{t("Dona")}</option>
+                <option value="barras">{t("Barras")}</option>
               </select>
             )}
             <Toggle
-              opciones={[{ v: "grafico", label: "Gráfico" }, { v: "tabla", label: "Tabla" }]}
+              opciones={[{ v: "grafico", label: t("Gráfico") }, { v: "tabla", label: t("Tabla") }]}
               valor={vista}
               onCambio={(v) => setVista(v as "grafico" | "tabla")}
             />
@@ -251,9 +251,9 @@ export default function Reportes() {
       <div className="mb-5">
         <Toggle
           opciones={[
-            { v: "todos", label: "Todos" },
-            { v: "temporal", label: "Temporario" },
-            { v: "largo", label: "Largo plazo" },
+            { v: "todos", label: t("Todos") },
+            { v: "temporal", label: t("Temporario") },
+            { v: "largo", label: t("Largo plazo") },
           ]}
           valor={negocio}
           onCambio={(v) => setNegocio(v as Negocio)}
@@ -269,15 +269,15 @@ export default function Reportes() {
           <TimelineGantt
             unidades={gruposOrdenados.flatMap(([, items]) => items)}
             reservas={reservas.filter((r) => incluyeTipo(esLargoPlazo(r.tipo)))}
-            eventos={generarTareas(reservas.filter((r) => incluyeTipo(esLargoPlazo(r.tipo))), desde, hasta, { saldoDe, ajusteInflacion: config.ajusteInflacion, pagos, gastos }).filter((t) => t.tipo === "cobro" || t.tipo === "ajuste")}
+            eventos={generarTareas(reservas.filter((r) => incluyeTipo(esLargoPlazo(r.tipo))), desde, hasta, { saldoDe, ajusteInflacion: config.ajusteInflacion, pagos, gastos }).filter((tarea) => tarea.tipo === "cobro" || tarea.tipo === "ajuste")}
             desde={desde}
             hasta={hasta}
             hoy={hoyISO()}
           />
           <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-3 text-xs text-slate-500 dark:text-slate-400">
-            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-rose-500" /> Cobro</span>
-            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-violet-500" /> Ajuste</span>
-            <span className="ml-auto">Las barras son reservas (color por canal). La línea teal es hoy.</span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-rose-500" /> {t("Cobro")}</span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-violet-500" /> {t("Ajuste")}</span>
+            <span className="ml-auto">{t("Las barras son reservas (color por canal). La línea teal es hoy.")}</span>
           </div>
         </>
       ) : tab === "economico" ? (
@@ -296,9 +296,9 @@ export default function Reportes() {
       )}
 
       {verGastos && (
-        <Overlay titulo="Gastos por tipo" onCerrar={() => setVerGastos(false)}>
+        <Overlay titulo={t("Gastos por tipo")} onCerrar={() => setVerGastos(false)}>
           {gastosPorCategoria.length === 0 ? (
-            <p className="text-sm text-slate-400 dark:text-slate-500">No hay gastos en el período.</p>
+            <p className="text-sm text-slate-400 dark:text-slate-500">{t("No hay gastos en el período.")}</p>
           ) : (
             <GraficoTorta datos={gastosPorCategoria} dona />
           )}
@@ -306,9 +306,9 @@ export default function Reportes() {
       )}
 
       {verMedios && (
-        <Overlay titulo="Ingresos por medio de pago" onCerrar={() => setVerMedios(false)}>
+        <Overlay titulo={t("Ingresos por medio de pago")} onCerrar={() => setVerMedios(false)}>
           {ingresosPorMedio.length === 0 ? (
-            <p className="text-sm text-slate-400 dark:text-slate-500">No hay cobros en el período.</p>
+            <p className="text-sm text-slate-400 dark:text-slate-500">{t("No hay cobros en el período.")}</p>
           ) : (
             <GraficoTorta datos={ingresosPorMedio} dona />
           )}
@@ -330,6 +330,7 @@ function Cobranzas({
   getUnidad: (id: string) => Unidad | undefined;
   incluyeTipo: (largo: boolean) => boolean;
 }) {
+  const { t } = useStore();
   const items = reservas
     .filter((r) => incluyeTipo(esLargoPlazo(r.tipo)) && saldoDe(r) > 0)
     .map((r) => ({ r, saldo: saldoDe(r) }))
@@ -341,7 +342,7 @@ function Cobranzas({
   if (items.length === 0) {
     return (
       <div className="card p-10 text-center text-slate-500 dark:text-slate-400">
-        Nadie debe nada. Todo cobrado 🎉
+        {t("Nadie debe nada. Todo cobrado")} 🎉
       </div>
     );
   }
@@ -350,11 +351,11 @@ function Cobranzas({
     <div>
       <div className="grid grid-cols-2 gap-3 mb-5">
         <div className="card p-4">
-          <div className="text-xs text-slate-500 dark:text-slate-400">Por cobrar (pesos)</div>
+          <div className="text-xs text-slate-500 dark:text-slate-400">{t("Por cobrar (pesos)")}</div>
           <div className="text-xl sm:text-2xl font-semibold text-amber-600 dark:text-amber-400 mt-1 tabular-nums">{pesos(totalARS)}</div>
         </div>
         <div className="card p-4">
-          <div className="text-xs text-slate-500 dark:text-slate-400">Por cobrar (dólares)</div>
+          <div className="text-xs text-slate-500 dark:text-slate-400">{t("Por cobrar (dólares)")}</div>
           <div className="text-xl sm:text-2xl font-semibold text-amber-600 dark:text-amber-400 mt-1 tabular-nums">US${Math.round(totalUSD).toLocaleString("es-AR")}</div>
         </div>
       </div>
@@ -368,12 +369,12 @@ function Cobranzas({
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">{r.huesped}</div>
                 <div className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                  {getUnidad(r.unidadId)?.nombre ?? "—"} · pagó {simbolo}{Math.round(pagado).toLocaleString("es-AR")} de {simbolo}{r.montoTotal.toLocaleString("es-AR")}
+                  {getUnidad(r.unidadId)?.nombre ?? "—"} · {t("pagó")} {simbolo}{Math.round(pagado).toLocaleString("es-AR")} {t("de")} {simbolo}{r.montoTotal.toLocaleString("es-AR")}
                 </div>
               </div>
               <div className="shrink-0 text-right">
                 <div className="text-sm font-semibold text-amber-600 dark:text-amber-400 tabular-nums">{simbolo}{saldo.toLocaleString("es-AR")}</div>
-                <div className="text-xs text-slate-400 dark:text-slate-500">debe</div>
+                <div className="text-xs text-slate-400 dark:text-slate-500">{t("debe")}</div>
               </div>
             </div>
           );
@@ -401,6 +402,7 @@ function Cronograma({
   incluyeTipo: (largo: boolean) => boolean;
   ajusteInflacion: boolean;
 }) {
+  const { t } = useStore();
   const [meses, setMeses] = useState(6);
   const hoy = hoyISO();
   const inicio = hoy.slice(0, 7) + "-01"; // desde el inicio del mes actual
@@ -408,21 +410,21 @@ function Cronograma({
 
   const rs = reservas.filter((r) => incluyeTipo(esLargoPlazo(r.tipo)));
   const tareas = generarTareas(rs, inicio, sumarDias(finExcl, -1), { saldoDe, ajusteInflacion, pagos, gastos })
-    .filter((t) => t.tipo === "cobro");
+    .filter((tarea) => tarea.tipo === "cobro");
 
   // Monto a cobrar de cada tarea: el alquiler mensual (largo) o el saldo (temporal).
-  const montoDe = (t: Tarea) => (t.reserva.montoMensual > 0 ? t.reserva.montoMensual : saldoDe(t.reserva));
+  const montoDe = (tarea: Tarea) => (tarea.reserva.montoMensual > 0 ? tarea.reserva.montoMensual : saldoDe(tarea.reserva));
 
   // Agrupar por mes (preservando el orden cronológico).
   const porMes = new Map<string, Tarea[]>();
-  for (const t of tareas) {
-    const k = t.fecha.slice(0, 7);
-    (porMes.get(k) ?? porMes.set(k, []).get(k)!).push(t);
+  for (const tarea of tareas) {
+    const k = tarea.fecha.slice(0, 7);
+    (porMes.get(k) ?? porMes.set(k, []).get(k)!).push(tarea);
   }
 
-  const totalARS = tareas.filter((t) => t.reserva.moneda !== "USD").reduce((a, t) => a + montoDe(t), 0);
-  const totalUSD = tareas.filter((t) => t.reserva.moneda === "USD").reduce((a, t) => a + montoDe(t), 0);
-  const vencidoARS = tareas.filter((t) => t.fecha < hoy && t.reserva.moneda !== "USD").reduce((a, t) => a + montoDe(t), 0);
+  const totalARS = tareas.filter((tarea) => tarea.reserva.moneda !== "USD").reduce((a, tarea) => a + montoDe(tarea), 0);
+  const totalUSD = tareas.filter((tarea) => tarea.reserva.moneda === "USD").reduce((a, tarea) => a + montoDe(tarea), 0);
+  const vencidoARS = tareas.filter((tarea) => tarea.fecha < hoy && tarea.reserva.moneda !== "USD").reduce((a, tarea) => a + montoDe(tarea), 0);
 
   const etiquetaMes = (k: string) => {
     const [y, m] = k.split("-").map(Number);
@@ -433,10 +435,10 @@ function Cronograma({
     <div>
       <div className="flex items-center justify-between mb-4 gap-3">
         <p className="text-xs text-slate-400 dark:text-slate-500">
-          Previsión sobre lo pactado (devengado). El alquiler mensual aparece en cada vencimiento; el temporario, según el saldo a cobrar.
+          {t("Previsión sobre lo pactado (devengado). El alquiler mensual aparece en cada vencimiento; el temporario, según el saldo a cobrar.")}
         </p>
         <Toggle
-          opciones={[{ v: "3", label: "3 m" }, { v: "6", label: "6 m" }, { v: "12", label: "12 m" }]}
+          opciones={[{ v: "3", label: t("3 m") }, { v: "6", label: t("6 m") }, { v: "12", label: t("12 m") }]}
           valor={String(meses)}
           onCambio={(v) => setMeses(Number(v))}
         />
@@ -444,16 +446,16 @@ function Cronograma({
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
         <div className="card p-4">
-          <div className="text-xs text-slate-500 dark:text-slate-400">A cobrar ({meses} meses)</div>
+          <div className="text-xs text-slate-500 dark:text-slate-400">{t("A cobrar")} ({meses} {t("meses")})</div>
           <div className="text-xl sm:text-2xl font-semibold text-slate-800 dark:text-slate-100 mt-1 tabular-nums">{pesos(totalARS)}</div>
         </div>
         <div className="card p-4">
-          <div className="text-xs text-slate-500 dark:text-slate-400">Vencido a hoy</div>
+          <div className="text-xs text-slate-500 dark:text-slate-400">{t("Vencido a hoy")}</div>
           <div className={`text-xl sm:text-2xl font-semibold mt-1 tabular-nums ${vencidoARS > 0 ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"}`}>{pesos(vencidoARS)}</div>
         </div>
         {totalUSD > 0 && (
           <div className="card p-4">
-            <div className="text-xs text-slate-500 dark:text-slate-400">A cobrar (dólares)</div>
+            <div className="text-xs text-slate-500 dark:text-slate-400">{t("A cobrar (dólares)")}</div>
             <div className="text-xl sm:text-2xl font-semibold text-slate-800 dark:text-slate-100 mt-1 tabular-nums">US${Math.round(totalUSD).toLocaleString("es-AR")}</div>
           </div>
         )}
@@ -461,12 +463,12 @@ function Cronograma({
 
       {tareas.length === 0 ? (
         <div className="card p-10 text-center text-slate-500 dark:text-slate-400">
-          No hay vencimientos en los próximos {meses} meses.
+          {t("No hay vencimientos en los próximos")} {meses} {t("meses")}.
         </div>
       ) : (
         <div className="space-y-5">
           {[...porMes.entries()].map(([mesK, items]) => {
-            const subARS = items.filter((t) => t.reserva.moneda !== "USD").reduce((a, t) => a + montoDe(t), 0);
+            const subARS = items.filter((tarea) => tarea.reserva.moneda !== "USD").reduce((a, tarea) => a + montoDe(tarea), 0);
             return (
               <div key={mesK}>
                 <div className="flex items-center justify-between mb-2">
@@ -474,25 +476,25 @@ function Cronograma({
                   <span className="text-sm font-medium text-slate-600 dark:text-slate-300 tabular-nums">{pesos(subARS)}</span>
                 </div>
                 <div className="space-y-2">
-                  {items.map((t, i) => {
-                    const r = t.reserva;
+                  {items.map((tarea, i) => {
+                    const r = tarea.reserva;
                     const sim = SIMBOLO_MONEDA[r.moneda];
-                    const vencido = t.fecha < hoy;
+                    const vencido = tarea.fecha < hoy;
                     return (
                       <div key={`${r.id}-${i}`} className="flex items-center gap-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/70 shadow-sm p-3">
                         <div className="shrink-0 w-12 text-center">
-                          <div className={`text-lg font-semibold tabular-nums leading-none ${vencido ? "text-rose-600 dark:text-rose-400" : "text-slate-700 dark:text-slate-200"}`}>{Number(t.fecha.slice(8, 10))}</div>
-                          <div className="text-[10px] text-slate-400 dark:text-slate-500">{nombreMes(Number(t.fecha.slice(5, 7)) - 1).slice(0, 3)}</div>
+                          <div className={`text-lg font-semibold tabular-nums leading-none ${vencido ? "text-rose-600 dark:text-rose-400" : "text-slate-700 dark:text-slate-200"}`}>{Number(tarea.fecha.slice(8, 10))}</div>
+                          <div className="text-[10px] text-slate-400 dark:text-slate-500">{nombreMes(Number(tarea.fecha.slice(5, 7)) - 1).slice(0, 3)}</div>
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">{r.huesped}</div>
                           <div className="text-xs text-slate-500 dark:text-slate-400 truncate">
                             {getUnidad(r.unidadId)?.nombre ?? "—"}
-                            {vencido && <span className="text-rose-500 dark:text-rose-400"> · vencido</span>}
+                            {vencido && <span className="text-rose-500 dark:text-rose-400"> · {t("vencido")}</span>}
                           </div>
                         </div>
                         <div className="shrink-0 text-right text-sm font-semibold text-slate-700 dark:text-slate-200 tabular-nums">
-                          {sim}{Math.round(montoDe(t)).toLocaleString("es-AR")}
+                          {sim}{Math.round(montoDe(tarea)).toLocaleString("es-AR")}
                         </div>
                       </div>
                     );
@@ -583,6 +585,7 @@ function TabBtn({ activo, onClick, children }: { activo: boolean; onClick: () =>
 
 // ---------- Resumen por unidad de negocio ----------
 function ResumenNegocios({ unidades, metricas, negocio, tipo, onGastosClick, onIngresosClick }: { unidades: Unidad[]; metricas: (uid: string) => Metricas; negocio: Negocio; tipo: TipoGrafico; onGastosClick: () => void; onIngresosClick: () => void }) {
+  const { t } = useStore();
   let temp = 0, largo = 0, otros = 0, gastos = 0;
   for (const u of unidades) {
     const m = metricas(u.id);
@@ -596,26 +599,26 @@ function ResumenNegocios({ unidades, metricas, negocio, tipo, onGastosClick, onI
   if (negocio === "todos") {
     const maxIng = Math.max(temp, largo, otros, 1);
     const datosTipo = [
-      { label: "Temporario", valor: temp, color: "#14b8a6" },
-      { label: "Largo plazo", valor: largo, color: "#8b5cf6" },
-      ...(otros > 0 ? [{ label: "Otros ingresos", valor: otros, color: "#f59e0b" }] : []),
+      { label: t("Temporario"), valor: temp, color: "#14b8a6" },
+      { label: t("Largo plazo"), valor: largo, color: "#8b5cf6" },
+      ...(otros > 0 ? [{ label: t("Otros ingresos"), valor: otros, color: "#f59e0b" }] : []),
     ];
     return (
       <div className="mb-6 space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <Tarjeta titulo="Ingresos" valor={pesos(totalIng)} sub="ver por medio →" onClick={onIngresosClick} />
-          <Tarjeta titulo="Gastos" valor={pesos(gastos)} sub="ver por tipo →" tono="amber" onClick={onGastosClick} />
-          <Tarjeta titulo="Resultado" valor={pesos(totalIng - gastos)} sub="ingresos − gastos" tono={totalIng - gastos >= 0 ? "emerald" : "rose"} />
+          <Tarjeta titulo={t("Ingresos")} valor={pesos(totalIng)} sub={t("ver por medio →")} onClick={onIngresosClick} />
+          <Tarjeta titulo={t("Gastos")} valor={pesos(gastos)} sub={t("ver por tipo →")} tono="amber" onClick={onGastosClick} />
+          <Tarjeta titulo={t("Resultado")} valor={pesos(totalIng - gastos)} sub={t("ingresos − gastos")} tono={totalIng - gastos >= 0 ? "emerald" : "rose"} />
         </div>
         <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700/70 shadow-sm p-4">
-          <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">Ingresos por tipo</h3>
+          <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">{t("Ingresos por tipo")}</h3>
           {tipo === "dona" ? (
             <GraficoTorta dona datos={datosTipo} />
           ) : (
             <>
-              <BarraH label="Temporario" pct={(temp / maxIng) * 100} valorTexto={pesos(temp)} tono="bg-teal-500" />
-              <BarraH label="Largo plazo" pct={(largo / maxIng) * 100} valorTexto={pesos(largo)} tono="bg-violet-500" />
-              {otros > 0 && <BarraH label="Otros ingresos" pct={(otros / maxIng) * 100} valorTexto={pesos(otros)} tono="bg-amber-500" />}
+              <BarraH label={t("Temporario")} pct={(temp / maxIng) * 100} valorTexto={pesos(temp)} tono="bg-teal-500" />
+              <BarraH label={t("Largo plazo")} pct={(largo / maxIng) * 100} valorTexto={pesos(largo)} tono="bg-violet-500" />
+              {otros > 0 && <BarraH label={t("Otros ingresos")} pct={(otros / maxIng) * 100} valorTexto={pesos(otros)} tono="bg-amber-500" />}
             </>
           )}
         </div>
@@ -625,11 +628,11 @@ function ResumenNegocios({ unidades, metricas, negocio, tipo, onGastosClick, onI
 
   // Filtrado a un solo negocio.
   const ing = negocio === "temporal" ? temp : largo;
-  const titulo = negocio === "temporal" ? "Ingresos temporario" : "Ingresos largo plazo";
+  const titulo = negocio === "temporal" ? t("Ingresos temporario") : t("Ingresos largo plazo");
   return (
     <div className="grid grid-cols-2 gap-3 mb-6">
-      <Tarjeta titulo={titulo} valor={pesos(ing)} sub="ver por medio →" onClick={onIngresosClick} />
-      <Tarjeta titulo="Gastos" valor={pesos(gastos)} sub="ver por tipo →" tono="amber" onClick={onGastosClick} />
+      <Tarjeta titulo={titulo} valor={pesos(ing)} sub={t("ver por medio →")} onClick={onIngresosClick} />
+      <Tarjeta titulo={t("Gastos")} valor={pesos(gastos)} sub={t("ver por tipo →")} tono="amber" onClick={onGastosClick} />
     </div>
   );
 }
@@ -664,6 +667,7 @@ function GraficoTorta({
   dona: boolean;
   formato?: "moneda" | "numero";
 }) {
+  const { t } = useStore();
   const total = datos.reduce((a, d) => a + d.valor, 0);
   const r = dona ? 46 : 30;
   const sw = dona ? 26 : 60;
@@ -672,7 +676,7 @@ function GraficoTorta({
   let acumulado = 0;
 
   if (total <= 0) {
-    return <p className="text-sm text-slate-400 dark:text-slate-500">Sin datos para graficar.</p>;
+    return <p className="text-sm text-slate-400 dark:text-slate-500">{t("Sin datos para graficar.")}</p>;
   }
 
   return (
@@ -705,7 +709,7 @@ function GraficoTorta({
           <div className="absolute inset-0 grid place-items-center pointer-events-none">
             <div className="text-center">
               <div className="text-base font-semibold text-slate-800 dark:text-slate-100 tabular-nums leading-none">{fmt(total)}</div>
-              <div className="text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500 mt-1">total</div>
+              <div className="text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500 mt-1">{t("total")}</div>
             </div>
           </div>
         )}
@@ -738,6 +742,7 @@ function GraficoEconomico({
   tipo: TipoGrafico;
   negocio: Negocio;
 }) {
+  const { t } = useStore();
   const Card = ({ titulo, children }: { titulo: string; children: React.ReactNode }) => (
     <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700/70 shadow-sm p-5 mb-4">
       <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">{titulo}</h3>
@@ -748,7 +753,7 @@ function GraficoEconomico({
   if (tipo === "dona") {
     // Dona: proporción de INGRESOS (no admiten negativos).
     const porGrupo = gruposOrdenados.map(([grupoId, items]) => ({
-      label: getGrupo(grupoId)?.nombre ?? "Sin grupo",
+      label: getGrupo(grupoId)?.nombre ?? t("Sin grupo"),
       valor: items.reduce((a, u) => a + metricas(u.id).ingARS, 0),
     }));
     const porUnidad = gruposOrdenados.flatMap(([, items]) =>
@@ -758,14 +763,14 @@ function GraficoEconomico({
     const gruposConVarias = gruposOrdenados.filter(([, items]) => items.length > 1);
     return (
       <>
-        <Card titulo="Ingresos por grupo"><GraficoTorta datos={porGrupo} dona /></Card>
+        <Card titulo={t("Ingresos por grupo")}><GraficoTorta datos={porGrupo} dona /></Card>
         {gruposConVarias.length > 0 && (
-          <Card titulo="Ingresos por unidad dentro de cada grupo">
+          <Card titulo={t("Ingresos por unidad dentro de cada grupo")}>
             <div className="space-y-5">
               {gruposConVarias.map(([grupoId, items]) => (
                 <div key={grupoId}>
                   <div className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500 mb-2">
-                    {getGrupo(grupoId)?.nombre ?? "Sin grupo"}
+                    {getGrupo(grupoId)?.nombre ?? t("Sin grupo")}
                   </div>
                   <GraficoTorta datos={items.map((u) => ({ label: u.nombre, valor: metricas(u.id).ingARS }))} dona />
                 </div>
@@ -773,7 +778,7 @@ function GraficoEconomico({
             </div>
           </Card>
         )}
-        <Card titulo="Ingresos por unidad"><GraficoTorta datos={porUnidad} dona /></Card>
+        <Card titulo={t("Ingresos por unidad")}><GraficoTorta datos={porUnidad} dona /></Card>
       </>
     );
   }
@@ -782,11 +787,11 @@ function GraficoEconomico({
   // (el resultado por negocio no se puede separar porque los gastos son compartidos).
   const usarResultado = negocio === "todos";
   const valorDe = (m: Metricas) => (usarResultado ? m.resultado : m.ingARS);
-  const titGrupo = usarResultado ? "Resultado por grupo" : "Ingresos por grupo";
-  const titUnidad = usarResultado ? "Resultado por unidad" : "Ingresos por unidad";
+  const titGrupo = usarResultado ? t("Resultado por grupo") : t("Ingresos por grupo");
+  const titUnidad = usarResultado ? t("Resultado por unidad") : t("Ingresos por unidad");
 
   const porGrupo = gruposOrdenados.map(([grupoId, items]) => ({
-    label: getGrupo(grupoId)?.nombre ?? "Sin grupo",
+    label: getGrupo(grupoId)?.nombre ?? t("Sin grupo"),
     valor: items.reduce((a, u) => a + valorDe(metricas(u.id)), 0),
   }));
   const maxGrupo = Math.max(1, ...porGrupo.map((g) => Math.abs(g.valor)));
@@ -803,7 +808,7 @@ function GraficoEconomico({
         {gruposOrdenados.map(([grupoId, items]) => (
           <div key={grupoId || "sin"} className="mb-4 last:mb-0">
             <div className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500 mb-1">
-              {getGrupo(grupoId)?.nombre ?? "Sin grupo"}
+              {getGrupo(grupoId)?.nombre ?? t("Sin grupo")}
             </div>
             {items.map((u) => {
               const valor = valorDe(metricas(u.id));
@@ -832,6 +837,7 @@ function GraficoOcupacion({
   tipo: TipoGrafico;
   periodDays: number;
 }) {
+  const { t } = useStore();
   const Card = ({ titulo, children }: { titulo: string; children: React.ReactNode }) => (
     <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700/70 shadow-sm p-5 mb-4">
       <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">{titulo}</h3>
@@ -842,7 +848,7 @@ function GraficoOcupacion({
   if (tipo === "dona") {
     // Reparto de las noches ocupadas, mismo drill-down que el económico.
     const porGrupo = gruposOrdenados.map(([grupoId, items]) => ({
-      label: getGrupo(grupoId)?.nombre ?? "Sin grupo",
+      label: getGrupo(grupoId)?.nombre ?? t("Sin grupo"),
       valor: items.reduce((a, u) => a + metricas(u.id).nochesOcup, 0),
     }));
     const porUnidad = gruposOrdenados.flatMap(([, items]) =>
@@ -851,14 +857,14 @@ function GraficoOcupacion({
     const gruposConVarias = gruposOrdenados.filter(([, items]) => items.length > 1);
     return (
       <>
-        <Card titulo="Noches ocupadas por grupo"><GraficoTorta datos={porGrupo} dona formato="numero" /></Card>
+        <Card titulo={t("Noches ocupadas por grupo")}><GraficoTorta datos={porGrupo} dona formato="numero" /></Card>
         {gruposConVarias.length > 0 && (
-          <Card titulo="Noches por unidad dentro de cada grupo">
+          <Card titulo={t("Noches por unidad dentro de cada grupo")}>
             <div className="space-y-5">
               {gruposConVarias.map(([grupoId, items]) => (
                 <div key={grupoId}>
                   <div className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500 mb-2">
-                    {getGrupo(grupoId)?.nombre ?? "Sin grupo"}
+                    {getGrupo(grupoId)?.nombre ?? t("Sin grupo")}
                   </div>
                   <GraficoTorta datos={items.map((u) => ({ label: u.nombre, valor: metricas(u.id).nochesOcup }))} dona formato="numero" />
                 </div>
@@ -866,7 +872,7 @@ function GraficoOcupacion({
             </div>
           </Card>
         )}
-        <Card titulo="Noches ocupadas por unidad"><GraficoTorta datos={porUnidad} dona formato="numero" /></Card>
+        <Card titulo={t("Noches ocupadas por unidad")}><GraficoTorta datos={porUnidad} dona formato="numero" /></Card>
       </>
     );
   }
@@ -875,28 +881,28 @@ function GraficoOcupacion({
   const porGrupoPct = gruposOrdenados.map(([grupoId, items]) => {
     const gNoches = items.reduce((a, u) => a + metricas(u.id).nochesOcup, 0);
     return {
-      label: getGrupo(grupoId)?.nombre ?? "Sin grupo",
+      label: getGrupo(grupoId)?.nombre ?? t("Sin grupo"),
       pct: (gNoches / (periodDays * Math.max(1, items.length))) * 100,
     };
   });
 
   return (
     <>
-      <Card titulo="Ocupación por grupo">
+      <Card titulo={t("Ocupación por grupo")}>
         {porGrupoPct.map((g) => (
           <BarraH key={g.label} label={g.label} pct={g.pct} valorTexto={`${g.pct.toFixed(0)}%`} tono={tono(g.pct)} />
         ))}
       </Card>
-      <Card titulo="Ocupación por unidad">
+      <Card titulo={t("Ocupación por unidad")}>
         {gruposOrdenados.map(([grupoId, items]) => (
           <div key={grupoId || "sin"} className="mb-4 last:mb-0">
             <div className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500 mb-1">
-              {getGrupo(grupoId)?.nombre ?? "Sin grupo"}
+              {getGrupo(grupoId)?.nombre ?? t("Sin grupo")}
             </div>
             {items.map((u) => {
               const m = metricas(u.id);
               return (
-                <BarraH key={u.id} label={u.nombre} sub={`${m.estadia} n prom`} pct={m.ocupacion} valorTexto={`${m.ocupacion.toFixed(0)}%`} tono={tono(m.ocupacion)} />
+                <BarraH key={u.id} label={u.nombre} sub={`${m.estadia} ${t("n prom")}`} pct={m.ocupacion} valorTexto={`${m.ocupacion.toFixed(0)}%`} tono={tono(m.ocupacion)} />
               );
             })}
           </div>
@@ -916,6 +922,7 @@ function TablaEconomica({
   getGrupo: (id: string) => { nombre: string } | undefined;
   metricas: (uid: string) => Metricas;
 }) {
+  const { t } = useStore();
   let totIng = 0, totGastos = 0, totRes = 0, totUSD = 0;
 
   return (
@@ -923,10 +930,10 @@ function TablaEconomica({
       <table className="w-full text-sm">
         <thead>
           <tr className="text-left text-xs text-slate-400 dark:text-slate-500 border-b border-slate-200 dark:border-slate-700">
-            <th className="py-2 font-medium">Unidad</th>
-            <th className="py-2 font-medium text-right">Ingresos</th>
-            <th className="py-2 font-medium text-right">Gastos</th>
-            <th className="py-2 font-medium text-right">Resultado</th>
+            <th className="py-2 font-medium">{t("Unidad")}</th>
+            <th className="py-2 font-medium text-right">{t("Ingresos")}</th>
+            <th className="py-2 font-medium text-right">{t("Gastos")}</th>
+            <th className="py-2 font-medium text-right">{t("Resultado")}</th>
           </tr>
         </thead>
         {gruposOrdenados.map(([grupoId, items]) => {
@@ -941,7 +948,7 @@ function TablaEconomica({
             <tbody key={grupoId || "sin"}>
               <tr className="border-b border-slate-100 dark:border-slate-800">
                 <td colSpan={4} className="pt-4 pb-1 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                  {getGrupo(grupoId)?.nombre ?? "Sin grupo"}
+                  {getGrupo(grupoId)?.nombre ?? t("Sin grupo")}
                 </td>
               </tr>
               {filas.map(({ u, m }) => (
@@ -958,7 +965,7 @@ function TablaEconomica({
                 </tr>
               ))}
               <tr className="border-b border-slate-200 dark:border-slate-700 text-xs">
-                <td className="py-1.5 text-slate-400 dark:text-slate-500">Subtotal {getGrupo(grupoId)?.nombre ?? "Sin grupo"}</td>
+                <td className="py-1.5 text-slate-400 dark:text-slate-500">{t("Subtotal")} {getGrupo(grupoId)?.nombre ?? t("Sin grupo")}</td>
                 <td className="py-1.5 text-right text-slate-500 dark:text-slate-400">{pesos(gIng)}</td>
                 <td className="py-1.5 text-right text-slate-500 dark:text-slate-400">{pesos(gGastos)}</td>
                 <td className="py-1.5 text-right text-slate-500 dark:text-slate-400">{pesos(gRes)}</td>
@@ -968,7 +975,7 @@ function TablaEconomica({
         })}
         <tfoot>
           <tr className="font-semibold text-slate-800 dark:text-slate-100">
-            <td className="py-3">Total</td>
+            <td className="py-3">{t("Total")}</td>
             <td className="py-3 text-right">{pesos(totIng)}</td>
             <td className="py-3 text-right text-amber-600 dark:text-amber-400">{pesos(totGastos)}</td>
             <td className={`py-3 text-right ${totRes >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>{pesos(totRes)}</td>
@@ -977,7 +984,7 @@ function TablaEconomica({
       </table>
       {totUSD > 0 && (
         <p className="text-xs text-slate-400 dark:text-slate-500 mt-3">
-          Ingresos en dólares (no incluidos en el resultado en pesos): <b>US${totUSD.toLocaleString("es-AR")}</b>.
+          {t("Ingresos en dólares (no incluidos en el resultado en pesos):")} <b>US${totUSD.toLocaleString("es-AR")}</b>.
         </p>
       )}
     </div>
@@ -996,17 +1003,18 @@ function TablaOcupacion({
   metricas: (uid: string) => Metricas;
   periodDays: number;
 }) {
+  const { t } = useStore();
   return (
     <div className="overflow-x-auto">
-      <p className="text-xs text-slate-400 dark:text-slate-500 mb-3">Período de {periodDays} noches.</p>
+      <p className="text-xs text-slate-400 dark:text-slate-500 mb-3">{t("Período de")} {periodDays} {t("noches")}.</p>
       <table className="w-full text-sm">
         <thead>
           <tr className="text-left text-xs text-slate-400 dark:text-slate-500 border-b border-slate-200 dark:border-slate-700">
-            <th className="py-2 font-medium">Unidad</th>
-            <th className="py-2 font-medium text-right">Ocupación</th>
-            <th className="py-2 font-medium text-right">Noches</th>
-            <th className="py-2 font-medium text-right">Reservas</th>
-            <th className="py-2 font-medium text-right">Estadía prom.</th>
+            <th className="py-2 font-medium">{t("Unidad")}</th>
+            <th className="py-2 font-medium text-right">{t("Ocupación")}</th>
+            <th className="py-2 font-medium text-right">{t("Noches")}</th>
+            <th className="py-2 font-medium text-right">{t("Reservas")}</th>
+            <th className="py-2 font-medium text-right">{t("Estadía prom.")}</th>
           </tr>
         </thead>
         {gruposOrdenados.map(([grupoId, items]) => {
@@ -1022,7 +1030,7 @@ function TablaOcupacion({
             <tbody key={grupoId || "sin"}>
               <tr className="border-b border-slate-100 dark:border-slate-800">
                 <td colSpan={5} className="pt-4 pb-1 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                  {getGrupo(grupoId)?.nombre ?? "Sin grupo"}
+                  {getGrupo(grupoId)?.nombre ?? t("Sin grupo")}
                 </td>
               </tr>
               {filas.map(({ u, m }) => (
@@ -1031,15 +1039,15 @@ function TablaOcupacion({
                   <td className="py-2 text-right text-slate-600 dark:text-slate-300">{m.ocupacion.toFixed(0)}%</td>
                   <td className="py-2 text-right text-slate-600 dark:text-slate-300">{m.nochesOcup}</td>
                   <td className="py-2 text-right text-slate-600 dark:text-slate-300">{m.reservas}</td>
-                  <td className="py-2 text-right text-slate-600 dark:text-slate-300">{m.estadia} {m.estadia === 1 ? "noche" : "noches"}</td>
+                  <td className="py-2 text-right text-slate-600 dark:text-slate-300">{m.estadia} {m.estadia === 1 ? t("noche") : t("noches")}</td>
                 </tr>
               ))}
               <tr className="border-b border-slate-200 dark:border-slate-700 text-xs text-slate-500 dark:text-slate-400">
-                <td className="py-1.5">Subtotal {getGrupo(grupoId)?.nombre ?? "Sin grupo"}</td>
+                <td className="py-1.5">{t("Subtotal")} {getGrupo(grupoId)?.nombre ?? t("Sin grupo")}</td>
                 <td className="py-1.5 text-right">{gOcup.toFixed(0)}%</td>
                 <td className="py-1.5 text-right">{gNoches}</td>
                 <td className="py-1.5 text-right">{gReservas}</td>
-                <td className="py-1.5 text-right">{gEstadia} noches</td>
+                <td className="py-1.5 text-right">{gEstadia} {t("noches")}</td>
               </tr>
             </tbody>
           );

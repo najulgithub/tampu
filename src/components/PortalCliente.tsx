@@ -10,6 +10,7 @@ import { aumentoVigente, cuentaCorriente } from "@/lib/cuentaCorriente";
 import { ChatWidgetInquilino } from "@/components/ChatWidget";
 import { CampanaInquilino } from "@/components/Campana";
 import { LogoTampu } from "@/components/Logo";
+import { traducir, idiomaDispositivo } from "@/lib/i18n";
 import type { TipoUnidad, Reserva, Pago, Gasto } from "@/lib/types";
 
 // ---------- Tipos del portal (lo que devuelven las RPC) ----------
@@ -100,6 +101,7 @@ function noches(inn: string, out: string) {
 }
 
 export default function PortalCliente({ session }: { session: Session }) {
+  const t = (s: string) => traducir(idiomaDispositivo(), s);
   const [unidades, setUnidades] = useState<UnidadPortal[]>([]);
   const [misReservas, setMisReservas] = useState<ReservaCliente[]>([]);
   const [contratos, setContratos] = useState<Contrato[]>([]);
@@ -129,7 +131,7 @@ export default function PortalCliente({ session }: { session: Session }) {
       }
       const { data, error } = await supabase.rpc("portal_unidades");
       if (!vivo) return;
-      if (error) setError("No pudimos cargar las unidades. Intentá de nuevo en un momento.");
+      if (error) setError(t("No pudimos cargar las unidades. Intentá de nuevo en un momento."));
       else setUnidades((data as UnidadPortal[]) ?? []);
       const { data: ct } = await supabase.rpc("portal_mis_contratos");
       if (vivo) setContratos((ct as Contrato[]) ?? []);
@@ -149,7 +151,7 @@ export default function PortalCliente({ session }: { session: Session }) {
     window.location.reload();
   }
 
-  const nombreUnidad = (id: string) => unidades.find((u) => u.id === id)?.nombre ?? "Unidad";
+  const nombreUnidad = (id: string) => unidades.find((u) => u.id === id)?.nombre ?? t("Unidad");
 
   return (
     <div className="min-h-screen text-slate-900 dark:text-slate-100">
@@ -165,7 +167,7 @@ export default function PortalCliente({ session }: { session: Session }) {
                 value={duenoActivo}
                 onChange={(e) => cambiarDueno(e.target.value)}
                 className="rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm px-2 py-1 max-w-[160px]"
-                title="Elegí el negocio"
+                title={t("Elegí el negocio")}
               >
                 {duenos.map((d) => <option key={d.owner_id} value={d.owner_id}>{d.nombre}</option>)}
               </select>
@@ -173,7 +175,7 @@ export default function PortalCliente({ session }: { session: Session }) {
             <CampanaInquilino />
             <span className="text-slate-500 dark:text-slate-400 hidden sm:inline max-w-[160px] truncate">{session.user.email}</span>
             <button onClick={() => supabase.auth.signOut()} className="text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 transition">
-              Salir
+              {t("Salir")}
             </button>
           </div>
         </div>
@@ -181,14 +183,14 @@ export default function PortalCliente({ session }: { session: Session }) {
 
       <main className="max-w-3xl mx-auto px-4 py-6 pb-16 animate-in space-y-8">
         {cargando ? (
-          <p className="text-center text-slate-400 dark:text-slate-500 py-12">Cargando…</p>
+          <p className="text-center text-slate-400 dark:text-slate-500 py-12">{t("Cargando…")}</p>
         ) : error ? (
           <p className="text-center text-rose-600 dark:text-rose-400 py-12">{error}</p>
         ) : (
           <>
             {contratos.length > 0 && (
               <section>
-                <h2 className="font-display text-lg font-semibold text-slate-800 dark:text-slate-100 mb-3">Tu cuenta</h2>
+                <h2 className="font-display text-lg font-semibold text-slate-800 dark:text-slate-100 mb-3">{t("Tu cuenta")}</h2>
                 <div className="space-y-4">
                   {contratos.map((c) => <ContratoCuenta key={c.id} contrato={c} />)}
                 </div>
@@ -197,8 +199,8 @@ export default function PortalCliente({ session }: { session: Session }) {
 
             {contratos.length > 0 && (
               <section>
-                <h2 className="font-display text-lg font-semibold text-slate-800 dark:text-slate-100 mb-1">Tus servicios</h2>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mb-3">Subí el comprobante de cada servicio del mes.</p>
+                <h2 className="font-display text-lg font-semibold text-slate-800 dark:text-slate-100 mb-1">{t("Tus servicios")}</h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mb-3">{t("Subí el comprobante de cada servicio del mes.")}</p>
                 <div className="space-y-4">
                   {contratos.map((c) => <ContratoServicios key={c.id} contrato={c} />)}
                 </div>
@@ -209,8 +211,8 @@ export default function PortalCliente({ session }: { session: Session }) {
 
             {provs.length > 0 && (
               <section>
-                <h2 className="font-display text-lg font-semibold text-slate-800 dark:text-slate-100 mb-1">Contactos de proveedores</h2>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mb-3">¿Se rompió algo? Acá tenés a quién llamar.</p>
+                <h2 className="font-display text-lg font-semibold text-slate-800 dark:text-slate-100 mb-1">{t("Contactos de proveedores")}</h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mb-3">{t("¿Se rompió algo? Acá tenés a quién llamar.")}</p>
                 <div className="grid sm:grid-cols-2 gap-2">
                   {provs.map((p, i) => (
                     <div key={i} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/70 p-3 shadow-sm">
@@ -228,7 +230,7 @@ export default function PortalCliente({ session }: { session: Session }) {
 
             {misReservas.length > 0 && (
               <section>
-                <h2 className="font-display text-lg font-semibold text-slate-800 dark:text-slate-100 mb-3">Tus reservas</h2>
+                <h2 className="font-display text-lg font-semibold text-slate-800 dark:text-slate-100 mb-3">{t("Tus reservas")}</h2>
                 <div className="space-y-2">
                   {misReservas.map((r) => {
                     const saldo = Math.max(0, r.monto_total - r.sena);
@@ -238,7 +240,7 @@ export default function PortalCliente({ session }: { session: Session }) {
                           <div>
                             <p className="font-medium text-slate-800 dark:text-slate-100">{nombreUnidad(r.unidad_id)}</p>
                             <p className="text-sm text-slate-500 dark:text-slate-400">
-                              {fechaLinda(r.check_in)} → {fechaLinda(r.check_out)} · {noches(r.check_in, r.check_out)} noches
+                              {fechaLinda(r.check_in)} → {fechaLinda(r.check_out)} · {noches(r.check_in, r.check_out)} {t("noches")}
                             </p>
                           </div>
                           <span className={`text-xs px-2 py-1 rounded-md whitespace-nowrap ${
@@ -248,13 +250,13 @@ export default function PortalCliente({ session }: { session: Session }) {
                               ? "bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-400"
                               : "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400"
                           }`}>
-                            {r.estado === "pendiente" ? "A confirmar" : r.estado === "cancelada" ? "Cancelada" : "Confirmada"}
+                            {r.estado === "pendiente" ? t("A confirmar") : r.estado === "cancelada" ? t("Cancelada") : t("Confirmada")}
                           </span>
                         </div>
                         {r.monto_total > 0 && (
                           <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
-                            Total {pesos(r.monto_total)} · Seña {pesos(r.sena)}
-                            {saldo > 0 && <span className="text-amber-600 dark:text-amber-400"> · Resta {pesos(saldo)}</span>}
+                            {t("Total")} {pesos(r.monto_total)} · {t("Seña")} {pesos(r.sena)}
+                            {saldo > 0 && <span className="text-amber-600 dark:text-amber-400"> · {t("Resta")} {pesos(saldo)}</span>}
                           </p>
                         )}
                       </div>
@@ -265,10 +267,10 @@ export default function PortalCliente({ session }: { session: Session }) {
             )}
 
             <section>
-              <h2 className="font-display text-lg font-semibold text-slate-800 dark:text-slate-100 mb-1">Unidades disponibles</h2>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">Elegí una unidad y reservá tus fechas.</p>
+              <h2 className="font-display text-lg font-semibold text-slate-800 dark:text-slate-100 mb-1">{t("Unidades disponibles")}</h2>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">{t("Elegí una unidad y reservá tus fechas.")}</p>
               {unidades.length === 0 ? (
-                <p className="text-slate-400 dark:text-slate-500">Todavía no hay unidades publicadas.</p>
+                <p className="text-slate-400 dark:text-slate-500">{t("Todavía no hay unidades publicadas.")}</p>
               ) : (
                 <div className="grid sm:grid-cols-2 gap-3">
                   {unidades.map((u) => (
@@ -296,9 +298,9 @@ export default function PortalCliente({ session }: { session: Session }) {
                           {[u.grupo_nombre, u.localidad].filter(Boolean).join(" · ")}
                         </p>
                         <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
-                          {u.capacidad > 0 && `${u.capacidad} huéspedes`}
+                          {u.capacidad > 0 && `${u.capacidad} ${t("huéspedes")}`}
                           {u.capacidad > 0 && u.ambientes > 0 && " · "}
-                          {u.ambientes > 0 && `${u.ambientes} amb.`}
+                          {u.ambientes > 0 && `${u.ambientes} ${t("amb.")}`}
                         </p>
                       </div>
                     </button>
@@ -325,6 +327,7 @@ export default function PortalCliente({ session }: { session: Session }) {
 
 // ---------- Servicios del contrato (inquilino sube comprobantes) ----------
 function ContratoServicios({ contrato }: { contrato: Contrato }) {
+  const t = (s: string) => traducir(idiomaDispositivo(), s);
   const [cargados, setCargados] = useState<ServicioCargado[]>([]);
   const [ver, setVer] = useState<ServicioCargado | null>(null);
   const [subiendo, setSubiendo] = useState("");
@@ -364,12 +367,12 @@ function ContratoServicios({ contrato }: { contrato: Contrato }) {
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="font-medium text-slate-800 dark:text-slate-100">{contrato.unidad}</div>
-          <div className="text-xs text-slate-400 dark:text-slate-500 mb-3">Contrato {fechaLinda(contrato.check_in)} → {fechaLinda(contrato.check_out)}</div>
+          <div className="text-xs text-slate-400 dark:text-slate-500 mb-3">{t("Contrato")} {fechaLinda(contrato.check_in)} → {fechaLinda(contrato.check_out)}</div>
         </div>
         {montoActual > 0 && (
           <div className="text-right shrink-0">
             <div className="text-sm font-semibold text-slate-800 dark:text-slate-100 tabular-nums">{pesos(montoActual)}</div>
-            <div className="text-[10px] text-slate-400 dark:text-slate-500">alquiler / mes</div>
+            <div className="text-[10px] text-slate-400 dark:text-slate-500">{t("alquiler / mes")}</div>
           </div>
         )}
       </div>
@@ -390,7 +393,7 @@ function ContratoServicios({ contrato }: { contrato: Contrato }) {
                 }
                 return (
                   <label key={s} className="text-[11px] px-2 py-0.5 rounded-full border border-dashed border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400 cursor-pointer hover:border-teal-400 hover:text-teal-500">
-                    {cargando ? "Subiendo…" : `+ ${s}`}
+                    {cargando ? t("Subiendo…") : `+ ${s}`}
                     <input type="file" accept="image/*" className="hidden" disabled={!!subiendo} onChange={async (e) => { const f = e.target.files?.[0]; if (f) await subir(periodo, s, f); e.target.value = ""; }} />
                   </label>
                 );
@@ -403,8 +406,8 @@ function ContratoServicios({ contrato }: { contrato: Contrato }) {
       {ver && (
         <Overlay titulo={`${ver.servicio} · ${labelMes(ver.periodo)}`} onCerrar={() => setVer(null)}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          {ver.comprobante && <img src={ver.comprobante} alt="Comprobante" className="w-full rounded-lg" />}
-          <p className="text-xs text-slate-400 dark:text-slate-500 mt-2 text-center">Cargado el {fechaLinda(ver.fecha)}</p>
+          {ver.comprobante && <img src={ver.comprobante} alt={t("Comprobante")} className="w-full rounded-lg" />}
+          <p className="text-xs text-slate-400 dark:text-slate-500 mt-2 text-center">{t("Cargado el")} {fechaLinda(ver.fecha)}</p>
         </Overlay>
       )}
     </div>
@@ -420,6 +423,7 @@ const COLOR_ESTADO: Record<string, string> = {
 };
 
 function ContratoCuenta({ contrato }: { contrato: Contrato }) {
+  const t = (s: string) => traducir(idiomaDispositivo(), s);
   const [pagos, setPagos] = useState<Pago[]>([]);
   const [creditos, setCreditos] = useState<Gasto[]>([]);
   const [pagarPeriodo, setPagarPeriodo] = useState("");
@@ -473,7 +477,7 @@ function ContratoCuenta({ contrato }: { contrato: Contrato }) {
       <div className="flex items-center justify-between mb-2">
         <div className="font-medium text-slate-800 dark:text-slate-100">{contrato.unidad}</div>
         <div className={`text-sm font-semibold ${cc.saldoVencido > 0 ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"}`}>
-          {cc.saldoVencido > 0 ? `Debés ${pesos(cc.saldoVencido)}` : "Al día ✓"}
+          {cc.saldoVencido > 0 ? `${t("Debés")} ${pesos(cc.saldoVencido)}` : t("Al día ✓")}
         </div>
       </div>
 
@@ -483,16 +487,16 @@ function ContratoCuenta({ contrato }: { contrato: Contrato }) {
             <div className="flex items-center gap-2 text-xs py-1">
               <span className="w-14 shrink-0 text-slate-600 dark:text-slate-300">{labelMes(c.periodo)}</span>
               <span className="text-slate-500 dark:text-slate-400 tabular-nums">{pesos(c.monto)}</span>
-              {c.credito > 0 && <span className="text-violet-500 dark:text-violet-400 tabular-nums">gasto −{pesos(c.credito)}</span>}
+              {c.credito > 0 && <span className="text-violet-500 dark:text-violet-400 tabular-nums">{t("gasto")} −{pesos(c.credito)}</span>}
               <span className={`ml-auto shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium ${COLOR_ESTADO[c.estado]}`}>{c.estado}</span>
               {c.saldo > 0 && pagarPeriodo !== c.periodo && (
-                <button type="button" onClick={() => abrirPago(c.periodo, c.saldo)} className="shrink-0 text-[11px] text-teal-600 dark:text-teal-400 hover:underline">pagar</button>
+                <button type="button" onClick={() => abrirPago(c.periodo, c.saldo)} className="shrink-0 text-[11px] text-teal-600 dark:text-teal-400 hover:underline">{t("pagar")}</button>
               )}
             </div>
             {pagarPeriodo === c.periodo && (
               <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-2 my-1 space-y-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-[11px] text-slate-500 dark:text-slate-400">Monto</span>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400">{t("Monto")}</span>
                   <input type="number" value={monto} onChange={(e) => setMonto(Number(e.target.value) || 0)} className="input py-1 text-sm flex-1" />
                   <select value={medio} onChange={(e) => setMedio(e.target.value)} className="input py-1 text-sm w-auto">
                     <option>Transferencia</option><option>Mercado Pago</option><option>MODO</option><option>Efectivo</option><option>Otro</option>
@@ -500,12 +504,12 @@ function ContratoCuenta({ contrato }: { contrato: Contrato }) {
                 </div>
                 <div className="flex items-center gap-2">
                   <label className="text-[11px] px-2 py-1 rounded-md bg-teal-50 text-teal-700 dark:bg-teal-500/15 dark:text-teal-400 cursor-pointer">
-                    {comprobante ? "Comprobante ✓" : "Adjuntar comprobante"}
+                    {comprobante ? t("Comprobante ✓") : t("Adjuntar comprobante")}
                     <input type="file" accept="image/*" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; if (f) setComprobante(await subirArchivo(f, "comprobantes")); e.target.value = ""; }} />
                   </label>
-                  <button type="button" onClick={() => setPagarPeriodo("")} className="ml-auto text-[11px] text-slate-400 hover:text-slate-600">Cancelar</button>
+                  <button type="button" onClick={() => setPagarPeriodo("")} className="ml-auto text-[11px] text-slate-400 hover:text-slate-600">{t("Cancelar")}</button>
                   <button type="button" disabled={enviando || monto <= 0} className="text-[11px] px-3 py-1 rounded-md bg-teal-600 text-white disabled:opacity-50" onClick={registrar}>
-                    {enviando ? "…" : "Registrar"}
+                    {enviando ? "…" : t("Registrar")}
                   </button>
                 </div>
               </div>
@@ -513,7 +517,7 @@ function ContratoCuenta({ contrato }: { contrato: Contrato }) {
           </div>
         ))}
       </div>
-      <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-2">El dueño verá tu pago y el comprobante para confirmarlo.</p>
+      <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-2">{t("El dueño verá tu pago y el comprobante para confirmarlo.")}</p>
     </div>
   );
 }
@@ -522,6 +526,7 @@ function ContratoCuenta({ contrato }: { contrato: Contrato }) {
 type DocInquilino = { key: string; unidad: string; servicio: string; periodo: string; comprobante: string; fecha: string };
 
 function DocumentosInquilino({ contratos }: { contratos: Contrato[] }) {
+  const t = (s: string) => traducir(idiomaDispositivo(), s);
   const [docs, setDocs] = useState<DocInquilino[]>([]);
   const [ver, setVer] = useState<DocInquilino | null>(null);
 
@@ -545,7 +550,7 @@ function DocumentosInquilino({ contratos }: { contratos: Contrato[] }) {
 
   return (
     <section>
-      <h2 className="font-display text-lg font-semibold text-slate-800 dark:text-slate-100 mb-3">Documentos</h2>
+      <h2 className="font-display text-lg font-semibold text-slate-800 dark:text-slate-100 mb-3">{t("Documentos")}</h2>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {docs.map((d) => (
           <button key={d.key} onClick={() => setVer(d)} className="text-left bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/70 shadow-sm hover:border-teal-400 transition overflow-hidden">
@@ -578,6 +583,7 @@ function FormReservaCliente({
   onCerrar: () => void;
   onReservado: () => void;
 }) {
+  const t = (s: string) => traducir(idiomaDispositivo(), s);
   const [ocupacion, setOcupacion] = useState<Ocupacion[]>([]);
   const [cargandoOc, setCargandoOc] = useState(true);
   const [checkIn, setCheckIn] = useState("");
@@ -613,8 +619,8 @@ function FormReservaCliente({
   async function reservar(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    if (!fechasOk) { setError("Revisá las fechas: la salida debe ser posterior a la entrada."); return; }
-    if (choca) { setError("Esas fechas no están disponibles."); return; }
+    if (!fechasOk) { setError(t("Revisá las fechas: la salida debe ser posterior a la entrada.")); return; }
+    if (choca) { setError(t("Esas fechas no están disponibles.")); return; }
     setEnviando(true);
     const { data, error } = await supabase.rpc("portal_reservar", {
       p_unidad: unidad.id,
@@ -626,7 +632,7 @@ function FormReservaCliente({
       p_moneda: "ARS",
     });
     setEnviando(false);
-    if (error) { setError(error.message || "No se pudo crear la reserva."); return; }
+    if (error) { setError(error.message || t("No se pudo crear la reserva.")); return; }
     setReservaId(data as string);
   }
 
@@ -636,7 +642,7 @@ function FormReservaCliente({
     try {
       setComprobante(await subirArchivo(f, "comprobantes"));
     } catch {
-      setError("No pudimos procesar la imagen.");
+      setError(t("No pudimos procesar la imagen."));
     }
   }
 
@@ -651,21 +657,21 @@ function FormReservaCliente({
       p_comprobante: comprobante ?? null,
     });
     setSubiendo(false);
-    if (error) { setError(error.message || "No se pudo registrar la seña."); return; }
+    if (error) { setError(error.message || t("No se pudo registrar la seña.")); return; }
     setListo(true);
   }
 
   // --- Render ---
   if (listo) {
     return (
-      <Overlay titulo="¡Reserva confirmada!" onCerrar={onReservado}>
+      <Overlay titulo={t("¡Reserva confirmada!")} onCerrar={onReservado}>
         <div className="text-center py-4 space-y-3">
           <div className="mx-auto w-14 h-14 rounded-full bg-emerald-100 dark:bg-emerald-500/15 grid place-items-center text-emerald-600 dark:text-emerald-400 text-3xl">✓</div>
           <p className="text-slate-700 dark:text-slate-200">
-            Reservaste <span className="font-semibold">{unidad.nombre}</span> del {fechaLinda(checkIn)} al {fechaLinda(checkOut)}.
+            {t("Reservaste")} <span className="font-semibold">{unidad.nombre}</span> {t("del")} {fechaLinda(checkIn)} {t("al")} {fechaLinda(checkOut)}.
           </p>
-          <p className="text-sm text-slate-500 dark:text-slate-400">Recibimos tu comprobante. El propietario lo revisará y se pondrá en contacto.</p>
-          <button onClick={onReservado} className="btn-primario w-full">Listo</button>
+          <p className="text-sm text-slate-500 dark:text-slate-400">{t("Recibimos tu comprobante. El propietario lo revisará y se pondrá en contacto.")}</p>
+          <button onClick={onReservado} className="btn-primario w-full">{t("Listo")}</button>
         </div>
       </Overlay>
     );
@@ -673,15 +679,15 @@ function FormReservaCliente({
 
   if (reservaId) {
     return (
-      <Overlay titulo="Cargá la seña" onCerrar={onReservado}>
+      <Overlay titulo={t("Cargá la seña")} onCerrar={onReservado}>
         <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
-          Tu reserva quedó registrada. Subí el comprobante de la seña para confirmarla.
+          {t("Tu reserva quedó registrada. Subí el comprobante de la seña para confirmarla.")}
         </p>
         <form onSubmit={enviarSena} className="space-y-3">
-          <Campo label="Monto de la seña">
+          <Campo label={t("Monto de la seña")}>
             <input type="number" inputMode="decimal" value={montoSena} onChange={(e) => setMontoSena(e.target.value)} className="input text-right" placeholder="0" />
           </Campo>
-          <Campo label="¿Cómo pagaste?">
+          <Campo label={t("¿Cómo pagaste?")}>
             <select value={medio} onChange={(e) => setMedio(e.target.value)} className="input">
               <option>Transferencia</option>
               <option>Mercado Pago</option>
@@ -690,18 +696,18 @@ function FormReservaCliente({
               <option>Otro</option>
             </select>
           </Campo>
-          <Campo label="Comprobante (foto o captura)">
+          <Campo label={t("Comprobante (foto o captura)")}>
             <input type="file" accept="image/*" onChange={elegirComprobante} className="block w-full text-sm text-slate-500 dark:text-slate-400 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-sm file:bg-teal-50 file:text-teal-700 dark:file:bg-teal-500/15 dark:file:text-teal-400" />
           </Campo>
           {comprobante && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={comprobante} alt="Comprobante" className="rounded-lg max-h-40 mx-auto ring-1 ring-black/5" />
+            <img src={comprobante} alt={t("Comprobante")} className="rounded-lg max-h-40 mx-auto ring-1 ring-black/5" />
           )}
           {error && <p className="text-sm text-rose-600 dark:text-rose-400">{error}</p>}
           <div className="flex gap-2 pt-1">
-            <button type="button" onClick={onReservado} className="btn-secundario flex-1">Más tarde</button>
+            <button type="button" onClick={onReservado} className="btn-secundario flex-1">{t("Más tarde")}</button>
             <button type="submit" disabled={subiendo} className="btn-primario flex-1 disabled:opacity-50">
-              {subiendo ? "Enviando…" : "Enviar seña"}
+              {subiendo ? t("Enviando…") : t("Enviar seña")}
             </button>
           </div>
         </form>
@@ -710,36 +716,36 @@ function FormReservaCliente({
   }
 
   return (
-    <Overlay titulo={`Reservar ${unidad.nombre}`} onCerrar={onCerrar}>
+    <Overlay titulo={`${t("Reservar")} ${unidad.nombre}`} onCerrar={onCerrar}>
       <form onSubmit={reservar} className="space-y-3">
         <div className="grid grid-cols-2 gap-3">
-          <Campo label="Entrada">
+          <Campo label={t("Entrada")}>
             <input type="date" min={hoy} value={checkIn} onChange={(e) => setCheckIn(e.target.value)} className="input" required />
           </Campo>
-          <Campo label="Salida">
+          <Campo label={t("Salida")}>
             <input type="date" min={checkIn || hoy} value={checkOut} onChange={(e) => setCheckOut(e.target.value)} className="input" required />
           </Campo>
         </div>
 
         {nn > 0 && !choca && fechasOk && (
-          <p className="text-sm text-emerald-600 dark:text-emerald-400">Disponible · {nn} {nn === 1 ? "noche" : "noches"}.</p>
+          <p className="text-sm text-emerald-600 dark:text-emerald-400">{t("Disponible")} · {nn} {nn === 1 ? t("noche") : t("noches")}.</p>
         )}
-        {choca && <p className="text-sm text-rose-600 dark:text-rose-400">Esas fechas no están disponibles. Probá con otras.</p>}
+        {choca && <p className="text-sm text-rose-600 dark:text-rose-400">{t("Esas fechas no están disponibles. Probá con otras.")}</p>}
 
-        <Campo label="Tu nombre">
-          <input value={huesped} onChange={(e) => setHuesped(e.target.value)} className="input" placeholder="Nombre y apellido" required />
+        <Campo label={t("Tu nombre")}>
+          <input value={huesped} onChange={(e) => setHuesped(e.target.value)} className="input" placeholder={t("Nombre y apellido")} required />
         </Campo>
-        <Campo label="Contacto (teléfono o email)">
-          <input value={contacto} onChange={(e) => setContacto(e.target.value)} className="input" placeholder="WhatsApp, teléfono…" />
+        <Campo label={t("Contacto (teléfono o email)")}>
+          <input value={contacto} onChange={(e) => setContacto(e.target.value)} className="input" placeholder={t("WhatsApp, teléfono…")} />
         </Campo>
 
-        {cargandoOc && <p className="text-xs text-slate-400 dark:text-slate-500">Cargando disponibilidad…</p>}
+        {cargandoOc && <p className="text-xs text-slate-400 dark:text-slate-500">{t("Cargando disponibilidad…")}</p>}
         {error && <p className="text-sm text-rose-600 dark:text-rose-400">{error}</p>}
 
         <div className="flex gap-2 pt-1">
-          <button type="button" onClick={onCerrar} className="btn-secundario flex-1">Cancelar</button>
+          <button type="button" onClick={onCerrar} className="btn-secundario flex-1">{t("Cancelar")}</button>
           <button type="submit" disabled={enviando || !fechasOk || choca} className="btn-primario flex-1 disabled:opacity-50">
-            {enviando ? "Reservando…" : "Reservar"}
+            {enviando ? t("Reservando…") : t("Reservar")}
           </button>
         </div>
       </form>
