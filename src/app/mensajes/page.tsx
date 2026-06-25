@@ -5,7 +5,7 @@ import { useStore } from "@/lib/store";
 import { Overlay } from "@/components/ui";
 
 export default function Mensajes() {
-  const { mensajes, reservas, getUnidad, mensajesDe, enviarMensaje, marcarLeidos } = useStore();
+  const { mensajes, reservas, getUnidad, mensajesDe, enviarMensaje, marcarLeidos, t } = useStore();
   const [abierta, setAbierta] = useState<string | null>(null);
 
   // Conversaciones = una por reserva con mensajes, ordenadas por el último mensaje.
@@ -16,20 +16,20 @@ export default function Mensajes() {
       const ultimo = ms[ms.length - 1];
       const noLeidos = ms.filter((m) => m.autor === "inquilino" && !m.leidoDueno).length;
       const r = reservas.find((x) => x.id === rid);
-      return { rid, ultimo, noLeidos, huesped: r?.huesped ?? "Inquilino", unidad: r ? (getUnidad(r.unidadId)?.nombre ?? "—") : "—" };
+      return { rid, ultimo, noLeidos, huesped: r?.huesped ?? t("Inquilino"), unidad: r ? (getUnidad(r.unidadId)?.nombre ?? "—") : "—" };
     })
     .sort((a, b) => (b.ultimo?.createdAt ?? "").localeCompare(a.ultimo?.createdAt ?? ""));
 
   return (
     <div>
       <div className="mb-5">
-        <h1 className="font-display text-2xl font-semibold text-slate-800 dark:text-slate-100">Mensajes</h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400">Conversaciones con tus inquilinos.</p>
+        <h1 className="font-display text-2xl font-semibold text-slate-800 dark:text-slate-100">{t("Mensajes")}</h1>
+        <p className="text-sm text-slate-500 dark:text-slate-400">{t("Conversaciones con tus inquilinos.")}</p>
       </div>
 
       {convos.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-600 p-10 text-center text-slate-500 dark:text-slate-400">
-          Todavía no hay mensajes. Cuando un inquilino te escriba desde su portal, lo vas a ver acá.
+          {t("Todavía no hay mensajes. Cuando un inquilino te escriba desde su portal, lo vas a ver acá.")}
         </div>
       ) : (
         <div className="space-y-2">
@@ -46,7 +46,7 @@ export default function Mensajes() {
                   <span className="text-xs text-slate-400 dark:text-slate-500 truncate">· {c.unidad}</span>
                 </div>
                 <div className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                  {c.ultimo ? `${c.ultimo.autor === "dueno" ? "Vos: " : ""}${c.ultimo.texto}` : ""}
+                  {c.ultimo ? `${c.ultimo.autor === "dueno" ? t("Vos:") + " " : ""}${c.ultimo.texto}` : ""}
                 </div>
               </div>
               {c.noLeidos > 0 && (
@@ -60,7 +60,7 @@ export default function Mensajes() {
       {abierta && (
         <HiloChat
           reservaId={abierta}
-          titulo={convos.find((c) => c.rid === abierta)?.huesped ?? "Inquilino"}
+          titulo={convos.find((c) => c.rid === abierta)?.huesped ?? t("Inquilino")}
           mensajesDe={mensajesDe}
           enviarMensaje={enviarMensaje}
           onCerrar={() => setAbierta(null)}
@@ -83,13 +83,14 @@ function HiloChat({
   enviarMensaje: (id: string, texto: string) => void;
   onCerrar: () => void;
 }) {
+  const { t } = useStore();
   const [texto, setTexto] = useState("");
   const msgs = mensajesDe(reservaId);
 
   function enviar() {
-    const t = texto.trim();
-    if (!t) return;
-    enviarMensaje(reservaId, t);
+    const txt = texto.trim();
+    if (!txt) return;
+    enviarMensaje(reservaId, txt);
     setTexto("");
   }
 
@@ -97,7 +98,7 @@ function HiloChat({
     <Overlay titulo={titulo} onCerrar={onCerrar}>
       <div className="space-y-1.5 max-h-[55vh] overflow-y-auto mb-3">
         {msgs.length === 0 ? (
-          <p className="text-xs text-slate-400 dark:text-slate-500">Sin mensajes.</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500">{t("Sin mensajes.")}</p>
         ) : msgs.map((m) => (
           <div key={m.id} className={`flex ${m.autor === "dueno" ? "justify-end" : "justify-start"}`}>
             <span className={`text-sm px-3 py-1.5 rounded-2xl max-w-[80%] ${m.autor === "dueno" ? "bg-teal-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200"}`}>{m.texto}</span>
@@ -105,8 +106,8 @@ function HiloChat({
         ))}
       </div>
       <div className="flex gap-2">
-        <input value={texto} onChange={(e) => setTexto(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); enviar(); } }} className="input flex-1" placeholder="Escribir respuesta…" autoFocus />
-        <button type="button" onClick={enviar} disabled={!texto.trim()} className="btn-primario disabled:opacity-50">Enviar</button>
+        <input value={texto} onChange={(e) => setTexto(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); enviar(); } }} className="input flex-1" placeholder={t("Escribir respuesta…")} autoFocus />
+        <button type="button" onClick={enviar} disabled={!texto.trim()} className="btn-primario disabled:opacity-50">{t("Enviar")}</button>
       </div>
     </Overlay>
   );

@@ -25,7 +25,7 @@ const COLOR_TIPO: Record<DocTipo, string> = {
 };
 
 export default function Documentos() {
-  const { pagos, gastos, serviciosComprobantes, reservas, getUnidad, nombreGrupo, unidades } = useStore();
+  const { pagos, gastos, serviciosComprobantes, reservas, getUnidad, nombreGrupo, unidades, t } = useStore();
   const [tipo, setTipo] = useState<"todos" | DocTipo>("todos");
   const [uFiltro, setUFiltro] = useState("");
   const [q, setQ] = useState("");
@@ -75,33 +75,33 @@ export default function Documentos() {
   return (
     <div>
       <div className="mb-5">
-        <h1 className="font-display text-2xl font-semibold text-slate-800 dark:text-slate-100">Documentos</h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400">Todos los comprobantes cargados: pagos, gastos y servicios.</p>
+        <h1 className="font-display text-2xl font-semibold text-slate-800 dark:text-slate-100">{t("Documentos")}</h1>
+        <p className="text-sm text-slate-500 dark:text-slate-400">{t("Todos los comprobantes cargados: pagos, gastos y servicios.")}</p>
       </div>
 
       {/* Filtros */}
       <div className="flex flex-wrap items-center gap-2 mb-5">
         <div className="flex rounded-lg border border-slate-300 dark:border-slate-600 overflow-hidden text-xs">
-          {tabs.map((t) => (
+          {tabs.map((it) => (
             <button
-              key={t}
-              onClick={() => setTipo(t)}
-              className={tipo === t ? "px-3 py-1.5 bg-teal-600 text-white capitalize" : "px-3 py-1.5 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 capitalize"}
+              key={it}
+              onClick={() => setTipo(it)}
+              className={tipo === it ? "px-3 py-1.5 bg-teal-600 text-white capitalize" : "px-3 py-1.5 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 capitalize"}
             >
-              {t === "todos" ? "Todos" : t + "s"}
+              {it === "todos" ? t("Todos") : t(it + "s")}
             </button>
           ))}
         </div>
         <select value={uFiltro} onChange={(e) => setUFiltro(e.target.value)} className="input w-auto py-1.5 text-sm">
-          <option value="">Todas las unidades</option>
+          <option value="">{t("Todas las unidades")}</option>
           {unidades.map((u) => <option key={u.id} value={u.id}>{u.nombre}</option>)}
         </select>
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar…" className="input flex-1 min-w-[140px] py-1.5 text-sm" />
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("Buscar…")} className="input flex-1 min-w-[140px] py-1.5 text-sm" />
       </div>
 
       {filtrados.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-600 p-10 text-center text-slate-500 dark:text-slate-400">
-          No hay documentos {tipo !== "todos" || uFiltro || q ? "para este filtro" : "cargados todavía"}.
+          {t("No hay documentos")} {tipo !== "todos" || uFiltro || q ? t("para este filtro") : t("cargados todavía")}.
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -114,7 +114,7 @@ export default function Documentos() {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={d.comprobante} alt={d.titulo} className="w-full h-28 object-cover bg-slate-100 dark:bg-slate-900" />
               <div className="p-2.5">
-                <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${COLOR_TIPO[d.tipo]}`}>{d.tipo}</span>
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${COLOR_TIPO[d.tipo]}`}>{t(d.tipo)}</span>
                 <div className="text-xs font-medium text-slate-700 dark:text-slate-200 truncate mt-1.5">{d.titulo}</div>
                 <div className="text-[11px] text-slate-400 dark:text-slate-500 truncate">{d.unidad} · {formatearFecha(d.fecha)}</div>
               </div>
@@ -129,7 +129,7 @@ export default function Documentos() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={ver.comprobante} alt={ver.titulo} className="w-full rounded-lg" />
           <div className="flex justify-end pt-3">
-            <a href={ver.comprobante} download={`${ver.tipo}-${ver.fecha}.jpg`} className="btn-secundario">Descargar</a>
+            <a href={ver.comprobante} download={`${ver.tipo}-${ver.fecha}.jpg`} className="btn-secundario">{t("Descargar")}</a>
           </div>
         </Overlay>
       )}

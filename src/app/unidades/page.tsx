@@ -14,7 +14,7 @@ import InputEntero from "@/components/InputEntero";
 import { subirArchivo } from "@/lib/storage";
 
 export default function Unidades() {
-  const { unidades, reservas, grupos, addUnidad, getGrupo, vacio, seedCuenta, puedeEditar, esAdmin } = useStore();
+  const { unidades, reservas, grupos, addUnidad, getGrupo, vacio, seedCuenta, puedeEditar, esAdmin, t } = useStore();
   const [abrirAlta, setAbrirAlta] = useState(false);
   const puedeEdit = puedeEditar("unidades");
   const [editarGrupoId, setEditarGrupoId] = useState<string | null>(null);
@@ -40,10 +40,10 @@ export default function Unidades() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="font-display text-2xl font-semibold text-slate-800 dark:text-slate-100">Mis unidades</h1>
+          <h1 className="font-display text-2xl font-semibold text-slate-800 dark:text-slate-100">{t("Mis unidades")}</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            {unidades.length} {unidades.length === 1 ? "unidad" : "unidades"} ·{" "}
-            {grupos.length} {grupos.length === 1 ? "grupo" : "grupos"} · {reservas.length} reservas
+            {unidades.length} {unidades.length === 1 ? t("unidad") : t("unidades")} ·{" "}
+            {grupos.length} {grupos.length === 1 ? t("grupo") : t("grupos")} · {reservas.length} {t("reservas")}
           </p>
         </div>
         {puedeEdit && (
@@ -51,21 +51,21 @@ export default function Unidades() {
             onClick={() => setAbrirAlta(true)}
             className="rounded-lg bg-teal-600 text-white px-4 py-2 text-sm font-medium hover:bg-teal-700 transition"
           >
-            + Agregar unidad
+            + {t("Agregar unidad")}
           </button>
         )}
       </div>
 
       {unidades.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-600 p-10 text-center text-slate-500 dark:text-slate-400">
-          Todavía no cargaste unidades. Empezá agregando una.
+          {t("Todavía no cargaste unidades. Empezá agregando una.")}
           {vacio && esAdmin && (
             <div className="mt-4">
               <button
-                onClick={() => { if (confirm("Esto carga un set de datos de PRUEBA (unidades, reservas, pagos…) en tu cuenta. Es solo para explorar la app. ¿Continuar?")) seedCuenta(); }}
+                onClick={() => { if (confirm(t("Esto carga un set de datos de PRUEBA (unidades, reservas, pagos…) en tu cuenta. Es solo para explorar la app. ¿Continuar?"))) seedCuenta(); }}
                 className="text-xs text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 underline"
               >
-                (admin) Cargar datos de ejemplo
+                {t("(admin) Cargar datos de ejemplo")}
               </button>
             </div>
           )}
@@ -77,12 +77,12 @@ export default function Unidades() {
               <div className="flex items-center gap-2 mb-3">
                 {getGrupo(grupoId) && <AvatarGrupo grupo={getGrupo(grupoId)!} size={28} />}
                 <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200 uppercase tracking-wide">
-                  {getGrupo(grupoId)?.nombre ?? "Sin grupo"}
+                  {getGrupo(grupoId)?.nombre ?? t("Sin grupo")}
                 </h2>
                 <span className="text-xs text-slate-400 dark:text-slate-500">· {items.length}</span>
                 {grupoId && (
                   <button onClick={() => setEditarGrupoId(grupoId)} className="text-xs text-slate-400 dark:text-slate-500 hover:text-teal-600 dark:hover:text-teal-400">
-                    Editar
+                    {t("Editar")}
                   </button>
                 )}
               </div>
@@ -117,18 +117,18 @@ export default function Unidades() {
 }
 
 function ModalEditarGrupo({ grupoId, onCerrar }: { grupoId: string; onCerrar: () => void }) {
-  const { getGrupo, updateGrupo, deleteGrupo } = useStore();
+  const { getGrupo, updateGrupo, deleteGrupo, t } = useStore();
   const grupo = getGrupo(grupoId);
   if (!grupo) return null;
 
   return (
-    <Overlay titulo="Editar grupo" onCerrar={onCerrar}>
+    <Overlay titulo={t("Editar grupo")} onCerrar={onCerrar}>
       <div className="space-y-4">
         <div className="flex items-center gap-4">
           <AvatarGrupo grupo={grupo} size={56} />
           <div className="flex gap-2">
             <label className="btn-secundario cursor-pointer">
-              {grupo.foto ? "Cambiar foto" : "Subir foto"}
+              {grupo.foto ? t("Cambiar foto") : t("Subir foto")}
               <input
                 type="file" accept="image/*" className="hidden"
                 onChange={async (e) => {
@@ -139,24 +139,24 @@ function ModalEditarGrupo({ grupoId, onCerrar }: { grupoId: string; onCerrar: ()
               />
             </label>
             {grupo.foto && (
-              <button onClick={() => updateGrupo(grupo.id, { foto: undefined })} className="btn-secundario">Quitar</button>
+              <button onClick={() => updateGrupo(grupo.id, { foto: undefined })} className="btn-secundario">{t("Quitar")}</button>
             )}
           </div>
         </div>
 
-        <Campo label="Nombre">
+        <Campo label={t("Nombre")}>
           <input className="input" value={grupo.nombre} onChange={(e) => updateGrupo(grupo.id, { nombre: e.target.value })} />
         </Campo>
 
         <div className="grid grid-cols-2 gap-4">
-          <Campo label="Ambiente">
+          <Campo label={t("Ambiente")}>
             <select className="input" value={grupo.ambiente} onChange={(e) => updateGrupo(grupo.id, { ambiente: e.target.value as AmbienteGrupo })}>
               {AMBIENTES_GRUPO.map((a) => (
-                <option key={a} value={a}>{a}</option>
+                <option key={a} value={a}>{t(a)}</option>
               ))}
             </select>
           </Campo>
-          <Campo label="Color">
+          <Campo label={t("Color")}>
             <div className="flex gap-2 flex-wrap pt-1">
               {COLORES_UNIDAD.map((c) => (
                 <button
@@ -164,7 +164,7 @@ function ModalEditarGrupo({ grupoId, onCerrar }: { grupoId: string; onCerrar: ()
                   onClick={() => updateGrupo(grupo.id, { color: c })}
                   className={`w-7 h-7 rounded-full ${grupo.color === c ? "ring-2 ring-offset-2 ring-slate-400 dark:ring-offset-slate-800" : ""}`}
                   style={{ background: c }}
-                  aria-label={`Color ${c}`}
+                  aria-label={`${t("Color")} ${c}`}
                 />
               ))}
             </div>
@@ -174,16 +174,16 @@ function ModalEditarGrupo({ grupoId, onCerrar }: { grupoId: string; onCerrar: ()
         <div className="flex justify-between items-center pt-2">
           <button
             onClick={() => {
-              if (confirm(`¿Eliminar el grupo "${grupo.nombre}"? Las unidades quedarán sin grupo.`)) {
+              if (confirm(`${t("¿Eliminar el grupo")} "${grupo.nombre}"? ${t("Las unidades quedarán sin grupo.")}`)) {
                 deleteGrupo(grupo.id);
                 onCerrar();
               }
             }}
             className="text-sm text-rose-600 hover:text-rose-700 dark:text-rose-400"
           >
-            Eliminar grupo
+            {t("Eliminar grupo")}
           </button>
-          <button onClick={onCerrar} className="btn-primario">Listo</button>
+          <button onClick={onCerrar} className="btn-primario">{t("Listo")}</button>
         </div>
       </div>
     </Overlay>
@@ -199,7 +199,7 @@ function TarjetaUnidad({
   reservas: Reserva[];
   hoy: string;
 }) {
-  const { getUnidad } = useStore();
+  const { getUnidad, t } = useStore();
   const uni = getUnidad(id)!;
 
   const ocupadaHoy = reservas.find((r) => diaOcupado(hoy, r.checkIn, r.checkOut));
@@ -218,17 +218,17 @@ function TarjetaUnidad({
           <div className="min-w-0">
             <h3 className="font-semibold text-slate-800 dark:text-slate-100 truncate">{uni.nombre}</h3>
             <p className="text-sm text-slate-500 dark:text-slate-400 truncate">
-              {uni.tipoUnidad} · {uni.localidad}
+              {t(uni.tipoUnidad)} · {uni.localidad}
             </p>
           </div>
         </div>
         {ocupadaHoy ? (
           <span className="shrink-0 text-xs font-medium px-2 py-1 rounded-full bg-rose-50 dark:bg-rose-500/15 text-rose-600 dark:text-rose-400">
-            Ocupada
+            {t("Ocupada")}
           </span>
         ) : (
           <span className="shrink-0 text-xs font-medium px-2 py-1 rounded-full bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
-            Libre
+            {t("Libre")}
           </span>
         )}
       </div>
@@ -236,20 +236,20 @@ function TarjetaUnidad({
       <div className="mt-4 flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
         {uni.tipoUnidad === "Cochera" ? (
           <>
-            <span>🅿 Cochera</span>
+            <span>🅿 {t("Cochera")}</span>
             {uni.ubicacionCochera && <span>· {uni.ubicacionCochera}</span>}
-            {uni.aptoCamioneta && <span>· apta camioneta</span>}
+            {uni.aptoCamioneta && <span>· {t("apta camioneta")}</span>}
             <span>·</span>
-            <span>{reservas.length} reservas</span>
+            <span>{reservas.length} {t("reservas")}</span>
           </>
         ) : (
           <>
-            <span>{uni.ambientes === 1 ? "Monoambiente" : `${uni.ambientes} ambientes`}</span>
+            <span>{uni.ambientes === 1 ? t("Monoambiente") : `${uni.ambientes} ${t("ambientes")}`}</span>
             <span>·</span>
-            <span>Hasta {uni.capacidad} huéspedes</span>
+            <span>{t("Hasta")} {uni.capacidad} {t("huéspedes")}</span>
             <span>·</span>
-            <span>{reservas.length} reservas</span>
-            {uni.cochera && <span className="text-teal-600 dark:text-teal-400">· 🅿 cochera{uni.aptoCamioneta ? " (camioneta)" : ""}</span>}
+            <span>{reservas.length} {t("reservas")}</span>
+            {uni.cochera && <span className="text-teal-600 dark:text-teal-400">· 🅿 {t("cochera")}{uni.aptoCamioneta ? ` (${t("camioneta")})` : ""}</span>}
           </>
         )}
       </div>
@@ -257,11 +257,11 @@ function TarjetaUnidad({
       <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700 text-sm">
         {proxima ? (
           <span className="text-slate-600 dark:text-slate-300">
-            Próxima: <span className="font-medium">{proxima.huesped}</span> ·{" "}
+            {t("Próxima")}: <span className="font-medium">{proxima.huesped}</span> ·{" "}
             {formatearFecha(proxima.checkIn)}
           </span>
         ) : (
-          <span className="text-slate-400 dark:text-slate-500">Sin próximas reservas</span>
+          <span className="text-slate-400 dark:text-slate-500">{t("Sin próximas reservas")}</span>
         )}
       </div>
     </Link>
@@ -275,6 +275,7 @@ function ModalAltaUnidad({
   onCerrar: () => void;
   onGuardar: (datos: Omit<Unidad, "id">) => void;
 }) {
+  const { t } = useStore();
   const [nombre, setNombre] = useState("");
   const [grupoId, setGrupoId] = useState("");
   const [tipoUnidad, setTipoUnidad] = useState<TipoUnidad>("Departamento");
@@ -291,7 +292,7 @@ function ModalAltaUnidad({
   const valido = nombre.trim().length > 0;
 
   return (
-    <Overlay onCerrar={onCerrar} titulo="Nueva unidad">
+    <Overlay onCerrar={onCerrar} titulo={t("Nueva unidad")}>
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -314,21 +315,21 @@ function ModalAltaUnidad({
         }}
         className="space-y-4"
       >
-        <Campo label="Nombre">
-          <input autoFocus value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="ej: Depto Güemes" className="input" />
+        <Campo label={t("Nombre")}>
+          <input autoFocus value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder={t("ej: Depto Güemes")} className="input" />
         </Campo>
-        <Campo label="Grupo">
+        <Campo label={t("Grupo")}>
           <SelectGrupo value={grupoId} onChange={setGrupoId} />
         </Campo>
         <div className="grid grid-cols-2 gap-4">
-          <Campo label="Tipo">
+          <Campo label={t("Tipo")}>
             <select value={tipoUnidad} onChange={(e) => setTipoUnidad(e.target.value as TipoUnidad)} className="input">
-              {TIPOS_UNIDAD.map((t) => (
-                <option key={t} value={t}>{t}</option>
+              {TIPOS_UNIDAD.map((tu) => (
+                <option key={tu} value={tu}>{t(tu)}</option>
               ))}
             </select>
           </Campo>
-          <Campo label="Color">
+          <Campo label={t("Color")}>
             <div className="flex gap-2 flex-wrap pt-1">
               {COLORES_UNIDAD.map((c) => (
                 <button
@@ -337,24 +338,24 @@ function ModalAltaUnidad({
                   onClick={() => setColor(c)}
                   className={`w-7 h-7 rounded-full ${color === c ? "ring-2 ring-offset-2 ring-slate-400 dark:ring-offset-slate-800" : ""}`}
                   style={{ background: c }}
-                  aria-label={`Color ${c}`}
+                  aria-label={`${t("Color")} ${c}`}
                 />
               ))}
             </div>
           </Campo>
         </div>
-        <Campo label="Dirección">
-          <input value={direccion} onChange={(e) => setDireccion(e.target.value)} placeholder="Calle y número" className="input" />
+        <Campo label={t("Dirección")}>
+          <input value={direccion} onChange={(e) => setDireccion(e.target.value)} placeholder={t("Calle y número")} className="input" />
         </Campo>
-        <Campo label="Localidad">
+        <Campo label={t("Localidad")}>
           <input value={localidad} onChange={(e) => setLocalidad(e.target.value)} className="input" />
         </Campo>
         {!esCochera && (
           <div className="grid grid-cols-2 gap-4">
-            <Campo label="Ambientes">
+            <Campo label={t("Ambientes")}>
               <InputEntero value={ambientes} onChange={setAmbientes} min={1} />
             </Campo>
-            <Campo label="Capacidad (huéspedes)">
+            <Campo label={t("Capacidad (huéspedes)")}>
               <InputEntero value={capacidad} onChange={setCapacidad} min={1} />
             </Campo>
           </div>
@@ -362,23 +363,23 @@ function ModalAltaUnidad({
         {!esCochera && (
           <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
             <input type="checkbox" checked={cochera} onChange={(e) => setCochera(e.target.checked)} />
-            Tiene cochera
+            {t("Tiene cochera")}
           </label>
         )}
         {(esCochera || cochera) && (
           <>
             <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
               <input type="checkbox" checked={aptoCamioneta} onChange={(e) => setAptoCamioneta(e.target.checked)} />
-              Apta para camioneta / pickup
+              {t("Apta para camioneta / pickup")}
             </label>
-            <Campo label="Ubicación de la cochera">
-              <input value={ubicacionCochera} onChange={(e) => setUbicacionCochera(e.target.value)} className="input" placeholder="ej: Subsuelo 2, lugar 14" />
+            <Campo label={t("Ubicación de la cochera")}>
+              <input value={ubicacionCochera} onChange={(e) => setUbicacionCochera(e.target.value)} className="input" placeholder={t("ej: Subsuelo 2, lugar 14")} />
             </Campo>
           </>
         )}
         <div className="flex justify-end gap-2 pt-2">
-          <button type="button" onClick={onCerrar} className="btn-secundario">Cancelar</button>
-          <button type="submit" disabled={!valido} className="btn-primario">Guardar</button>
+          <button type="button" onClick={onCerrar} className="btn-secundario">{t("Cancelar")}</button>
+          <button type="submit" disabled={!valido} className="btn-primario">{t("Guardar")}</button>
         </div>
       </form>
     </Overlay>
