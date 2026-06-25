@@ -53,6 +53,36 @@ const DE: Record<string, string> = {
   "Reservar": "Reservieren",
   "Nueva reserva": "Neue Reservierung",
   "Editar reserva": "Reservierung bearbeiten",
+
+  // Inicio / agenda
+  "Hoy": "Heute",
+  "Mañana": "Morgen",
+  "Llegadas hoy": "Anreisen heute",
+  "Salidas hoy": "Abreisen heute",
+  "Ocupadas": "Belegt",
+  "Libres": "Frei",
+  "Próximos eventos": "Nächste Termine",
+  "Sin eventos en los próximos 14 días.": "Keine Termine in den nächsten 14 Tagen.",
+  "Calendario": "Kalender",
+  "Sin tareas este día.": "Keine Aufgaben an diesem Tag.",
+  "Debe": "Schuldet",
+  "Vence": "Läuft ab",
+  "Manual": "Manuell",
+  // Etiquetas de tareas (META_TAREA)
+  "Llegada": "Anreise",
+  "Salida / limpieza": "Abreise / Reinigung",
+  "Cobro": "Zahlung",
+  "Ajuste": "Anpassung",
+  "Fin de contrato": "Vertragsende",
+  // Bandeja de aprobación
+  "Reservas por aprobar": "Zu bestätigende Reservierungen",
+  "Seña": "Anzahlung",
+  "Ver": "Ansehen",
+  "Todavía no subió el comprobante de la seña.": "Der Anzahlungsbeleg wurde noch nicht hochgeladen.",
+  "¿Rechazar la reserva?": "Reservierung ablehnen?",
+  "Rechazar": "Ablehnen",
+  "Aprobar": "Bestätigen",
+  "Comprobante de seña": "Anzahlungsbeleg",
 };
 
 const DICCIONARIOS: Record<Idioma, Record<string, string>> = {

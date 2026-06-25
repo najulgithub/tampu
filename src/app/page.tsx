@@ -14,8 +14,9 @@ import { Overlay } from "@/components/ui";
 import { Monto } from "@/components/Monto";
 
 export default function Agenda() {
-  const { unidades, reservas, saldoDe, config, pagos, gastos } = useStore();
+  const { unidades, reservas, saldoDe, config, pagos, gastos, t } = useStore();
   const hoy = hoyISO();
+  const loc = config.idioma === "de" ? "de-DE" : "es-AR";
 
   const [mesAncla, setMesAncla] = useState(hoy.slice(0, 7) + "-01"); // primer día del mes visible
   const [diaSel, setDiaSel] = useState(hoy);
@@ -47,32 +48,32 @@ export default function Agenda() {
   const salidasHoy = (proximasPorDia.get(hoy) ?? []).filter((t) => t.tipo === "salida").length;
   const libres = Math.max(0, unidades.length - ocupadasHoy);
 
-  const fechaHoy = new Date().toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" });
+  const fechaHoy = new Date().toLocaleDateString(loc, { weekday: "long", day: "numeric", month: "long" });
 
   function etiquetaDia(iso: string) {
-    if (iso === hoy) return "Hoy";
-    if (iso === sumarDias(hoy, 1)) return "Mañana";
-    return desdeISO(iso).toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "short" });
+    if (iso === hoy) return t("Hoy");
+    if (iso === sumarDias(hoy, 1)) return t("Mañana");
+    return desdeISO(iso).toLocaleDateString(loc, { weekday: "long", day: "numeric", month: "short" });
   }
 
   // Etiqueta corta para el timeline (columna izquierda).
   function etiquetaCorta(iso: string) {
-    if (iso === hoy) return "Hoy";
-    if (iso === sumarDias(hoy, 1)) return "Mañana";
-    return desdeISO(iso).toLocaleDateString("es-AR", { weekday: "short", day: "numeric" });
+    if (iso === hoy) return t("Hoy");
+    if (iso === sumarDias(hoy, 1)) return t("Mañana");
+    return desdeISO(iso).toLocaleDateString(loc, { weekday: "short", day: "numeric" });
   }
 
   // Detalle a la derecha de cada tarea según su tipo
-  function detalleTarea(t: Tarea): React.ReactNode {
-    const r = t.reserva;
+  function detalleTarea(ta: Tarea): React.ReactNode {
+    const r = ta.reserva;
     const sim = SIMBOLO_MONEDA[r.moneda];
-    switch (t.tipo) {
+    switch (ta.tipo) {
       case "llegada": {
         const saldo = saldoDe(r);
         return (
           <div>
             <div className="text-slate-600 dark:text-slate-300">{r.horaCheckIn}h</div>
-            {saldo > 0 && <div className="text-amber-600 dark:text-amber-400">Debe <Monto valor={saldo} simbolo={sim} /></div>}
+            {saldo > 0 && <div className="text-amber-600 dark:text-amber-400">{t("Debe")} <Monto valor={saldo} simbolo={sim} /></div>}
           </div>
         );
       }
@@ -83,30 +84,30 @@ export default function Agenda() {
         return <span className="text-rose-600 dark:text-rose-400"><Monto valor={monto} simbolo={sim} /></span>;
       }
       case "ajuste":
-        return <span className="text-violet-600 dark:text-violet-400">{r.indice === "Manual" ? `Manual ${r.porcentajeManual}%` : r.indice}</span>;
+        return <span className="text-violet-600 dark:text-violet-400">{r.indice === "Manual" ? `${t("Manual")} ${r.porcentajeManual}%` : r.indice}</span>;
       case "contrato":
-        return <span className="text-violet-600 dark:text-violet-400">Vence</span>;
+        return <span className="text-violet-600 dark:text-violet-400">{t("Vence")}</span>;
     }
   }
 
-  function FilaTarea({ t }: { t: Tarea }) {
-    const r = t.reserva;
-    const meta = META_TAREA[t.tipo];
+  function FilaTarea({ t: ta }: { t: Tarea }) {
+    const r = ta.reserva;
+    const meta = META_TAREA[ta.tipo];
     const interior = (
       <>
         <span className={`shrink-0 w-2.5 h-2.5 rounded-full ${meta.dot}`} title={meta.label} />
         <div className="min-w-0 flex-1">
           <div className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">{r.huesped}</div>
           <div className="text-xs text-slate-500 dark:text-slate-400 truncate">
-            <span className={meta.texto}>{meta.label}</span> · {nombreUnidad(r.unidadId)}
+            <span className={meta.texto}>{t(meta.label)}</span> · {nombreUnidad(r.unidadId)}
           </div>
         </div>
-        <div className="shrink-0 text-right text-xs">{detalleTarea(t)}</div>
+        <div className="shrink-0 text-right text-xs">{detalleTarea(ta)}</div>
       </>
     );
     const cls = "flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-700/40 transition w-full text-left";
     // El ajuste abre la calculadora; el resto navega a la unidad.
-    if (t.tipo === "ajuste") {
+    if (ta.tipo === "ajuste") {
       return <button onClick={() => setCalcular(r)} className={cls}>{interior}</button>;
     }
     return <Link href={`/unidades/${r.unidadId}`} className={cls}>{interior}</Link>;
@@ -115,49 +116,49 @@ export default function Agenda() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="font-display text-2xl font-semibold text-slate-800 dark:text-slate-100">Hoy</h1>
+        <h1 className="font-display text-2xl font-semibold text-slate-800 dark:text-slate-100">{t("Hoy")}</h1>
         <p className="text-sm text-slate-500 dark:text-slate-400 capitalize">{fechaHoy}</p>
       </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-        <Kpi valor={llegadasHoy} label="Llegadas hoy" tono="teal" />
-        <Kpi valor={salidasHoy} label="Salidas hoy" tono="amber" />
-        <Kpi valor={ocupadasHoy} label="Ocupadas" tono="rose" />
-        <Kpi valor={libres} label="Libres" tono="emerald" />
+        <Kpi valor={llegadasHoy} label={t("Llegadas hoy")} tono="teal" />
+        <Kpi valor={salidasHoy} label={t("Salidas hoy")} tono="amber" />
+        <Kpi valor={ocupadasHoy} label={t("Ocupadas")} tono="rose" />
+        <Kpi valor={libres} label={t("Libres")} tono="emerald" />
       </div>
 
       <BandejaAprobacion />
 
       {/* Timeline de próximos eventos */}
       <section className="mb-8">
-        <h2 className="font-display text-lg font-semibold text-slate-800 dark:text-slate-100 mb-3">Próximos eventos</h2>
+        <h2 className="font-display text-lg font-semibold text-slate-800 dark:text-slate-100 mb-3">{t("Próximos eventos")}</h2>
         {tareasProximas.length === 0 ? (
-          <p className="text-sm text-slate-400 dark:text-slate-500">Sin eventos en los próximos 14 días. 🧉</p>
+          <p className="text-sm text-slate-400 dark:text-slate-500">{t("Sin eventos en los próximos 14 días.")} 🧉</p>
         ) : (
           <div className="card p-4">
-            {tareasProximas.map((t, i) => {
+            {tareasProximas.map((ta, i) => {
               const prev = tareasProximas[i - 1];
-              const nuevoDia = !prev || prev.fecha !== t.fecha;
+              const nuevoDia = !prev || prev.fecha !== ta.fecha;
               const ultimo = i === tareasProximas.length - 1;
-              const meta = META_TAREA[t.tipo];
-              const r = t.reserva;
+              const meta = META_TAREA[ta.tipo];
+              const r = ta.reserva;
               const cuerpo = (
                 <div className="flex items-center gap-3 w-full">
                   <div className="min-w-0 flex-1">
                     <div className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">{r.huesped}</div>
                     <div className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                      <span className={meta.texto}>{meta.label}</span> · {nombreUnidad(r.unidadId)}
+                      <span className={meta.texto}>{t(meta.label)}</span> · {nombreUnidad(r.unidadId)}
                     </div>
                   </div>
-                  <div className="shrink-0 text-right text-xs whitespace-nowrap">{detalleTarea(t)}</div>
+                  <div className="shrink-0 text-right text-xs whitespace-nowrap">{detalleTarea(ta)}</div>
                 </div>
               );
               return (
-                <div key={`${t.tipo}-${r.id}-${i}`} className="flex gap-3">
+                <div key={`${ta.tipo}-${r.id}-${i}`} className="flex gap-3">
                   {/* Columna fecha */}
                   <div className="w-14 shrink-0 text-right pt-2">
-                    {nuevoDia && <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 capitalize leading-tight">{etiquetaCorta(t.fecha)}</div>}
+                    {nuevoDia && <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 capitalize leading-tight">{etiquetaCorta(ta.fecha)}</div>}
                   </div>
                   {/* Línea + nodo */}
                   <div className="flex flex-col items-center self-stretch w-3 shrink-0">
@@ -166,7 +167,7 @@ export default function Agenda() {
                     <span className={`w-px flex-1 ${ultimo ? "bg-transparent" : "bg-slate-200 dark:bg-slate-700/70"}`} />
                   </div>
                   {/* Contenido */}
-                  {t.tipo === "ajuste" ? (
+                  {ta.tipo === "ajuste" ? (
                     <button onClick={() => setCalcular(r)} className="flex-1 min-w-0 text-left pb-4 hover:opacity-75 transition">{cuerpo}</button>
                   ) : (
                     <Link href={`/unidades/${r.unidadId}`} className="flex-1 min-w-0 pb-4 hover:opacity-75 transition">{cuerpo}</Link>
@@ -180,7 +181,7 @@ export default function Agenda() {
 
       {/* Calendario de tareas */}
       <section>
-        <h2 className="font-display text-lg font-semibold text-slate-800 dark:text-slate-100 mb-3">Calendario</h2>
+        <h2 className="font-display text-lg font-semibold text-slate-800 dark:text-slate-100 mb-3">{t("Calendario")}</h2>
         <CalendarioTareas
           anio={anio}
           mes={mes0}
@@ -194,7 +195,7 @@ export default function Agenda() {
         <div className="mt-3">
           <div className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2 capitalize">{etiquetaDia(diaSel)}</div>
           {tareasDelDia.length === 0 ? (
-            <p className="text-sm text-slate-400 dark:text-slate-500 px-1">Sin tareas este día.</p>
+            <p className="text-sm text-slate-400 dark:text-slate-500 px-1">{t("Sin tareas este día.")}</p>
           ) : (
             <div className="card divide-y divide-slate-100 dark:divide-slate-700/50 p-1">
               {tareasDelDia.map((t, i) => <FilaTarea key={`${t.tipo}-${t.reserva.id}-${i}`} t={t} />)}
@@ -237,7 +238,7 @@ function Kpi({
 // Bandeja de reservas del portal pendientes de aprobación.
 // Muestra el comprobante de seña para que el dueño verifique antes de confirmar.
 function BandejaAprobacion() {
-  const { reservas, unidades, pagosDe, updateReserva, deleteReserva } = useStore();
+  const { reservas, unidades, pagosDe, updateReserva, deleteReserva, t } = useStore();
   const [ver, setVer] = useState<string | null>(null);
 
   const pendientes = reservas
@@ -251,7 +252,7 @@ function BandejaAprobacion() {
     <div className="mb-6 rounded-2xl border border-amber-300/70 dark:border-amber-500/30 bg-amber-50/70 dark:bg-amber-500/10 overflow-hidden">
       <div className="px-4 py-3 flex items-center gap-2 border-b border-amber-200/70 dark:border-amber-500/20">
         <span className="w-2 h-2 rounded-full bg-amber-500" />
-        <span className="text-sm font-semibold text-amber-800 dark:text-amber-300">Reservas por aprobar</span>
+        <span className="text-sm font-semibold text-amber-800 dark:text-amber-300">{t("Reservas por aprobar")}</span>
         <span className="text-xs text-amber-600 dark:text-amber-400 tabular-nums">{pendientes.length}</span>
       </div>
       <div className="divide-y divide-amber-100 dark:divide-amber-500/10">
@@ -282,29 +283,29 @@ function BandejaAprobacion() {
                       )}
                       <div className="min-w-0 flex-1 text-xs">
                         <div className="font-medium text-slate-700 dark:text-slate-200">
-                          Seña <Monto valor={p.monto} simbolo={SIMBOLO_MONEDA[r.moneda]} />
+                          {t("Seña")} <Monto valor={p.monto} simbolo={SIMBOLO_MONEDA[r.moneda]} />
                         </div>
                         <div className="text-slate-400 dark:text-slate-500">{p.medio} · {formatearFecha(p.fecha)}</div>
                       </div>
                       {p.comprobante && (
-                        <button onClick={() => setVer(p.comprobante!)} className="text-xs text-teal-600 dark:text-teal-400 hover:underline shrink-0">Ver</button>
+                        <button onClick={() => setVer(p.comprobante!)} className="text-xs text-teal-600 dark:text-teal-400 hover:underline shrink-0">{t("Ver")}</button>
                       )}
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="mt-3 text-xs text-amber-700 dark:text-amber-400">Todavía no subió el comprobante de la seña.</p>
+                <p className="mt-3 text-xs text-amber-700 dark:text-amber-400">{t("Todavía no subió el comprobante de la seña.")}</p>
               )}
 
               <div className="mt-3 flex gap-2">
                 <button
-                  onClick={() => { if (confirm(`¿Rechazar la reserva de ${r.huesped}? Se borrará y se liberarán las fechas.`)) deleteReserva(r.id); }}
+                  onClick={() => { if (confirm(`${t("¿Rechazar la reserva?")} ${r.huesped}`)) deleteReserva(r.id); }}
                   className="btn-secundario flex-1"
                 >
-                  Rechazar
+                  {t("Rechazar")}
                 </button>
                 <button onClick={() => updateReserva(r.id, { estado: "confirmada" })} className="btn-primario flex-1">
-                  Aprobar
+                  {t("Aprobar")}
                 </button>
               </div>
             </div>
@@ -313,7 +314,7 @@ function BandejaAprobacion() {
       </div>
 
       {ver && (
-        <Overlay titulo="Comprobante de seña" onCerrar={() => setVer(null)}>
+        <Overlay titulo={t("Comprobante de seña")} onCerrar={() => setVer(null)}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={ver} alt="Comprobante" className="w-full rounded-lg" />
         </Overlay>
