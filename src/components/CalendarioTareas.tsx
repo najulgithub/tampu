@@ -3,6 +3,7 @@
 import { grillaMes, DIAS_SEMANA, nombreMes } from "@/lib/fechas";
 import type { Tarea } from "@/lib/tareas";
 import { META_TAREA } from "@/lib/tareas";
+import { useStore } from "@/lib/store";
 
 // Calendario mensual con marcadores de tareas por día. Al tocar un día se
 // selecciona (el detalle se muestra fuera, en la página).
@@ -23,6 +24,7 @@ export default function CalendarioTareas({
   onMes: (delta: number) => void;
   onSel: (iso: string) => void;
 }) {
+  const { t } = useStore();
   const celdas = grillaMes(anio, mes);
 
   return (
@@ -36,7 +38,7 @@ export default function CalendarioTareas({
           ‹
         </button>
         <div className="font-display font-semibold text-slate-800 dark:text-slate-100 capitalize">
-          {nombreMes(mes)} {anio}
+          {t(nombreMes(mes))} {anio}
         </div>
         <button
           onClick={() => onMes(1)}
@@ -49,7 +51,7 @@ export default function CalendarioTareas({
 
       <div className="grid grid-cols-7 gap-1 mb-1">
         {DIAS_SEMANA.map((d) => (
-          <div key={d} className="text-center text-[11px] font-medium text-slate-400 dark:text-slate-500">{d}</div>
+          <div key={d} className="text-center text-[11px] font-medium text-slate-400 dark:text-slate-500">{t(d)}</div>
         ))}
       </div>
 

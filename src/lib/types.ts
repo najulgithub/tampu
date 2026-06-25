@@ -342,7 +342,7 @@ export interface MedioPago {
   nombre: string;
   activo: boolean;
 }
-export const MEDIOS_PAGO_DEFAULT = ["Efectivo", "Transferencia", "Mercado Pago", "MODO", "BNA", "Tarjeta", "Otro"];
+export const MEDIOS_PAGO_DEFAULT = ["Efectivo", "Transferencia", "Tarjeta", "Otro"];
 
 // Pago recibido por una reserva (registro con historial).
 export interface Pago {

@@ -808,11 +808,34 @@ const CHAT: Record<string, string> = {
   "Sin notificaciones.": "Keine Benachrichtigungen.",
 };
 
+const CALENDARIO_MEDIOS: Record<string, string> = {
+  // Meses (claves en minúscula, como en fechas.ts)
+  "enero": "Januar", "febrero": "Februar", "marzo": "März", "abril": "April",
+  "mayo": "Mai", "junio": "Juni", "julio": "Juli", "agosto": "August",
+  "septiembre": "September", "octubre": "Oktober", "noviembre": "November", "diciembre": "Dezember",
+  // Días de la semana (abreviados)
+  "Lun": "Mo", "Mar": "Di", "Mié": "Mi", "Jue": "Do", "Vie": "Fr", "Sáb": "Sa", "Dom": "So",
+  "Días con color = ocupado:": "Farbige Tage = belegt:",
+  // Medios de pago (los comunes)
+  "Efectivo": "Bargeld",
+  "Transferencia": "Überweisung",
+  "Tarjeta": "Karte",
+  // SelectMedio (UI)
+  "➕ Nuevo medio…": "➕ Neue Zahlungsart…",
+  "⚙ Administrar…": "⚙ Verwalten…",
+  "Nuevo medio (ej: Transferencia Galicia)": "Neue Zahlungsart (z. B. Überweisung)",
+  "Crear": "Erstellen",
+  "Medios de pago": "Zahlungsarten",
+  "Inactivo": "Inaktiv",
+  "Agregar medio (ej: Transferencia BNA)": "Zahlungsart hinzufügen (z. B. Überweisung)",
+  "Desactivá una cuenta bloqueada para que no aparezca al cobrar, sin perder el historial.": "Deaktiviere eine gesperrte Zahlungsart, damit sie beim Kassieren nicht erscheint, ohne den Verlauf zu verlieren.",
+};
+
 // Diccionario español → alemán fusionado (spread: si una clave se repite, gana la última).
 const DE: Record<string, string> = {
   ...COMUN, ...ENUMS, ...INICIO, ...UNIDADES, ...EQUIPO, ...DOCUMENTOS, ...MENSAJES,
   ...REPORTES, ...GASTOS, ...FORMRESERVA, ...PORTAL,
-  ...UNIDAD_DETALLE, ...SHELL, ...CONFIG2, ...CHAT,
+  ...UNIDAD_DETALLE, ...SHELL, ...CONFIG2, ...CHAT, ...CALENDARIO_MEDIOS,
 };
 
 const DICCIONARIOS: Record<Idioma, Record<string, string>> = {

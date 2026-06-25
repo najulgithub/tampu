@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { Reserva, Bloqueo, Canal } from "@/lib/types";
 import { COLOR_CANAL } from "@/lib/types";
 import { grillaMes, nombreMes, DIAS_SEMANA, diaOcupado, hoyISO } from "@/lib/fechas";
+import { useStore } from "@/lib/store";
 
 export default function Calendario({
   reservas,
@@ -18,6 +19,7 @@ export default function Calendario({
   onClickReserva?: (r: Reserva) => void;
   onClickBloqueo?: (b: Bloqueo) => void;
 }) {
+  const { t } = useStore();
   const ahora = new Date();
   const [anio, setAnio] = useState(ahora.getFullYear());
   const [mes, setMes] = useState(ahora.getMonth());
@@ -52,7 +54,7 @@ export default function Calendario({
           ‹
         </button>
         <div className="font-semibold text-slate-800 dark:text-slate-100 capitalize">
-          {nombreMes(mes)} {anio}
+          {t(nombreMes(mes))} {anio}
         </div>
         <button onClick={() => mover(1)} className="px-2 py-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400" aria-label="Mes siguiente">
           ›
@@ -62,7 +64,7 @@ export default function Calendario({
       <div className="grid grid-cols-7 gap-1 mb-1">
         {DIAS_SEMANA.map((d) => (
           <div key={d} className="text-center text-xs font-medium text-slate-400 dark:text-slate-500 py-1">
-            {d}
+            {t(d)}
           </div>
         ))}
       </div>
@@ -134,11 +136,11 @@ export default function Calendario({
       </div>
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-4 pt-3 border-t border-slate-100 dark:border-slate-700">
-        <span className="text-xs text-slate-400 dark:text-slate-500">Días con color = ocupado:</span>
+        <span className="text-xs text-slate-400 dark:text-slate-500">{t("Días con color = ocupado:")}</span>
         {Object.entries(COLOR_CANAL).map(([canal, c]) => (
           <div key={canal} className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
             <span className={`w-2.5 h-2.5 rounded-full ${c.punto}`} />
-            {canal}
+            {t(canal)}
           </div>
         ))}
       </div>

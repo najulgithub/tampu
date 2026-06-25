@@ -370,11 +370,11 @@ function MiniCalendario({ ocupados, checkIn, checkOut, onPick }: { ocupados: Ran
     <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-3">
       <div className="flex items-center justify-between mb-2">
         <button type="button" onClick={() => mover(-1)} className="px-2 py-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500">‹</button>
-        <div className="text-sm font-medium text-slate-700 dark:text-slate-200 capitalize">{nombreMes(mes)} {anio}</div>
+        <div className="text-sm font-medium text-slate-700 dark:text-slate-200 capitalize">{t(nombreMes(mes))} {anio}</div>
         <button type="button" onClick={() => mover(1)} className="px-2 py-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500">›</button>
       </div>
       <div className="grid grid-cols-7 gap-0.5 mb-1">
-        {DIAS_SEMANA.map((d) => <div key={d} className="text-center text-[10px] font-medium text-slate-400 py-0.5">{d}</div>)}
+        {DIAS_SEMANA.map((d) => <div key={d} className="text-center text-[10px] font-medium text-slate-400 py-0.5">{t(d)}</div>)}
       </div>
       <div className="grid grid-cols-7 gap-0.5">
         {celdas.map((c) => {

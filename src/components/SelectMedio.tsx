@@ -13,7 +13,7 @@ export default function SelectMedio({
   value: string;
   onChange: (nombre: string) => void;
 }) {
-  const { mediosPago, addMedioPago } = useStore();
+  const { mediosPago, addMedioPago, t } = useStore();
   const [creando, setCreando] = useState(false);
   const [nuevo, setNuevo] = useState("");
   const [admin, setAdmin] = useState(false);
@@ -38,10 +38,10 @@ export default function SelectMedio({
       <div className="flex gap-2">
         <input
           autoFocus value={nuevo} onChange={(e) => setNuevo(e.target.value)}
-          placeholder="Nuevo medio (ej: Transferencia Galicia)" className="input"
+          placeholder={t("Nuevo medio (ej: Transferencia Galicia)")} className="input"
           onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); confirmar(); } if (e.key === "Escape") { setCreando(false); setNuevo(""); } }}
         />
-        <button type="button" onClick={confirmar} className="btn-primario whitespace-nowrap">Crear</button>
+        <button type="button" onClick={confirmar} className="btn-primario whitespace-nowrap">{t("Crear")}</button>
         <button type="button" onClick={() => { setCreando(false); setNuevo(""); }} className="btn-secundario" aria-label="Cancelar">×</button>
       </div>
     );
@@ -59,10 +59,10 @@ export default function SelectMedio({
         }}
       >
         {opciones.map((m) => (
-          <option key={m.id} value={m.nombre}>{m.nombre}</option>
+          <option key={m.id} value={m.nombre}>{t(m.nombre)}</option>
         ))}
-        <option value="__nuevo__">➕ Nuevo medio…</option>
-        <option value="__admin__">⚙ Administrar…</option>
+        <option value="__nuevo__">{t("➕ Nuevo medio…")}</option>
+        <option value="__admin__">{t("⚙ Administrar…")}</option>
       </select>
       {admin && <AdminMedios onCerrar={() => setAdmin(false)} />}
     </>
@@ -70,11 +70,11 @@ export default function SelectMedio({
 }
 
 function AdminMedios({ onCerrar }: { onCerrar: () => void }) {
-  const { mediosPago, addMedioPago, updateMedioPago, deleteMedioPago } = useStore();
+  const { mediosPago, addMedioPago, updateMedioPago, deleteMedioPago, t } = useStore();
   const [nuevo, setNuevo] = useState("");
 
   return (
-    <Overlay titulo="Medios de pago" onCerrar={onCerrar}>
+    <Overlay titulo={t("Medios de pago")} onCerrar={onCerrar}>
       <div className="space-y-2">
         {mediosPago.map((m) => (
           <div key={m.id} className="flex items-center gap-2">
@@ -88,7 +88,7 @@ function AdminMedios({ onCerrar }: { onCerrar: () => void }) {
               onClick={() => updateMedioPago(m.id, { activo: !m.activo })}
               className={`text-xs px-2 py-1 rounded-md whitespace-nowrap ${m.activo ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400" : "bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-400"}`}
             >
-              {m.activo ? "Activo" : "Inactivo"}
+              {m.activo ? t("Activo") : t("Inactivo")}
             </button>
             <button
               type="button"
@@ -105,19 +105,19 @@ function AdminMedios({ onCerrar }: { onCerrar: () => void }) {
           <input
             value={nuevo}
             onChange={(e) => setNuevo(e.target.value)}
-            placeholder="Agregar medio (ej: Transferencia BNA)"
+            placeholder={t("Agregar medio (ej: Transferencia BNA)")}
             className="input flex-1"
             onKeyDown={(e) => { if (e.key === "Enter" && nuevo.trim()) { e.preventDefault(); addMedioPago(nuevo); setNuevo(""); } }}
           />
-          <button type="button" onClick={() => { if (nuevo.trim()) { addMedioPago(nuevo); setNuevo(""); } }} className="btn-primario">Agregar</button>
+          <button type="button" onClick={() => { if (nuevo.trim()) { addMedioPago(nuevo); setNuevo(""); } }} className="btn-primario">{t("Agregar")}</button>
         </div>
 
         <p className="text-xs text-slate-400 dark:text-slate-500 pt-1">
-          Desactivá una cuenta bloqueada para que no aparezca al cobrar, sin perder el historial.
+          {t("Desactivá una cuenta bloqueada para que no aparezca al cobrar, sin perder el historial.")}
         </p>
 
         <div className="flex justify-end pt-2">
-          <button type="button" onClick={onCerrar} className="btn-primario">Listo</button>
+          <button type="button" onClick={onCerrar} className="btn-primario">{t("Listo")}</button>
         </div>
       </div>
     </Overlay>
