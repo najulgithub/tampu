@@ -95,3 +95,11 @@ export function traducir(idioma: Idioma, texto: string): string {
   if (idioma === "es") return texto;
   return DICCIONARIOS[idioma]?.[texto] ?? texto;
 }
+
+// Idioma del dispositivo (navegador). Se usa como arranque cuando la cuenta
+// todavía no tiene un idioma elegido. Alemán si el celular está en alemán.
+export function idiomaDispositivo(): Idioma {
+  if (typeof navigator === "undefined") return "es";
+  const langs = navigator.languages?.length ? navigator.languages : [navigator.language];
+  return langs.some((l) => l?.toLowerCase().startsWith("de")) ? "de" : "es";
+}

@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
 import type { Grupo, Unidad, Reserva, Gasto, GastoProgramado, Colaborador, Pago, MedioPago, Configuracion, ServicioComprobante, Proveedor, Presupuesto, Mensaje, Notificacion, AvisoSistema, Suscripcion, Ingreso, Bloqueo, Personal } from "./types";
 import { COLORES_UNIDAD, MEDIOS_PAGO_DEFAULT, CONFIG_DEFAULT } from "./types";
-import { traducir } from "./i18n";
+import { traducir, idiomaDispositivo } from "./i18n";
 import { solapan, hoyISO } from "./fechas";
 import { generarGastos } from "./programados";
 import { supabase } from "./supabase";
@@ -450,7 +450,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setSuscripcion(su.data ? suscDe(su.data) : null);
     setIngresos((in_.data ?? []).map(ingresoDe));
     setBloqueos((bl.data ?? []).map(bloqueoDe));
-    setConfig(cf.data ? configDe(cf.data) : CONFIG_DEFAULT);
+    // Sin config guardada (cuenta nueva): arrancamos en el idioma del dispositivo.
+    setConfig(cf.data ? configDe(cf.data) : { ...CONFIG_DEFAULT, idioma: idiomaDispositivo() });
     setCargado(true);
   }, []);
 
