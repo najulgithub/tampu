@@ -53,7 +53,7 @@ export default function DetalleUnidad() {
                   </span>
                 )}
               </div>
-              <p className="text-sm text-slate-500 dark:text-slate-400">{uni.tipoUnidad} · {uni.direccion} · {uni.localidad}</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">{t(uni.tipoUnidad)} · {uni.direccion} · {uni.localidad}</p>
             </div>
           </div>
           <div className="flex gap-2 shrink-0">

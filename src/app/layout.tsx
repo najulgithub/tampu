@@ -16,7 +16,7 @@ const sans = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: "tampu — gestión de alquileres",
+  title: "tampu",
   description: "Gestioná tus propiedades todo el año: temporal y largo plazo, con portal para inquilinos.",
   applicationName: "tampu",
   appleWebApp: { capable: true, title: "tampu", statusBarStyle: "default" },
