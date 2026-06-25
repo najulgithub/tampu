@@ -8,7 +8,7 @@ import type { Moneda, AvisoSistema, TipoAviso } from "@/lib/types";
 import { pushSoportado, pushActivo, activarPush, desactivarPush } from "@/lib/push";
 
 export default function Configuracion() {
-  const { config, updateConfig, seedCuenta, puedeEditar, esAdmin, rol } = useStore();
+  const { config, updateConfig, seedCuenta, puedeEditar, esAdmin, rol, t } = useStore();
   const puedeEdit = puedeEditar("config");
   const [sembrando, setSembrando] = useState(false);
 
@@ -22,11 +22,11 @@ export default function Configuracion() {
     }
   }
 
-  // Al cambiar de país, proponemos su moneda y si aplica ajuste por inflación.
+  // Al cambiar de país, proponemos su moneda, si aplica ajuste por inflación y su idioma.
   function cambiarPais(codigo: string) {
     const p = PAISES.find((x) => x.codigo === codigo);
     if (!p) { updateConfig({ pais: codigo }); return; }
-    updateConfig({ pais: codigo, monedaDefault: p.moneda, ajusteInflacion: p.ajusteInflacion });
+    updateConfig({ pais: codigo, monedaDefault: p.moneda, ajusteInflacion: p.ajusteInflacion, idioma: p.idioma });
   }
 
   return (
@@ -44,11 +44,11 @@ export default function Configuracion() {
 
       <fieldset disabled={!puedeEdit} className="disabled:opacity-60">
       <div className="card divide-y divide-slate-100 dark:divide-slate-700/50">
-        {/* País */}
+        {/* Localización (país) */}
         <div className="p-4 flex items-center justify-between gap-4">
           <div>
-            <div className="text-sm font-medium text-slate-700 dark:text-slate-200">País</div>
-            <div className="text-xs text-slate-500 dark:text-slate-400">Ajusta moneda e índices por defecto.</div>
+            <div className="text-sm font-medium text-slate-700 dark:text-slate-200">{t("Localización")}</div>
+            <div className="text-xs text-slate-500 dark:text-slate-400">Define moneda, índices e idioma de la app.</div>
           </div>
           <select
             value={config.pais}
@@ -58,6 +58,22 @@ export default function Configuracion() {
             {PAISES.map((p) => (
               <option key={p.codigo} value={p.codigo}>{p.nombre}</option>
             ))}
+          </select>
+        </div>
+
+        {/* Idioma */}
+        <div className="p-4 flex items-center justify-between gap-4">
+          <div>
+            <div className="text-sm font-medium text-slate-700 dark:text-slate-200">{t("Idioma")}</div>
+            <div className="text-xs text-slate-500 dark:text-slate-400">Idioma de la interfaz.</div>
+          </div>
+          <select
+            value={config.idioma}
+            onChange={(e) => updateConfig({ idioma: e.target.value as "es" | "de" })}
+            className="input max-w-[170px]"
+          >
+            <option value="es">Español</option>
+            <option value="de">Deutsch</option>
           </select>
         </div>
 

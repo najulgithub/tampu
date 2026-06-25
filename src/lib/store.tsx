@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
 import type { Grupo, Unidad, Reserva, Gasto, GastoProgramado, Colaborador, Pago, MedioPago, Configuracion, ServicioComprobante, Proveedor, Presupuesto, Mensaje, Notificacion, AvisoSistema, Suscripcion, Ingreso, Bloqueo, Personal } from "./types";
 import { COLORES_UNIDAD, MEDIOS_PAGO_DEFAULT, CONFIG_DEFAULT } from "./types";
+import { traducir } from "./i18n";
 import { solapan, hoyISO } from "./fechas";
 import { generarGastos } from "./programados";
 import { supabase } from "./supabase";
@@ -76,10 +77,11 @@ const servCompDb = (s: ServicioComprobante) => ({
 const configDe = (r: any): Configuracion => ({
   pais: r.pais ?? "AR", monedaDefault: r.moneda_default ?? "ARS",
   ajusteInflacion: r.ajuste_inflacion ?? true, diaVencimiento: r.dia_vencimiento ?? undefined,
+  idioma: r.idioma === "de" ? "de" : "es",
 });
 const configDb = (c: Configuracion) => ({
   pais: c.pais, moneda_default: c.monedaDefault, ajuste_inflacion: c.ajusteInflacion,
-  dia_vencimiento: c.diaVencimiento ?? null,
+  dia_vencimiento: c.diaVencimiento ?? null, idioma: c.idioma ?? "es",
 });
 
 const pagoDe = (r: any): Pago => ({
@@ -270,6 +272,7 @@ interface StoreCtx {
   deleteColaborador: (id: string) => void;
   config: Configuracion;
   updateConfig: (cambios: Partial<Configuracion>) => void;
+  t: (texto: string) => string; // traduce según config.idioma
   rol: "dueno" | "colaborador" | "cliente" | "nuevo" | null;
   permisosColab: string[];
   puedeEditar: (modulo: string) => boolean;
@@ -966,6 +969,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     });
   }, [userId]);
 
+  // Traducción de la interfaz según el idioma configurado.
+  const t = useCallback((texto: string) => traducir(config.idioma, texto), [config.idioma]);
+
   // ---------- Datos de ejemplo ----------
   const seedCuenta = useCallback(async () => {
     const datos = construirEjemplo();
@@ -1008,7 +1014,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     mensajesNoLeidos: mensajes.filter((m) => m.autor === "inquilino" && !m.leidoDueno).length,
     gastosProgramados, addProgramado, updateProgramado, deleteProgramado,
     colaboradores, addColaborador, updateColaborador, deleteColaborador,
-    config, updateConfig,
+    config, updateConfig, t,
     rol, permisosColab,
     puedeEditar: (modulo: string) => rol === "dueno" || permisosColab.includes(modulo),
     puedeVerMontos: rol === "dueno" || permisosColab.includes("montos"),

@@ -94,7 +94,7 @@ function BotonTema() {
 export default function Shell({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [authListo, setAuthListo] = useState(false);
-  const { rol, puedeEditar, avisos, accesoActivo, diasTrial, suscripcion, esAdmin, unidades } = useStore();
+  const { rol, puedeEditar, avisos, accesoActivo, diasTrial, suscripcion, esAdmin, unidades, t } = useStore();
   const planActual = planPorUnidades(unidades.length);
   // Días hasta la renovación (solo aplica a suscripciones pagas por Mercado Pago).
   const diasRenovacion = suscripcion?.periodoFin ? Math.ceil((Date.parse(suscripcion.periodoFin) - Date.now()) / 86400000) : Infinity;
@@ -163,7 +163,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
               tampu
             </Link>
             <nav className="hidden sm:flex items-center gap-5">
-              {navVisible.map((n) => <NavLink key={n.href} href={n.href}>{n.label}</NavLink>)}
+              {navVisible.map((n) => <NavLink key={n.href} href={n.href}>{t(n.label)}</NavLink>)}
             </nav>
           </div>
           <div className="flex items-center gap-3 text-sm">
@@ -250,7 +250,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
                 className={`flex flex-col items-center gap-0.5 py-2 transition ${activo ? "text-teal-600 dark:text-teal-400" : "text-slate-400 dark:text-slate-500"}`}
               >
                 <NavIcon name={n.icon} size={22} />
-                <span className="text-[10px] font-medium">{n.label}</span>
+                <span className="text-[10px] font-medium">{t(n.label)}</span>
               </Link>
             );
           })}

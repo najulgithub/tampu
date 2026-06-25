@@ -106,20 +106,25 @@ export const MONEDAS: { valor: Moneda; label: string }[] = [
 ];
 export const SIMBOLO_MONEDA: Record<Moneda, string> = { ARS: "$", USD: "US$", UYU: "$U", CLP: "$", MXN: "$", EUR: "€" };
 
-// País del negocio: define defaults regionales (moneda y si aplica ajuste por inflación).
+// Idiomas soportados por la interfaz.
+export type Idioma = "es" | "de";
+
+// País del negocio: define defaults regionales (moneda, ajuste por inflación e idioma).
 export interface Pais {
-  codigo: string; // "AR", "UY", "CL", "MX", "ES", "Otro"
+  codigo: string; // "AR", "DE", "UY", "CL", "MX", "ES", "Otro"
   nombre: string;
   moneda: Moneda;
   ajusteInflacion: boolean; // si el mercado local usa ajuste por índice (ICL/IPC)
+  idioma: Idioma;
 }
 export const PAISES: Pais[] = [
-  { codigo: "AR", nombre: "Argentina", moneda: "ARS", ajusteInflacion: true },
-  { codigo: "UY", nombre: "Uruguay", moneda: "UYU", ajusteInflacion: false },
-  { codigo: "CL", nombre: "Chile", moneda: "CLP", ajusteInflacion: false },
-  { codigo: "MX", nombre: "México", moneda: "MXN", ajusteInflacion: false },
-  { codigo: "ES", nombre: "España", moneda: "EUR", ajusteInflacion: false },
-  { codigo: "Otro", nombre: "Otro", moneda: "USD", ajusteInflacion: false },
+  { codigo: "AR", nombre: "Argentina", moneda: "ARS", ajusteInflacion: true, idioma: "es" },
+  { codigo: "DE", nombre: "Alemania", moneda: "EUR", ajusteInflacion: false, idioma: "de" },
+  { codigo: "UY", nombre: "Uruguay", moneda: "UYU", ajusteInflacion: false, idioma: "es" },
+  { codigo: "CL", nombre: "Chile", moneda: "CLP", ajusteInflacion: false, idioma: "es" },
+  { codigo: "MX", nombre: "México", moneda: "MXN", ajusteInflacion: false, idioma: "es" },
+  { codigo: "ES", nombre: "España", moneda: "EUR", ajusteInflacion: false, idioma: "es" },
+  { codigo: "Otro", nombre: "Otro", moneda: "USD", ajusteInflacion: false, idioma: "es" },
 ];
 
 // Estado de suscripción del negocio (prueba gratis → pago).
@@ -157,11 +162,13 @@ export interface Configuracion {
   monedaDefault: Moneda;
   ajusteInflacion: boolean; // muestra/oculta los campos de actualización por índice
   diaVencimiento?: number; // día del mes (1-28) de vencimiento por defecto para alquileres largos
+  idioma: Idioma; // idioma de la interfaz
 }
 export const CONFIG_DEFAULT: Configuracion = {
   pais: "AR",
   monedaDefault: "ARS",
   ajusteInflacion: true,
+  idioma: "es",
 };
 
 export interface PlataformaICal {
