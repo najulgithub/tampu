@@ -3,7 +3,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { useStore } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
+import { traducir, idiomaDispositivo } from "@/lib/i18n";
 import type { AvisoSistema, TipoAviso } from "@/lib/types";
+
+const t = (s: string) => traducir(idiomaDispositivo(), s);
 
 function IconoCampana({ size = 20 }: { size?: number }) {
   return (
@@ -50,7 +53,7 @@ function Panel({ avisos, children, onCerrar }: { avisos: AvisoSistema[]; childre
 
 // ---------- Campana del dueño ----------
 export function CampanaDueno() {
-  const { notificaciones, notifNoLeidas, marcarNotifLeidas, avisos } = useStore();
+  const { notificaciones, notifNoLeidas, marcarNotifLeidas, avisos, t } = useStore();
   const [open, setOpen] = useState(false);
 
   function toggle() {
@@ -61,7 +64,7 @@ export function CampanaDueno() {
 
   return (
     <div className="relative">
-      <button onClick={toggle} aria-label="Notificaciones" title="Notificaciones" className="relative text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 transition">
+      <button onClick={toggle} aria-label={t("Notificaciones")} title={t("Notificaciones")} className="relative text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 transition">
         <IconoCampana />
         {notifNoLeidas > 0 && (
           <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 grid place-items-center rounded-full bg-rose-500 text-white text-[10px] font-bold">{notifNoLeidas}</span>
@@ -70,7 +73,7 @@ export function CampanaDueno() {
       {open && (
         <Panel avisos={avisos} onCerrar={() => setOpen(false)}>
           {notificaciones.length === 0 ? (
-            <p className="text-sm text-slate-400 dark:text-slate-500 p-4 text-center">Sin notificaciones.</p>
+            <p className="text-sm text-slate-400 dark:text-slate-500 p-4 text-center">{t("Sin notificaciones.")}</p>
           ) : (
             <div className="space-y-0.5">
               {notificaciones.map((n) => (
@@ -120,7 +123,7 @@ export function CampanaInquilino() {
 
   return (
     <div className="relative">
-      <button onClick={toggle} aria-label="Notificaciones" className="relative text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 transition">
+      <button onClick={toggle} aria-label={t("Notificaciones")} className="relative text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 transition">
         <IconoCampana />
         {noLeidas > 0 && (
           <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 grid place-items-center rounded-full bg-rose-500 text-white text-[10px] font-bold">{noLeidas}</span>
@@ -129,7 +132,7 @@ export function CampanaInquilino() {
       {open && (
         <Panel avisos={avisos} onCerrar={() => setOpen(false)}>
           {notifs.length === 0 ? (
-            <p className="text-sm text-slate-400 dark:text-slate-500 p-4 text-center">Sin notificaciones.</p>
+            <p className="text-sm text-slate-400 dark:text-slate-500 p-4 text-center">{t("Sin notificaciones.")}</p>
           ) : (
             <div className="space-y-0.5">
               {notifs.map((n) => (

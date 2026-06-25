@@ -13,7 +13,7 @@ import AvatarUnidad from "@/components/AvatarUnidad";
 
 export default function DetalleUnidad() {
   const params = useParams<{ id: string }>();
-  const { cargado, getUnidad, reservasDe, nombreGrupo, getGrupo, bloqueosDe } = useStore();
+  const { cargado, getUnidad, reservasDe, nombreGrupo, getGrupo, bloqueosDe, t } = useStore();
 
   const [abrirNueva, setAbrirNueva] = useState(false);
   const [fechaInicial, setFechaInicial] = useState<string | undefined>();
@@ -26,8 +26,8 @@ export default function DetalleUnidad() {
   if (!uni) {
     return (
       <div className="text-center py-16">
-        <p className="text-slate-500 dark:text-slate-400 mb-4">No se encontró esta unidad.</p>
-        <Link href="/unidades" className="text-teal-600 hover:underline">← Volver a unidades</Link>
+        <p className="text-slate-500 dark:text-slate-400 mb-4">{t("No se encontró esta unidad.")}</p>
+        <Link href="/unidades" className="text-teal-600 hover:underline">← {t("Volver a unidades")}</Link>
       </div>
     );
   }
@@ -40,7 +40,7 @@ export default function DetalleUnidad() {
   return (
     <div>
       <div className="mb-5">
-        <Link href="/unidades" className="text-sm text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100">← Unidades</Link>
+        <Link href="/unidades" className="text-sm text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100">← {t("Unidades")}</Link>
         <div className="flex flex-col gap-3 mt-2 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-center gap-3 min-w-0">
             <AvatarUnidad unidad={uni} size={52} />
@@ -57,12 +57,12 @@ export default function DetalleUnidad() {
             </div>
           </div>
           <div className="flex gap-2 shrink-0">
-            <Link href={`/unidades/${uni.id}/config`} className="btn-secundario flex-1 sm:flex-none text-center">Configuración</Link>
+            <Link href={`/unidades/${uni.id}/config`} className="btn-secundario flex-1 sm:flex-none text-center">{t("Configuración")}</Link>
             <button
               onClick={() => { setFechaInicial(undefined); setAbrirNueva(true); }}
               className="btn-primario flex-1 sm:flex-none"
             >
-              + Reserva
+              + {t("Reserva")}
             </button>
           </div>
         </div>
@@ -79,11 +79,11 @@ export default function DetalleUnidad() {
 
         <div>
           <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">
-            Próximas reservas ({proximas.length})
+            {t("Próximas reservas")} ({proximas.length})
           </h2>
           <div className="space-y-2">
             {proximas.length === 0 && (
-              <p className="text-sm text-slate-400 dark:text-slate-500">Sin reservas próximas.</p>
+              <p className="text-sm text-slate-400 dark:text-slate-500">{t("Sin reservas próximas.")}</p>
             )}
             {proximas.map((r) => (
               <FilaReserva key={r.id} r={r} onClick={() => setEditando(r)} />
@@ -93,7 +93,7 @@ export default function DetalleUnidad() {
           {pasadas.length > 0 && (
             <>
               <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mt-5 mb-2">
-                Pasadas ({pasadas.length})
+                {t("Pasadas")} ({pasadas.length})
               </h2>
               <div className="space-y-2 opacity-70">
                 {pasadas.map((r) => (
@@ -134,7 +134,7 @@ export default function DetalleUnidad() {
 }
 
 function FilaReserva({ r, onClick }: { r: Reserva; onClick: () => void }) {
-  const { saldoDe } = useStore();
+  const { saldoDe, t } = useStore();
   const color = COLOR_CANAL[r.canal];
   const saldo = saldoDe(r);
   return (
@@ -149,7 +149,7 @@ function FilaReserva({ r, onClick }: { r: Reserva; onClick: () => void }) {
         </span>
       </div>
       <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-        {formatearFecha(r.checkIn)} → {formatearFecha(r.checkOut)} · {noches(r.checkIn, r.checkOut)} noches
+        {formatearFecha(r.checkIn)} → {formatearFecha(r.checkOut)} · {noches(r.checkIn, r.checkOut)} {t("noches")}
       </div>
       <div className="text-xs mt-1 flex items-center gap-2">
         {esLargoPlazo(r.tipo) && (
@@ -162,13 +162,13 @@ function FilaReserva({ r, onClick }: { r: Reserva; onClick: () => void }) {
         {esLargoPlazo(r.tipo) ? (
           r.montoMensual > 0 && (
             <span className="text-slate-500 dark:text-slate-400">
-              {SIMBOLO_MONEDA[r.moneda]}{r.montoMensual.toLocaleString("es-AR")}/mes
+              {SIMBOLO_MONEDA[r.moneda]}{r.montoMensual.toLocaleString("es-AR")}/{t("mes")}
             </span>
           )
         ) : (
           r.montoTotal > 0 && (
             <span className={saldo > 0 ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"}>
-              {saldo > 0 ? `Saldo ${SIMBOLO_MONEDA[r.moneda]}${saldo.toLocaleString("es-AR")}` : "Pagado"}
+              {saldo > 0 ? `${t("Saldo")} ${SIMBOLO_MONEDA[r.moneda]}${saldo.toLocaleString("es-AR")}` : t("Pagado")}
             </span>
           )
         )}

@@ -78,13 +78,14 @@ function useTema(): [boolean, () => void] {
 }
 
 function BotonTema() {
+  const { t } = useStore();
   const [oscuro, alternar] = useTema();
   return (
     <button
       onClick={alternar}
       className="text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 transition text-base leading-none"
-      aria-label={oscuro ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
-      title={oscuro ? "Modo claro" : "Modo oscuro"}
+      aria-label={oscuro ? t("Cambiar a modo claro") : t("Cambiar a modo oscuro")}
+      title={oscuro ? t("Modo claro") : t("Modo oscuro")}
     >
       {oscuro ? "☀" : "☾"}
     </button>
@@ -124,13 +125,13 @@ export default function Shell({ children }: { children: React.ReactNode }) {
   }, []);
 
   if (!authListo) {
-    return <div className="min-h-screen grid place-items-center text-slate-400 dark:text-slate-500">Cargando…</div>;
+    return <div className="min-h-screen grid place-items-center text-slate-400 dark:text-slate-500">{t("Cargando…")}</div>;
   }
 
   if (!session) return <Login />;
 
   if (rol === null) {
-    return <div className="min-h-screen grid place-items-center text-slate-400 dark:text-slate-500">Cargando…</div>;
+    return <div className="min-h-screen grid place-items-center text-slate-400 dark:text-slate-500">{t("Cargando…")}</div>;
   }
 
   if (rol === "cliente") return <PortalCliente session={session} />;
@@ -197,7 +198,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
             </Link>
             <span className="text-slate-500 dark:text-slate-400 hidden md:inline max-w-[160px] truncate">{session.user.email}</span>
             <button onClick={() => supabase.auth.signOut()} className="text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 transition">
-              Salir
+              {t("Salir")}
             </button>
           </div>
         </div>
@@ -211,28 +212,28 @@ export default function Shell({ children }: { children: React.ReactNode }) {
 
       {rol === "dueno" && suscripcion?.estado === "trial" && (
         <div className="bg-teal-600 text-white text-sm px-4 py-2 text-center">
-          Prueba gratis: te quedan <b>{diasTrial} {diasTrial === 1 ? "día" : "días"}</b>.{" "}
+          {t("Prueba gratis: te quedan")} <b>{diasTrial} {diasTrial === 1 ? t("día") : t("días")}</b>.{" "}
           {planActual.contacto ? (
-            <>Plan {planActual.nombre} (a medida).{" "}
-            <a href={`mailto:${CONTACTO_EMPRESAS}?subject=Plan%20Empresas%20tampu`} className="underline font-medium hover:opacity-90">Escribinos →</a></>
+            <>{t("Plan")} {t(planActual.nombre)} {t("(a medida).")}{" "}
+            <a href={`mailto:${CONTACTO_EMPRESAS}?subject=Plan%20Empresas%20tampu`} className="underline font-medium hover:opacity-90">{t("Escribinos →")}</a></>
           ) : (
-            <>Plan {planActual.nombre} ${planActual.precio.toLocaleString("es-AR")}/mes.{" "}
-            <button onClick={iniciarSuscripcion} className="underline font-medium hover:opacity-90">Suscribite ahora →</button></>
+            <>{t("Plan")} {t(planActual.nombre)} ${planActual.precio.toLocaleString("es-AR")}{t("/mes")}.{" "}
+            <button onClick={iniciarSuscripcion} className="underline font-medium hover:opacity-90">{t("Suscribite ahora →")}</button></>
           )}
         </div>
       )}
 
       {rol === "dueno" && ventanaRenovacion && !planActual.contacto && planActual.precio > (suscripcion!.precio ?? 0) && (
         <div className="bg-amber-500 text-white text-sm px-4 py-2 text-center">
-          Creciste a <b>{unidades.length} unidades</b> → te corresponde el plan {planActual.nombre} (${planActual.precio.toLocaleString("es-AR")}/mes).{" "}
-          <button onClick={actualizarPlan} className="underline font-medium hover:opacity-90">Actualizar mi plan →</button>
+          {t("Creciste a")} <b>{unidades.length} {t("unidades")}</b> → {t("te corresponde el plan")} {t(planActual.nombre)} (${planActual.precio.toLocaleString("es-AR")}{t("/mes")}).{" "}
+          <button onClick={actualizarPlan} className="underline font-medium hover:opacity-90">{t("Actualizar mi plan →")}</button>
         </div>
       )}
 
       {rol === "dueno" && ventanaRenovacion && planActual.contacto && (
         <div className="bg-amber-500 text-white text-sm px-4 py-2 text-center">
-          Tu cuenta creció al plan <b>Empresas</b> ({unidades.length} unidades).{" "}
-          <a href={`mailto:${CONTACTO_EMPRESAS}?subject=Plan%20Empresas%20tampu`} className="underline font-medium hover:opacity-90">Escribinos →</a>
+          {t("Tu cuenta creció al plan")} <b>{t("Empresas")}</b> ({unidades.length} {t("unidades")}).{" "}
+          <a href={`mailto:${CONTACTO_EMPRESAS}?subject=Plan%20Empresas%20tampu`} className="underline font-medium hover:opacity-90">{t("Escribinos →")}</a>
         </div>
       )}
 
@@ -292,7 +293,7 @@ async function actualizarPlan() {
 }
 
 function Paywall({ esDueno, email }: { esDueno: boolean; email: string }) {
-  const { unidades } = useStore();
+  const { unidades, t } = useStore();
   const [cargando, setCargando] = useState(false);
   const plan = planPorUnidades(unidades.length);
   async function suscribir() { setCargando(true); await iniciarSuscripcion(); setCargando(false); }
@@ -301,45 +302,45 @@ function Paywall({ esDueno, email }: { esDueno: boolean; email: string }) {
     <div className="min-h-screen grid place-items-center px-4 bg-gradient-to-br from-teal-50 via-stone-50 to-emerald-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
       <div className="w-full max-w-sm text-center animate-in">
         <LogoTampu size={64} className="rounded-2xl shadow-lg shadow-teal-500/25 mx-auto" />
-        <h1 className="mt-4 font-display text-2xl font-semibold text-slate-800 dark:text-slate-100">Tu prueba terminó</h1>
+        <h1 className="mt-4 font-display text-2xl font-semibold text-slate-800 dark:text-slate-100">{t("Tu prueba terminó")}</h1>
         {esDueno && plan.contacto ? (
           <>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
-              Con {unidades.length} unidades te corresponde el plan <b>Empresas</b>, a medida. Escribinos y armamos tu suscripción.
+              {t("Con")} {unidades.length} {t("unidades te corresponde el plan")} <b>{t("Empresas")}</b>, {t("a medida. Escribinos y armamos tu suscripción.")}
             </p>
             <a
               href={`mailto:${CONTACTO_EMPRESAS}?subject=Plan%20Empresas%20tampu&body=Hola,%20tengo%20${unidades.length}%20unidades%20y%20quiero%20el%20plan%20Empresas.`}
               className="mt-5 block w-full rounded-lg bg-teal-600 text-white py-3 text-sm font-semibold shadow-sm hover:bg-teal-700 active:scale-[.98] transition"
             >
-              Escribinos para tu plan
+              {t("Escribinos para tu plan")}
             </a>
-            <button onClick={() => location.reload()} className="mt-3 text-xs text-teal-600 dark:text-teal-400 hover:underline">Ya está activo — actualizar</button>
+            <button onClick={() => location.reload()} className="mt-3 text-xs text-teal-600 dark:text-teal-400 hover:underline">{t("Ya está activo — actualizar")}</button>
           </>
         ) : esDueno ? (
           <>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
-              Suscribite para seguir gestionando tus alquileres con tampu. Tus datos están guardados y vuelven apenas reactivás.
+              {t("Suscribite para seguir gestionando tus alquileres con tampu. Tus datos están guardados y vuelven apenas reactivás.")}
             </p>
             <div className="mt-4 rounded-xl border border-teal-200 dark:border-teal-500/30 bg-teal-50/60 dark:bg-teal-500/10 p-4">
-              <div className="text-xs uppercase tracking-wide text-teal-700 dark:text-teal-300 font-semibold">Plan {plan.nombre}</div>
-              <div className="text-3xl font-semibold text-slate-800 dark:text-slate-100 mt-1 tabular-nums">${plan.precio.toLocaleString("es-AR")}<span className="text-sm font-normal text-slate-500 dark:text-slate-400">/mes</span></div>
-              <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">Según tus {unidades.length} {unidades.length === 1 ? "unidad" : "unidades"} cargadas.</div>
+              <div className="text-xs uppercase tracking-wide text-teal-700 dark:text-teal-300 font-semibold">{t("Plan")} {t(plan.nombre)}</div>
+              <div className="text-3xl font-semibold text-slate-800 dark:text-slate-100 mt-1 tabular-nums">${plan.precio.toLocaleString("es-AR")}<span className="text-sm font-normal text-slate-500 dark:text-slate-400">{t("/mes")}</span></div>
+              <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">{t("Según tus")} {unidades.length} {unidades.length === 1 ? t("unidad") : t("unidades")} {t("cargadas.")}</div>
             </div>
             <button
               onClick={suscribir}
               disabled={cargando}
               className="mt-5 w-full rounded-lg bg-teal-600 text-white py-3 text-sm font-semibold shadow-sm hover:bg-teal-700 active:scale-[.98] transition disabled:opacity-50"
             >
-              {cargando ? "Redirigiendo…" : "Suscribirme con Mercado Pago"}
+              {cargando ? t("Redirigiendo…") : t("Suscribirme con Mercado Pago")}
             </button>
-            <button onClick={() => location.reload()} className="mt-3 text-xs text-teal-600 dark:text-teal-400 hover:underline">Ya pagué — actualizar</button>
+            <button onClick={() => location.reload()} className="mt-3 text-xs text-teal-600 dark:text-teal-400 hover:underline">{t("Ya pagué — actualizar")}</button>
           </>
         ) : (
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
-            El acceso del negocio está suspendido. Avisale al propietario para que renueve la suscripción.
+            {t("El acceso del negocio está suspendido. Avisale al propietario para que renueve la suscripción.")}
           </p>
         )}
-        <button onClick={() => supabase.auth.signOut()} className="mt-6 block mx-auto text-sm text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">Salir ({email})</button>
+        <button onClick={() => supabase.auth.signOut()} className="mt-6 block mx-auto text-sm text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">{t("Salir")} ({email})</button>
       </div>
     </div>
   );
@@ -349,6 +350,7 @@ function Paywall({ esDueno, email }: { esDueno: boolean; email: string }) {
 // (reservas + bloqueos) no se pueden seleccionar. Clic = check-in; 2º clic = check-out.
 type Rango = { desde: string; hasta: string };
 function MiniCalendario({ ocupados, checkIn, checkOut, onPick }: { ocupados: Rango[]; checkIn: string; checkOut: string; onPick: (iso: string) => void }) {
+  const { t } = useStore();
   const ahora = new Date();
   const [anio, setAnio] = useState(ahora.getFullYear());
   const [mes, setMes] = useState(ahora.getMonth());
@@ -388,7 +390,7 @@ function MiniCalendario({ ocupados, checkIn, checkOut, onPick }: { ocupados: Ran
           else if (esCheckIn || esCheckOut) clases = "bg-teal-600 text-white font-semibold";
           else if (dentro) clases = "bg-teal-100 dark:bg-teal-500/20 text-teal-800 dark:text-teal-200";
           return (
-            <button key={c.iso} type="button" disabled={deshabilitado} onClick={() => onPick(c.iso)} title={ocupado ? "Ocupado" : ""}
+            <button key={c.iso} type="button" disabled={deshabilitado} onClick={() => onPick(c.iso)} title={ocupado ? t("Ocupado") : ""}
               className={`aspect-square rounded-md grid place-items-center text-xs transition ${c.delMes ? "" : "opacity-0 pointer-events-none"} ${clases}`}>
               {c.dia}
             </button>
@@ -396,8 +398,8 @@ function MiniCalendario({ ocupados, checkIn, checkOut, onPick }: { ocupados: Ran
         })}
       </div>
       <div className="flex items-center gap-3 mt-2 pt-2 border-t border-slate-100 dark:border-slate-700 text-[10px] text-slate-400">
-        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded bg-rose-200 dark:bg-rose-500/30" /> Ocupado</span>
-        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded bg-teal-600" /> Tu estadía</span>
+        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded bg-rose-200 dark:bg-rose-500/30" /> {t("Ocupado")}</span>
+        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded bg-teal-600" /> {t("Tu estadía")}</span>
       </div>
     </div>
   );
@@ -407,7 +409,7 @@ function MiniCalendario({ ocupados, checkIn, checkOut, onPick }: { ocupados: Ran
 // dueño de otro negocio). Reserva como huésped sin cambiar tu cuenta.
 type UnidadSlug = { id: string; nombre: string; tipo_unidad: string; color: string; foto: string | null; localidad: string; capacidad: number; ambientes: number; precio_dia: number | null; moneda: string | null };
 function ReservarComoHuesped({ slug, email, onCerrar }: { slug: string; email: string; onCerrar: () => void }) {
-  const { dolarOficial } = useStore();
+  const { dolarOficial, t } = useStore();
   const [negocio, setNegocio] = useState<string>("");
   const [unidades, setUnidades] = useState<UnidadSlug[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -445,7 +447,7 @@ function ReservarComoHuesped({ slug, email, onCerrar }: { slug: string; email: s
     if (iso <= checkIn) { setCheckIn(iso); setCheckOut(""); return; }
     // Verificar que el tramo elegido no pise ninguna noche ocupada.
     if (ocup.some((o) => solapan(checkIn, iso, o.desde, o.hasta))) {
-      setError("Hay fechas ocupadas en ese rango. Elegí otras."); setCheckOut(""); return;
+      setError(t("Hay fechas ocupadas en ese rango. Elegí otras.")); setCheckOut(""); return;
     }
     setCheckOut(iso);
   }
@@ -454,8 +456,8 @@ function ReservarComoHuesped({ slug, email, onCerrar }: { slug: string; email: s
   // Precio por noche mostrado en pesos (si la unidad está en USD, lo convierte al dólar oficial).
   const labelNoche = (u: UnidadSlug): string | null => {
     if (!u.precio_dia) return null;
-    if (u.moneda === "USD") return dolarOficial ? `$${Math.round(u.precio_dia * dolarOficial).toLocaleString("es-AR")}/noche` : `US$${u.precio_dia.toLocaleString("es-AR")}/noche`;
-    return `$${Math.round(u.precio_dia).toLocaleString("es-AR")}/noche`;
+    if (u.moneda === "USD") return dolarOficial ? `$${Math.round(u.precio_dia * dolarOficial).toLocaleString("es-AR")}${t("/noche")}` : `US$${u.precio_dia.toLocaleString("es-AR")}${t("/noche")}`;
+    return `$${Math.round(u.precio_dia).toLocaleString("es-AR")}${t("/noche")}`;
   };
   const labelTotal = (u: UnidadSlug): string | null => {
     if (!u.precio_dia || cantNoches <= 0) return null;
@@ -465,7 +467,7 @@ function ReservarComoHuesped({ slug, email, onCerrar }: { slug: string; email: s
   };
 
   async function reservar() {
-    if (!sel || !checkIn || !checkOut || checkIn >= checkOut) { setError("Completá unidad y fechas válidas."); return; }
+    if (!sel || !checkIn || !checkOut || checkIn >= checkOut) { setError(t("Completá unidad y fechas válidas.")); return; }
     setEstado("enviando");
     const { error } = await supabase.rpc("reservar_en_slug", {
       p_slug: slug, p_unidad: sel.id, p_check_in: checkIn, p_check_out: checkOut,
@@ -481,24 +483,24 @@ function ReservarComoHuesped({ slug, email, onCerrar }: { slug: string; email: s
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
             <LogoTampu size={28} />
-            <span className="font-bold tracking-tight text-slate-800 dark:text-slate-100">{negocio || "Reservar"}</span>
+            <span className="font-bold tracking-tight text-slate-800 dark:text-slate-100">{negocio || t("Reservar")}</span>
           </div>
-          <button onClick={onCerrar} className="text-sm text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100">← Volver a mi cuenta</button>
+          <button onClick={onCerrar} className="text-sm text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100">{t("← Volver a mi cuenta")}</button>
         </div>
 
         {cargando ? (
-          <p className="text-center text-slate-400 py-12">Cargando…</p>
+          <p className="text-center text-slate-400 py-12">{t("Cargando…")}</p>
         ) : estado === "listo" ? (
           <div className="card p-8 text-center">
             <div className="text-4xl mb-2">✅</div>
-            <h2 className="font-display text-xl font-semibold text-slate-800 dark:text-slate-100">Solicitud enviada</h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">Tu reserva quedó <b>pendiente de aprobación</b> del propietario. Te va a avisar cuando la confirme.</p>
-            <button onClick={onCerrar} className="btn-primario mt-5">Volver a mi cuenta</button>
+            <h2 className="font-display text-xl font-semibold text-slate-800 dark:text-slate-100">{t("Solicitud enviada")}</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">{t("Tu reserva quedó")} <b>{t("pendiente de aprobación")}</b> {t("del propietario. Te va a avisar cuando la confirme.")}</p>
+            <button onClick={onCerrar} className="btn-primario mt-5">{t("Volver a mi cuenta")}</button>
           </div>
         ) : (
           <div className="space-y-5">
             <div>
-              <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Elegí la unidad</h2>
+              <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">{t("Elegí la unidad")}</h2>
               <div className="grid sm:grid-cols-2 gap-3">
                 {unidades.map((u) => (
                   <Fragment key={u.id}>
@@ -515,7 +517,7 @@ function ReservarComoHuesped({ slug, email, onCerrar }: { slug: string; email: s
                           <span className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">{u.nombre}</span>
                         </div>
                         <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                          {u.tipo_unidad} · {u.localidad} · hasta {u.capacidad} {u.capacidad === 1 ? "huésped" : "huéspedes"}
+                          {u.tipo_unidad} · {u.localidad} · {t("hasta")} {u.capacidad} {u.capacidad === 1 ? t("huésped") : t("huéspedes")}
                         </div>
                         {labelNoche(u) && <div className="text-sm font-semibold text-teal-700 dark:text-teal-300 mt-1">{labelNoche(u)}</div>}
                       </div>
@@ -523,28 +525,28 @@ function ReservarComoHuesped({ slug, email, onCerrar }: { slug: string; email: s
 
                     {sel?.id === u.id && (
                       <div className="sm:col-span-2 card p-4 space-y-3">
-                        <div className="text-sm font-semibold text-slate-700 dark:text-slate-200">Reservar {u.nombre}</div>
+                        <div className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t("Reservar")} {u.nombre}</div>
                         <p className="text-xs text-slate-500 dark:text-slate-400">
-                          {!checkIn ? "Tocá el día de llegada en el calendario." : !checkOut ? "Ahora tocá el día de salida." : <>Del <b>{checkIn}</b> al <b>{checkOut}</b> · <button type="button" onClick={() => { setCheckIn(""); setCheckOut(""); }} className="text-teal-600 hover:underline">cambiar</button></>}
+                          {!checkIn ? t("Tocá el día de llegada en el calendario.") : !checkOut ? t("Ahora tocá el día de salida.") : <>{t("Del")} <b>{checkIn}</b> {t("al")} <b>{checkOut}</b> · <button type="button" onClick={() => { setCheckIn(""); setCheckOut(""); }} className="text-teal-600 hover:underline">{t("cambiar")}</button></>}
                         </p>
                         <MiniCalendario ocupados={ocupacion[u.id] ?? []} checkIn={checkIn} checkOut={checkOut} onPick={pickFecha} />
                         {labelTotal(u) && (
                           <div className="rounded-lg bg-teal-50 dark:bg-teal-500/10 border border-teal-200 dark:border-teal-500/30 px-3 py-2 text-sm text-teal-800 dark:text-teal-200">
-                            Total estimado: <b>{labelTotal(u)}</b> <span className="text-teal-600/80 dark:text-teal-300/70">({cantNoches} {cantNoches === 1 ? "noche" : "noches"})</span>
+                            {t("Total estimado:")} <b>{labelTotal(u)}</b> <span className="text-teal-600/80 dark:text-teal-300/70">({cantNoches} {cantNoches === 1 ? t("noche") : t("noches")})</span>
                           </div>
                         )}
-                        <label className="block text-xs text-slate-500 dark:text-slate-400">A nombre de<input value={huesped} onChange={(e) => setHuesped(e.target.value)} placeholder={email} className="input mt-1" /></label>
-                        <label className="block text-xs text-slate-500 dark:text-slate-400">Contacto (tel)<input value={contacto} onChange={(e) => setContacto(e.target.value)} className="input mt-1" placeholder="+54 9 223…" /></label>
+                        <label className="block text-xs text-slate-500 dark:text-slate-400">{t("A nombre de")}<input value={huesped} onChange={(e) => setHuesped(e.target.value)} placeholder={email} className="input mt-1" /></label>
+                        <label className="block text-xs text-slate-500 dark:text-slate-400">{t("Contacto (tel)")}<input value={contacto} onChange={(e) => setContacto(e.target.value)} className="input mt-1" placeholder="+54 9 223…" /></label>
                         {error && <p className="text-sm text-rose-600 dark:text-rose-400">{error}</p>}
                         <button onClick={reservar} disabled={estado === "enviando"} className="btn-primario w-full disabled:opacity-50">
-                          {estado === "enviando" ? "Enviando…" : `Reservar ${u.nombre}`}
+                          {estado === "enviando" ? t("Enviando…") : `${t("Reservar")} ${u.nombre}`}
                         </button>
-                        <p className="text-[11px] text-slate-400 dark:text-slate-500 text-center">La reserva queda pendiente hasta que el propietario la apruebe.</p>
+                        <p className="text-[11px] text-slate-400 dark:text-slate-500 text-center">{t("La reserva queda pendiente hasta que el propietario la apruebe.")}</p>
                       </div>
                     )}
                   </Fragment>
                 ))}
-                {unidades.length === 0 && <p className="text-sm text-slate-400">Este negocio no tiene unidades publicadas.</p>}
+                {unidades.length === 0 && <p className="text-sm text-slate-400">{t("Este negocio no tiene unidades publicadas.")}</p>}
               </div>
             </div>
           </div>
@@ -557,21 +559,22 @@ function ReservarComoHuesped({ slug, email, onCerrar }: { slug: string; email: s
 
 // Landing pública de planes (accesible desde el login, sin estar logueado).
 function LandingPlanes({ onCerrar }: { onCerrar: () => void }) {
+  const { t } = useStore();
   const rango = (i: number) => {
     const p = PLANES[i];
     const desde = i === 0 ? 1 : PLANES[i - 1].hasta + 1;
-    if (p.hasta === Infinity) return `${desde} o más unidades`;
-    if (i === 0) return `hasta ${p.hasta} unidades`;
-    return `${desde} a ${p.hasta} unidades`;
+    if (p.hasta === Infinity) return `${desde} ${t("o más unidades")}`;
+    if (i === 0) return `${t("hasta")} ${p.hasta} ${t("unidades")}`;
+    return `${desde} ${t("a")} ${p.hasta} ${t("unidades")}`;
   };
   return (
     <div className="min-h-screen px-4 py-10 bg-gradient-to-br from-teal-50 via-stone-50 to-emerald-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
       <div className="max-w-3xl mx-auto animate-in">
         <div className="flex flex-col items-center text-center mb-8">
           <LogoTampu size={56} className="rounded-2xl shadow-lg shadow-teal-500/25" />
-          <h1 className="mt-4 font-display text-3xl font-semibold text-slate-800 dark:text-slate-100">Planes</h1>
+          <h1 className="mt-4 font-display text-3xl font-semibold text-slate-800 dark:text-slate-100">{t("Planes")}</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1.5 max-w-md">
-            Empezá con <b>30 días gratis</b>. El precio depende de cuántas unidades gestiones — todas las funciones incluidas.
+            {t("Empezá con")} <b>{t("30 días gratis")}</b>. {t("El precio depende de cuántas unidades gestiones — todas las funciones incluidas.")}
           </p>
         </div>
 
@@ -581,31 +584,31 @@ function LandingPlanes({ onCerrar }: { onCerrar: () => void }) {
               key={p.nombre}
               className={`rounded-2xl border bg-white dark:bg-slate-800 shadow-sm p-5 ${p.nombre === "Pro" ? "border-teal-400 dark:border-teal-500/50 ring-1 ring-teal-400/40" : "border-slate-200 dark:border-slate-700/70"}`}
             >
-              {p.nombre === "Pro" && <div className="text-[10px] font-bold uppercase tracking-wider text-teal-600 dark:text-teal-400 mb-1">Más elegido</div>}
-              <div className="font-display text-lg font-semibold text-slate-800 dark:text-slate-100">{p.nombre}</div>
+              {p.nombre === "Pro" && <div className="text-[10px] font-bold uppercase tracking-wider text-teal-600 dark:text-teal-400 mb-1">{t("Más elegido")}</div>}
+              <div className="font-display text-lg font-semibold text-slate-800 dark:text-slate-100">{t(p.nombre)}</div>
               <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{rango(i)}</div>
               <div className="mt-3">
                 {p.contacto ? (
-                  <div className="text-2xl font-semibold text-slate-800 dark:text-slate-100">A convenir</div>
+                  <div className="text-2xl font-semibold text-slate-800 dark:text-slate-100">{t("A convenir")}</div>
                 ) : (
                   <div className="text-3xl font-semibold text-slate-800 dark:text-slate-100 tabular-nums">
-                    ${p.precio.toLocaleString("es-AR")}<span className="text-sm font-normal text-slate-500 dark:text-slate-400">/mes</span>
+                    ${p.precio.toLocaleString("es-AR")}<span className="text-sm font-normal text-slate-500 dark:text-slate-400">{t("/mes")}</span>
                   </div>
                 )}
               </div>
               {p.contacto && (
-                <a href={`mailto:${CONTACTO_EMPRESAS}?subject=Plan%20Empresas%20tampu`} className="mt-3 inline-block text-sm text-teal-600 dark:text-teal-400 hover:underline">Escribinos →</a>
+                <a href={`mailto:${CONTACTO_EMPRESAS}?subject=Plan%20Empresas%20tampu`} className="mt-3 inline-block text-sm text-teal-600 dark:text-teal-400 hover:underline">{t("Escribinos →")}</a>
               )}
             </div>
           ))}
         </div>
 
         <p className="text-xs text-center text-slate-400 dark:text-slate-500 mt-6 max-w-lg mx-auto">
-          Cambiás de plan automáticamente al sumar unidades. Precios en pesos, podés cancelar cuando quieras.
+          {t("Cambiás de plan automáticamente al sumar unidades. Precios en pesos, podés cancelar cuando quieras.")}
         </p>
 
         <button onClick={onCerrar} className="mt-8 mx-auto block rounded-lg bg-teal-600 text-white px-6 py-2.5 text-sm font-semibold shadow-sm hover:bg-teal-700 active:scale-[.98] transition">
-          ← Volver a ingresar
+          {t("← Volver a ingresar")}
         </button>
       </div>
     </div>
@@ -613,6 +616,7 @@ function LandingPlanes({ onCerrar }: { onCerrar: () => void }) {
 }
 
 function Login() {
+  const { t } = useStore();
   const [modo, setModo] = useState<"ingresar" | "crear">("ingresar");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -641,11 +645,11 @@ function Login() {
     try {
       if (modo === "ingresar") {
         const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-        if (error) setError(traducir(error.message));
+        if (error) setError(t(traducir(error.message)));
       } else {
         const { data, error } = await supabase.auth.signUp({ email: email.trim(), password });
-        if (error) setError(traducir(error.message));
-        else if (!data.session) setAviso("Te enviamos un email para confirmar la cuenta. Confirmalo y volvé a ingresar.");
+        if (error) setError(t(traducir(error.message)));
+        else if (!data.session) setAviso(t("Te enviamos un email para confirmar la cuenta. Confirmalo y volvé a ingresar."));
       }
     } finally {
       setCargando(false);
@@ -661,22 +665,22 @@ function Login() {
           <LogoTampu size={64} className="rounded-2xl shadow-lg shadow-teal-500/25" />
           <h1 className="mt-4 text-3xl font-bold tracking-tight text-slate-800 dark:text-slate-100">tampu</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1.5">
-            {negocioInvita ? `Reservá tu estadía en ${negocioInvita}.` : "Gestioná tus propiedades, todo el año."}
+            {negocioInvita ? `${t("Reservá tu estadía en")} ${negocioInvita}.` : t("Gestioná tus propiedades, todo el año.")}
           </p>
         </div>
 
         <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700/70 shadow-xl p-7">
           <p className="text-sm font-medium text-slate-700 dark:text-slate-200 mb-4">
-            {modo === "ingresar" ? "Ingresá a tu cuenta" : "Creá tu cuenta"}
+            {modo === "ingresar" ? t("Ingresá a tu cuenta") : t("Creá tu cuenta")}
           </p>
 
           <form onSubmit={enviar} className="space-y-3">
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">Email</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">{t("Email")}</label>
               <input type="email" autoFocus value={email} onChange={(e) => setEmail(e.target.value)} required className="input" placeholder="email@ejemplo.com" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">Contraseña</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">{t("Contraseña")}</label>
               <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} className="input" placeholder="••••••••" />
             </div>
 
@@ -684,13 +688,13 @@ function Login() {
             {aviso && <p className="text-sm text-emerald-600 dark:text-emerald-400">{aviso}</p>}
 
             <button type="submit" disabled={cargando} className="w-full rounded-lg bg-teal-600 text-white py-2.5 text-sm font-semibold shadow-sm hover:bg-teal-700 active:scale-[.98] transition disabled:opacity-50">
-              {cargando ? "..." : modo === "ingresar" ? "Ingresar" : "Crear cuenta"}
+              {cargando ? "..." : modo === "ingresar" ? t("Ingresar") : t("Crear cuenta")}
             </button>
           </form>
 
           <div className="flex items-center gap-3 my-4">
             <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
-            <span className="text-xs text-slate-400 dark:text-slate-500">o</span>
+            <span className="text-xs text-slate-400 dark:text-slate-500">{t("o")}</span>
             <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
           </div>
 
@@ -711,14 +715,14 @@ function Login() {
               <path fill="#FBBC05" d="M5.84 14.1a6.6 6.6 0 0 1 0-4.2V7.06H2.18a11 11 0 0 0 0 9.88l3.66-2.84z" />
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84C6.71 7.31 9.14 5.38 12 5.38z" />
             </svg>
-            Continuar con Google
+            {t("Continuar con Google")}
           </button>
 
           <button
             onClick={() => { setModo(modo === "ingresar" ? "crear" : "ingresar"); setError(""); setAviso(""); }}
             className="mt-4 text-sm text-teal-600 dark:text-teal-400 hover:underline"
           >
-            {modo === "ingresar" ? "¿No tenés cuenta? Crear una" : "¿Ya tenés cuenta? Ingresar"}
+            {modo === "ingresar" ? t("¿No tenés cuenta? Crear una") : t("¿Ya tenés cuenta? Ingresar")}
           </button>
         </div>
 
@@ -726,7 +730,7 @@ function Login() {
           onClick={() => setVerPlanes(true)}
           className="mt-5 mx-auto block text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 transition"
         >
-          Ver planes y precios →
+          {t("Ver planes y precios →")}
         </button>
       </div>
     </div>

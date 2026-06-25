@@ -16,7 +16,7 @@ import { subirArchivo } from "@/lib/storage";
 
 export default function ConfigUnidad() {
   const params = useParams<{ id: string }>();
-  const { cargado, getUnidad, updateUnidad, deleteUnidad } = useStore();
+  const { cargado, getUnidad, updateUnidad, deleteUnidad, t } = useStore();
 
   if (!cargado) return null;
   const uni = getUnidad(params.id);
@@ -24,8 +24,8 @@ export default function ConfigUnidad() {
   if (!uni) {
     return (
       <div className="text-center py-16">
-        <p className="text-slate-500 dark:text-slate-400 mb-4">No se encontró esta unidad.</p>
-        <Link href="/unidades" className="text-teal-600 hover:underline">← Volver a unidades</Link>
+        <p className="text-slate-500 dark:text-slate-400 mb-4">{t("No se encontró esta unidad.")}</p>
+        <Link href="/unidades" className="text-teal-600 hover:underline">← {t("Volver a unidades")}</Link>
       </div>
     );
   }
@@ -38,16 +38,16 @@ export default function ConfigUnidad() {
       <Link href={`/unidades/${uni.id}`} className="text-sm text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100">
         ← {uni.nombre}
       </Link>
-      <h1 className="font-display text-2xl font-semibold text-slate-800 dark:text-slate-100 mt-2 mb-6">Configuración</h1>
+      <h1 className="font-display text-2xl font-semibold text-slate-800 dark:text-slate-100 mt-2 mb-6">{t("Configuración")}</h1>
 
       {/* Identificación */}
       <section className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700/70 shadow-sm p-5 mb-5">
-        <h2 className="font-semibold text-slate-800 dark:text-slate-100 mb-4">Identificación</h2>
+        <h2 className="font-semibold text-slate-800 dark:text-slate-100 mb-4">{t("Identificación")}</h2>
         <div className="flex items-center gap-4 mb-4">
           <AvatarUnidad unidad={uni} size={64} />
           <div className="flex gap-2">
             <label className="btn-secundario cursor-pointer">
-              {uni.foto ? "Cambiar foto" : "Subir foto"}
+              {uni.foto ? t("Cambiar foto") : t("Subir foto")}
               <input
                 type="file"
                 accept="image/*"
@@ -61,20 +61,20 @@ export default function ConfigUnidad() {
             </label>
             {uni.foto && (
               <button onClick={() => updateUnidad(uni.id, { foto: undefined })} className="btn-secundario">
-                Quitar
+                {t("Quitar")}
               </button>
             )}
           </div>
         </div>
         <div className="grid grid-cols-2 gap-4">
-          <Campo label="Tipo">
+          <Campo label={t("Tipo")}>
             <select className="input" value={uni.tipoUnidad} onChange={(e) => updateUnidad(uni.id, { tipoUnidad: e.target.value as TipoUnidad })}>
-              {TIPOS_UNIDAD.map((t) => (
-                <option key={t} value={t}>{t}</option>
+              {TIPOS_UNIDAD.map((tipo) => (
+                <option key={tipo} value={tipo}>{t(tipo)}</option>
               ))}
             </select>
           </Campo>
-          <Campo label="Color">
+          <Campo label={t("Color")}>
             <div className="flex gap-2 flex-wrap pt-1">
               {COLORES_UNIDAD.map((c) => (
                 <button
@@ -93,26 +93,26 @@ export default function ConfigUnidad() {
 
       {/* Datos básicos */}
       <section className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700/70 shadow-sm p-5 mb-5">
-        <h2 className="font-semibold text-slate-800 dark:text-slate-100 mb-4">Datos de la unidad</h2>
+        <h2 className="font-semibold text-slate-800 dark:text-slate-100 mb-4">{t("Datos de la unidad")}</h2>
         <div className="space-y-4">
-          <Campo label="Nombre">
+          <Campo label={t("Nombre")}>
             <input className="input" value={uni.nombre} onChange={(e) => updateUnidad(uni.id, { nombre: e.target.value })} />
           </Campo>
-          <Campo label="Grupo">
+          <Campo label={t("Grupo")}>
             <SelectGrupo value={uni.grupoId} onChange={(grupoId) => updateUnidad(uni.id, { grupoId })} />
           </Campo>
-          <Campo label="Dirección">
+          <Campo label={t("Dirección")}>
             <input className="input" value={uni.direccion} onChange={(e) => updateUnidad(uni.id, { direccion: e.target.value })} />
           </Campo>
-          <Campo label="Localidad">
+          <Campo label={t("Localidad")}>
             <input className="input" value={uni.localidad} onChange={(e) => updateUnidad(uni.id, { localidad: e.target.value })} />
           </Campo>
           {uni.tipoUnidad !== "Cochera" && (
             <div className="grid grid-cols-2 gap-4">
-              <Campo label="Ambientes">
+              <Campo label={t("Ambientes")}>
                 <InputEntero value={uni.ambientes} onChange={(n) => updateUnidad(uni.id, { ambientes: n })} min={1} />
               </Campo>
-              <Campo label="Capacidad">
+              <Campo label={t("Capacidad")}>
                 <InputEntero value={uni.capacidad} onChange={(n) => updateUnidad(uni.id, { capacidad: n })} min={1} />
               </Campo>
             </div>
@@ -120,25 +120,25 @@ export default function ConfigUnidad() {
           {uni.tipoUnidad !== "Cochera" && (
             <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
               <input type="checkbox" checked={uni.cochera ?? false} onChange={(e) => updateUnidad(uni.id, { cochera: e.target.checked })} />
-              Tiene cochera
+              {t("Tiene cochera")}
             </label>
           )}
           {(uni.tipoUnidad === "Cochera" || uni.cochera) && (
             <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
               <input type="checkbox" checked={uni.aptoCamioneta ?? false} onChange={(e) => updateUnidad(uni.id, { aptoCamioneta: e.target.checked })} />
-              Apta para camioneta / pickup
+              {t("Apta para camioneta / pickup")}
             </label>
           )}
 
           {(uni.tipoUnidad === "Cochera" || uni.cochera) && (
-            <Campo label="Ubicación de la cochera">
-              <input className="input" value={uni.ubicacionCochera ?? ""} onChange={(e) => updateUnidad(uni.id, { ubicacionCochera: e.target.value })} placeholder="ej: Subsuelo 2, lugar 14" />
+            <Campo label={t("Ubicación de la cochera")}>
+              <input className="input" value={uni.ubicacionCochera ?? ""} onChange={(e) => updateUnidad(uni.id, { ubicacionCochera: e.target.value })} placeholder={t("ej: Subsuelo 2, lugar 14")} />
             </Campo>
           )}
 
-          <Campo label="Moneda">
+          <Campo label={t("Moneda")}>
             <select className="input max-w-[200px]" value={uni.moneda ?? ""} onChange={(e) => updateUnidad(uni.id, { moneda: (e.target.value || undefined) as Moneda | undefined })}>
-              <option value="">Según configuración del negocio</option>
+              <option value="">{t("Según configuración del negocio")}</option>
               {MONEDAS.map((m) => <option key={m.valor} value={m.valor}>{m.label}</option>)}
             </select>
           </Campo>
@@ -146,19 +146,18 @@ export default function ConfigUnidad() {
           {/* Tarifa por día para alquiler temporal (opcional: si la ponés, la reserva calcula el total sola). */}
           <TarifasDia uni={uni} set={(c) => updateUnidad(uni.id, c)} />
 
-          <Campo label="Notas">
+          <Campo label={t("Notas")}>
             <textarea className="input min-h-20" value={uni.notas} onChange={(e) => updateUnidad(uni.id, { notas: e.target.value })} />
           </Campo>
         </div>
-        <p className="text-xs text-slate-400 dark:text-slate-500 mt-3">Los cambios se guardan automáticamente.</p>
+        <p className="text-xs text-slate-400 dark:text-slate-500 mt-3">{t("Los cambios se guardan automáticamente.")}</p>
       </section>
 
       {/* Sincronización iCal */}
       <section className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700/70 shadow-sm p-5 mb-5">
-        <h2 className="font-semibold text-slate-800 dark:text-slate-100 mb-1">Sincronización de calendarios (iCal)</h2>
+        <h2 className="font-semibold text-slate-800 dark:text-slate-100 mb-1">{t("Sincronización de calendarios (iCal)")}</h2>
         <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
-          Pegá los links iCal de tus plataformas para importar sus reservas. Y copiá el link de
-          exportación de tampu en cada plataforma para que vean tu calendario.
+          {t("Pegá los links iCal de tus plataformas para importar sus reservas. Y copiá el link de exportación de tampu en cada plataforma para que vean tu calendario.")}
         </p>
 
         <ListaICals
@@ -170,7 +169,7 @@ export default function ConfigUnidad() {
 
         <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-700">
           <span className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">
-            Tu link de exportación (pegalo en Airbnb / Booking)
+            {t("Tu link de exportación (pegalo en Airbnb / Booking)")}
           </span>
           <div className="flex gap-2">
             <input readOnly value={urlExport} className="input bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400" />
@@ -178,11 +177,11 @@ export default function ConfigUnidad() {
               onClick={() => navigator.clipboard?.writeText(urlExport)}
               className="btn-secundario whitespace-nowrap"
             >
-              Copiar
+              {t("Copiar")}
             </button>
           </div>
           <p className="text-xs text-slate-400 dark:text-slate-500 mt-2">
-            Pegá este link en Airbnb/Booking (Importar calendario) para que bloqueen las fechas reservadas en tampu. Se actualiza solo.
+            {t("Pegá este link en Airbnb/Booking (Importar calendario) para que bloqueen las fechas reservadas en tampu. Se actualiza solo.")}
           </p>
         </div>
       </section>
@@ -192,20 +191,20 @@ export default function ConfigUnidad() {
 
       {/* Zona peligrosa */}
       <section className="bg-white dark:bg-slate-800 rounded-2xl border border-rose-200 dark:border-rose-500/40 shadow-sm p-5">
-        <h2 className="font-semibold text-rose-700 dark:text-rose-400 mb-1">Eliminar unidad</h2>
+        <h2 className="font-semibold text-rose-700 dark:text-rose-400 mb-1">{t("Eliminar unidad")}</h2>
         <p className="text-sm text-slate-500 dark:text-slate-400 mb-3">
-          Se borrarán también todas sus reservas. Esta acción no se puede deshacer.
+          {t("Se borrarán también todas sus reservas. Esta acción no se puede deshacer.")}
         </p>
         <button
           onClick={() => {
-            if (confirm(`¿Eliminar "${uni.nombre}" y todas sus reservas?`)) {
+            if (confirm(`${t("¿Eliminar")} "${uni.nombre}" ${t("y todas sus reservas?")}`)) {
               deleteUnidad(uni.id);
               window.location.href = "/unidades";
             }
           }}
           className="rounded-lg border border-rose-300 dark:border-rose-500/50 text-rose-700 dark:text-rose-400 px-4 py-2 text-sm font-medium hover:bg-rose-50 dark:hover:bg-rose-500/10 transition"
         >
-          Eliminar unidad
+          {t("Eliminar unidad")}
         </button>
       </section>
     </div>
@@ -214,6 +213,7 @@ export default function ConfigUnidad() {
 
 // Guía del huésped: datos que ve quien escanea el QR de la unidad.
 function GuiaHuesped({ uni, set }: { uni: Unidad; set: (c: Partial<Unidad>) => void }) {
+  const { t } = useStore();
   const [qr, setQr] = useState("");
   const [copiado, setCopiado] = useState(false);
   const [puntoNombre, setPuntoNombre] = useState("");
@@ -234,39 +234,39 @@ function GuiaHuesped({ uni, set }: { uni: Unidad; set: (c: Partial<Unidad>) => v
 
   return (
     <section className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700/70 shadow-sm p-5 mb-5">
-      <h2 className="font-semibold text-slate-800 dark:text-slate-100 mb-1">Guía del huésped (QR)</h2>
+      <h2 className="font-semibold text-slate-800 dark:text-slate-100 mb-1">{t("Guía del huésped (QR)")}</h2>
       <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
-        Datos que ve el huésped al escanear el QR de la unidad: WiFi, encargado, instrucciones y lugares de interés.
+        {t("Datos que ve el huésped al escanear el QR de la unidad: WiFi, encargado, instrucciones y lugares de interés.")}
       </p>
 
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
-          <Campo label="WiFi - Red"><input className="input" value={uni.wifiNombre ?? ""} onChange={(e) => set({ wifiNombre: e.target.value })} /></Campo>
-          <Campo label="WiFi - Clave"><input className="input" value={uni.wifiClave ?? ""} onChange={(e) => set({ wifiClave: e.target.value })} /></Campo>
+          <Campo label={t("WiFi - Red")}><input className="input" value={uni.wifiNombre ?? ""} onChange={(e) => set({ wifiNombre: e.target.value })} /></Campo>
+          <Campo label={t("WiFi - Clave")}><input className="input" value={uni.wifiClave ?? ""} onChange={(e) => set({ wifiClave: e.target.value })} /></Campo>
         </div>
         <div className="grid grid-cols-2 gap-4">
-          <Campo label="Encargado - Nombre"><input className="input" value={uni.encargadoNombre ?? ""} onChange={(e) => set({ encargadoNombre: e.target.value })} /></Campo>
-          <Campo label="Encargado - Teléfono"><input className="input" value={uni.encargadoTel ?? ""} onChange={(e) => set({ encargadoTel: e.target.value })} placeholder="+54 9 223…" /></Campo>
+          <Campo label={t("Encargado - Nombre")}><input className="input" value={uni.encargadoNombre ?? ""} onChange={(e) => set({ encargadoNombre: e.target.value })} /></Campo>
+          <Campo label={t("Encargado - Teléfono")}><input className="input" value={uni.encargadoTel ?? ""} onChange={(e) => set({ encargadoTel: e.target.value })} placeholder="+54 9 223…" /></Campo>
         </div>
-        <Campo label="Instrucciones / normas">
-          <textarea className="input min-h-24" value={uni.instrucciones ?? ""} onChange={(e) => set({ instrucciones: e.target.value })} placeholder="Cómo ingresar, normas de la casa, cómo usar el aire, etc." />
+        <Campo label={t("Instrucciones / normas")}>
+          <textarea className="input min-h-24" value={uni.instrucciones ?? ""} onChange={(e) => set({ instrucciones: e.target.value })} placeholder={t("Cómo ingresar, normas de la casa, cómo usar el aire, etc.")} />
         </Campo>
 
         <div>
-          <span className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">Lugares de interés</span>
+          <span className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">{t("Lugares de interés")}</span>
           <div className="space-y-2 mb-2">
             {puntos.map((p, i) => (
               <div key={i} className="flex items-center gap-2 bg-slate-50 dark:bg-slate-900 rounded-lg px-3 py-2">
                 <span className="text-sm text-slate-700 dark:text-slate-200 flex-1 truncate">{p.nombre}</span>
-                <a href={p.url} target="_blank" rel="noreferrer" className="text-xs text-teal-600 dark:text-teal-400 truncate max-w-[120px]">link</a>
-                <button onClick={() => set({ puntosInteres: puntos.filter((_, j) => j !== i) })} className="text-slate-400 hover:text-rose-600 text-sm">Quitar</button>
+                <a href={p.url} target="_blank" rel="noreferrer" className="text-xs text-teal-600 dark:text-teal-400 truncate max-w-[120px]">{t("link")}</a>
+                <button onClick={() => set({ puntosInteres: puntos.filter((_, j) => j !== i) })} className="text-slate-400 hover:text-rose-600 text-sm">{t("Quitar")}</button>
               </div>
             ))}
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <input className="input" value={puntoNombre} onChange={(e) => setPuntoNombre(e.target.value)} placeholder="Nombre (ej: Playa Varese)" />
+            <input className="input" value={puntoNombre} onChange={(e) => setPuntoNombre(e.target.value)} placeholder={t("Nombre (ej: Playa Varese)")} />
             <div className="flex gap-2">
-              <input className="input flex-1" value={puntoUrl} onChange={(e) => setPuntoUrl(e.target.value)} placeholder="Link de Google Maps" />
+              <input className="input flex-1" value={puntoUrl} onChange={(e) => setPuntoUrl(e.target.value)} placeholder={t("Link de Google Maps")} />
               <button type="button" onClick={agregarPunto} className="btn-secundario whitespace-nowrap">+</button>
             </div>
           </div>
@@ -274,16 +274,16 @@ function GuiaHuesped({ uni, set }: { uni: Unidad; set: (c: Partial<Unidad>) => v
       </div>
 
       <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-700">
-        <span className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">Link / QR de la guía (pegalo o imprimilo para el huésped)</span>
+        <span className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">{t("Link / QR de la guía (pegalo o imprimilo para el huésped)")}</span>
         <div className="flex gap-2">
           <input readOnly value={link} className="input bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400" />
-          <button onClick={() => { navigator.clipboard?.writeText(link); setCopiado(true); setTimeout(() => setCopiado(false), 1500); }} className="btn-secundario whitespace-nowrap">{copiado ? "¡Copiado!" : "Copiar"}</button>
+          <button onClick={() => { navigator.clipboard?.writeText(link); setCopiado(true); setTimeout(() => setCopiado(false), 1500); }} className="btn-secundario whitespace-nowrap">{copiado ? t("¡Copiado!") : t("Copiar")}</button>
         </div>
         {qr && (
           <div className="mt-3 flex items-center gap-4">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={qr} alt="QR guía" className="w-28 h-28 rounded-lg ring-1 ring-slate-200 dark:ring-slate-700" />
-            <a href={qr} download={`guia-${uni.id}.png`} className="text-sm text-teal-600 dark:text-teal-400 hover:underline">Descargar QR</a>
+            <img src={qr} alt={t("QR guía")} className="w-28 h-28 rounded-lg ring-1 ring-slate-200 dark:ring-slate-700" />
+            <a href={qr} download={`guia-${uni.id}.png`} className="text-sm text-teal-600 dark:text-teal-400 hover:underline">{t("Descargar QR")}</a>
           </div>
         )}
       </div>
@@ -294,6 +294,7 @@ function GuiaHuesped({ uni, set }: { uni: Unidad; set: (c: Partial<Unidad>) => v
 // Tarifas por día para temporal. Si la unidad tiene cochera, permite dos valores
 // (sin/con cochera) o uno solo con el check "Mismo valor".
 function TarifasDia({ uni, set }: { uni: Unidad; set: (c: Partial<Unidad>) => void }) {
+  const { t } = useStore();
   const [mismo, setMismo] = useState(uni.precioDiaCochera == null || uni.precioDiaCochera === uni.precioDia);
 
   function setSin(n: number) {
@@ -307,7 +308,7 @@ function TarifasDia({ uni, set }: { uni: Unidad; set: (c: Partial<Unidad>) => vo
 
   if (!uni.cochera) {
     return (
-      <Campo label="Valor por día (temporal)">
+      <Campo label={t("Valor por día (temporal)")}>
         <InputMonto value={uni.precioDia ?? 0} onChange={(n) => set({ precioDia: n || undefined })} decimales={uni.moneda === "USD"} />
       </Campo>
     );
@@ -316,18 +317,18 @@ function TarifasDia({ uni, set }: { uni: Unidad; set: (c: Partial<Unidad>) => vo
   return (
     <div className="space-y-3">
       <div className={mismo ? "" : "grid grid-cols-2 gap-4"}>
-        <Campo label={mismo ? "Valor por día (temporal)" : "Valor por día (sin cochera)"}>
+        <Campo label={mismo ? t("Valor por día (temporal)") : t("Valor por día (sin cochera)")}>
           <InputMonto value={uni.precioDia ?? 0} onChange={setSin} decimales={uni.moneda === "USD"} />
         </Campo>
         {!mismo && (
-          <Campo label="Valor por día (con cochera)">
+          <Campo label={t("Valor por día (con cochera)")}>
             <InputMonto value={uni.precioDiaCochera ?? 0} onChange={(n) => set({ precioDiaCochera: n || undefined })} decimales={uni.moneda === "USD"} />
           </Campo>
         )}
       </div>
       <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
         <input type="checkbox" checked={mismo} onChange={(e) => toggleMismo(e.target.checked)} />
-        Mismo valor con cochera
+        {t("Mismo valor con cochera")}
       </label>
     </div>
   );
@@ -335,7 +336,7 @@ function TarifasDia({ uni, set }: { uni: Unidad; set: (c: Partial<Unidad>) => vo
 
 // Botón para traer ahora las reservas de las plataformas externas (Airbnb/Booking).
 function SyncIcal({ unidadId }: { unidadId: string }) {
-  const { sincronizarIcal, bloqueosDe } = useStore();
+  const { sincronizarIcal, bloqueosDe, t } = useStore();
   const [estado, setEstado] = useState<"idle" | "sync" | "ok" | "err">("idle");
   const cantidad = bloqueosDe(unidadId).length;
 
@@ -352,11 +353,11 @@ function SyncIcal({ unidadId }: { unidadId: string }) {
   return (
     <div className="mt-3 flex items-center gap-3 flex-wrap">
       <button onClick={sync} disabled={estado === "sync"} className="btn-secundario disabled:opacity-50">
-        {estado === "sync" ? "Sincronizando…" : "Sincronizar ahora"}
+        {estado === "sync" ? t("Sincronizando…") : t("Sincronizar ahora")}
       </button>
       <span className="text-xs text-slate-400 dark:text-slate-500">
-        {estado === "ok" ? "Calendarios actualizados. " : estado === "err" ? "No se pudo sincronizar. " : ""}
-        {cantidad > 0 && `${cantidad} ${cantidad === 1 ? "fecha bloqueada" : "fechas bloqueadas"} importadas.`}
+        {estado === "ok" ? t("Calendarios actualizados. ") : estado === "err" ? t("No se pudo sincronizar. ") : ""}
+        {cantidad > 0 && `${cantidad} ${cantidad === 1 ? t("fecha bloqueada") : t("fechas bloqueadas")} ${t("importadas.")}`}
       </span>
     </div>
   );
@@ -369,6 +370,7 @@ function ListaICals({
   icals: PlataformaICal[];
   onCambiar: (icals: PlataformaICal[]) => void;
 }) {
+  const { t } = useStore();
   const [plataforma, setPlataforma] = useState("Airbnb");
   const [url, setUrl] = useState("");
 
@@ -382,7 +384,7 @@ function ListaICals({
     <div>
       <div className="space-y-2 mb-3">
         {icals.length === 0 && (
-          <p className="text-sm text-slate-400 dark:text-slate-500">Todavía no conectaste ninguna plataforma.</p>
+          <p className="text-sm text-slate-400 dark:text-slate-500">{t("Todavía no conectaste ninguna plataforma.")}</p>
         )}
         {icals.map((ical, i) => (
           <div key={i} className="flex items-center gap-2 bg-slate-50 dark:bg-slate-900 rounded-lg px-3 py-2">
@@ -392,7 +394,7 @@ function ListaICals({
               onClick={() => onCambiar(icals.filter((_, j) => j !== i))}
               className="text-slate-400 hover:text-rose-600 dark:text-slate-500 dark:hover:text-rose-400 text-sm"
             >
-              Quitar
+              {t("Quitar")}
             </button>
           </div>
         ))}
@@ -413,7 +415,7 @@ function ListaICals({
           className="input flex-1"
           onKeyDown={(e) => e.key === "Enter" && agregar()}
         />
-        <button onClick={agregar} className="btn-primario whitespace-nowrap">Conectar</button>
+        <button onClick={agregar} className="btn-primario whitespace-nowrap">{t("Conectar")}</button>
       </div>
     </div>
   );

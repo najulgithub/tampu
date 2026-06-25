@@ -4,6 +4,9 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
+import { traducir, idiomaDispositivo } from "@/lib/i18n";
+
+const t = (s: string) => traducir(idiomaDispositivo(), s);
 
 function IconoChat({ size = 24 }: { size?: number }) {
   return (
@@ -35,10 +38,10 @@ function CampoMensaje({ value, onChange, onEnviar }: { value: string; onChange: 
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); onEnviar(); } }}
         className="input flex-1 resize-none leading-snug py-2 max-h-[120px] overflow-y-auto"
-        placeholder="Escribir…"
+        placeholder={t("Escribir…")}
         autoFocus
       />
-      <button onClick={onEnviar} disabled={!value.trim()} className="btn-primario shrink-0 disabled:opacity-50">Enviar</button>
+      <button onClick={onEnviar} disabled={!value.trim()} className="btn-primario shrink-0 disabled:opacity-50">{t("Enviar")}</button>
     </div>
   );
 }
@@ -73,7 +76,7 @@ function Burbuja({
       )}
       <button
         onClick={() => setAbierto(!abierto)}
-        aria-label="Mensajes"
+        aria-label={t("Mensajes")}
         className={`fixed z-40 right-4 bottom-20 sm:bottom-6 w-14 h-14 rounded-full bg-teal-600 hover:bg-teal-700 text-white shadow-lg shadow-teal-600/30 place-items-center transition active:scale-95 ${abierto ? "hidden sm:grid" : "grid"}`}
       >
         {abierto ? <span className="text-2xl leading-none">×</span> : <IconoChat />}
@@ -87,7 +90,7 @@ function Burbuja({
 
 // ---------- Widget del dueño (conversaciones desde el store) ----------
 export function ChatWidgetDueno() {
-  const { mensajes, reservas, getUnidad, mensajesDe, enviarMensaje, marcarLeidos, enviarConsultaDueno, marcarLeidosConsulta, mensajesNoLeidos } = useStore();
+  const { mensajes, reservas, getUnidad, mensajesDe, enviarMensaje, marcarLeidos, enviarConsultaDueno, marcarLeidosConsulta, mensajesNoLeidos, t } = useStore();
   const [abierto, setAbierto] = useState(false);
   const [sel, setSel] = useState<string | null>(null);
   const [nuevo, setNuevo] = useState(false);
@@ -107,18 +110,18 @@ export function ChatWidgetDueno() {
     return {
       key: rid, esConsulta: false, cid: "", email: "",
       ultimo: ms[ms.length - 1], noLeidos: ms.filter((m) => m.autor === "inquilino" && !m.leidoDueno).length,
-      huesped: r?.huesped ?? "Inquilino", unidad: r ? (getUnidad(r.unidadId)?.nombre ?? "—") : "—",
+      huesped: r?.huesped ?? t("Inquilino"), unidad: r ? (getUnidad(r.unidadId)?.nombre ?? "—") : "—",
     };
   });
   // Consultas pre-reserva (sin reserva), agrupadas por huésped.
   const cids = Array.from(new Set(mensajes.filter((m) => m.clienteId && !m.reservaId).map((m) => m.clienteId!)));
   const convoConsultas = cids.map((cid) => {
     const ms = mensajes.filter((m) => m.clienteId === cid && !m.reservaId).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
-    const email = ms.find((m) => m.clienteEmail)?.clienteEmail ?? "Consulta";
+    const email = ms.find((m) => m.clienteEmail)?.clienteEmail ?? t("Consulta");
     return {
       key: "c:" + cid, esConsulta: true, cid, email,
       ultimo: ms[ms.length - 1], noLeidos: ms.filter((m) => m.autor === "inquilino" && !m.leidoDueno).length,
-      huesped: email, unidad: "Consulta (sin reserva)",
+      huesped: email, unidad: t("Consulta (sin reserva)"),
     };
   });
   const convos = [...convoReservas, ...convoConsultas].sort((a, b) => (b.ultimo?.createdAt ?? "").localeCompare(a.ultimo?.createdAt ?? ""));
@@ -138,7 +141,7 @@ export function ChatWidgetDueno() {
   const msgs = !sel ? [] : sel.startsWith("c:")
     ? mensajes.filter((m) => m.clienteId === sel.slice(2) && !m.reservaId).sort((a, b) => a.createdAt.localeCompare(b.createdAt))
     : mensajesDe(sel);
-  const titulo = sel ? (selConvo?.huesped ?? "Inquilino") : nuevo ? "Escribir a…" : "Mensajes";
+  const titulo = sel ? (selConvo?.huesped ?? t("Inquilino")) : nuevo ? t("Escribir a…") : t("Mensajes");
   const onAtras = sel ? () => setSel(null) : nuevo ? () => setNuevo(false) : undefined;
 
   return (
@@ -146,7 +149,7 @@ export function ChatWidgetDueno() {
       {sel ? null : nuevo ? (
         <div className="flex-1 overflow-y-auto">
           {elegibles.length === 0 ? (
-            <p className="text-sm text-slate-400 dark:text-slate-500 p-6 text-center">No hay inquilinos con portal vinculado. Cargá el email del inquilino en el contrato.</p>
+            <p className="text-sm text-slate-400 dark:text-slate-500 p-6 text-center">{t("No hay inquilinos con portal vinculado. Cargá el email del inquilino en el contrato.")}</p>
           ) : elegibles.map((e) => (
             <button key={e.rid} onClick={() => abrir(e.rid)} className="w-full text-left flex items-center gap-3 px-4 py-3 border-b border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/40">
               <span className="shrink-0 w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-700 grid place-items-center text-xs font-semibold text-slate-600 dark:text-slate-200 uppercase">{e.huesped.trim().charAt(0) || "?"}</span>
@@ -160,16 +163,16 @@ export function ChatWidgetDueno() {
       ) : (
         <div className="flex-1 overflow-y-auto">
           <button onClick={() => setNuevo(true)} className="w-full text-left px-4 py-3 border-b border-slate-100 dark:border-slate-700/50 text-sm font-medium text-teal-600 dark:text-teal-400 hover:bg-slate-50 dark:hover:bg-slate-700/40">
-            + Escribir a un inquilino
+            {t("+ Escribir a un inquilino")}
           </button>
           {convos.length === 0 ? (
-            <p className="text-sm text-slate-400 dark:text-slate-500 p-6 text-center">Sin conversaciones todavía.</p>
+            <p className="text-sm text-slate-400 dark:text-slate-500 p-6 text-center">{t("Sin conversaciones todavía.")}</p>
           ) : convos.map((c) => (
             <button key={c.key} onClick={() => abrir(c.key)} className="w-full text-left flex items-center gap-3 px-4 py-3 border-b border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/40">
               <span className="shrink-0 w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-700 grid place-items-center text-xs font-semibold text-slate-600 dark:text-slate-200 uppercase">{c.huesped.trim().charAt(0) || "?"}</span>
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">{c.huesped} <span className="text-xs text-slate-400">· {c.unidad}</span></div>
-                <div className="text-xs text-slate-500 dark:text-slate-400 truncate">{c.ultimo ? `${c.ultimo.autor === "dueno" ? "Vos: " : ""}${c.ultimo.texto}` : ""}</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400 truncate">{c.ultimo ? `${c.ultimo.autor === "dueno" ? t("Vos: ") : ""}${c.ultimo.texto}` : ""}</div>
               </div>
               {c.noLeidos > 0 && <span className="shrink-0 min-w-[18px] h-[18px] px-1 grid place-items-center rounded-full bg-rose-500 text-white text-[10px] font-bold">{c.noLeidos}</span>}
             </button>
@@ -179,7 +182,7 @@ export function ChatWidgetDueno() {
       {sel && (
         <>
           <div className="flex-1 overflow-y-auto p-3 space-y-1.5">
-            {msgs.length === 0 ? <p className="text-xs text-slate-400 dark:text-slate-500 text-center py-4">Sin mensajes.</p> :
+            {msgs.length === 0 ? <p className="text-xs text-slate-400 dark:text-slate-500 text-center py-4">{t("Sin mensajes.")}</p> :
               msgs.map((m) => <div key={m.id} className={`flex ${m.autor === "dueno" ? "justify-end" : "justify-start"}`}><span className={burbuja(m.autor === "dueno")}>{m.texto}</span></div>)}
           </div>
           <CampoMensaje value={texto} onChange={setTexto} onEnviar={enviar} />
@@ -204,24 +207,24 @@ export function ChatWidgetConsulta({ slug }: { slug: string }) {
   useEffect(() => {
     if (!abierto) return;
     recargar();
-    const t = setInterval(recargar, 5000);
-    return () => clearInterval(t);
+    const timer = setInterval(recargar, 5000);
+    return () => clearInterval(timer);
   }, [abierto, recargar]);
 
   async function enviar() {
-    const t = texto.trim();
-    if (!t) return;
+    const txt = texto.trim();
+    if (!txt) return;
     setTexto("");
-    setMsgs((prev) => [...prev, { autor: "inquilino", texto: t, created_at: new Date().toISOString() }]);
-    const { error } = await supabase.rpc("consulta_enviar", { p_slug: slug, p_texto: t });
+    setMsgs((prev) => [...prev, { autor: "inquilino", texto: txt, created_at: new Date().toISOString() }]);
+    const { error } = await supabase.rpc("consulta_enviar", { p_slug: slug, p_texto: txt });
     if (!error) await recargar();
   }
 
   return (
-    <Burbuja abierto={abierto} setAbierto={setAbierto} titulo="Consultá al dueño">
+    <Burbuja abierto={abierto} setAbierto={setAbierto} titulo={t("Consultá al dueño")}>
       <>
         <div className="flex-1 overflow-y-auto p-3 space-y-1.5">
-          {msgs.length === 0 ? <p className="text-xs text-slate-400 dark:text-slate-500 text-center py-4">¿Dudas? Escribile al dueño por acá.</p> :
+          {msgs.length === 0 ? <p className="text-xs text-slate-400 dark:text-slate-500 text-center py-4">{t("¿Dudas? Escribile al dueño por acá.")}</p> :
             msgs.map((m, i) => <div key={i} className={`flex ${m.autor === "inquilino" ? "justify-end" : "justify-start"}`}><span className={burbuja(m.autor === "inquilino")}>{m.texto}</span></div>)}
         </div>
         <CampoMensaje value={texto} onChange={setTexto} onEnviar={enviar} />
@@ -246,15 +249,15 @@ export function ChatWidgetInquilino({ contratos }: { contratos: { id: string; un
   useEffect(() => { if (abierto) recargar(); }, [abierto, recargar]);
 
   async function enviar() {
-    const t = texto.trim();
-    if (!sel || !t) return;
+    const txt = texto.trim();
+    if (!sel || !txt) return;
     setTexto("");
-    const { error } = await supabase.rpc("portal_enviar_mensaje", { p_reserva: sel, p_texto: t });
+    const { error } = await supabase.rpc("portal_enviar_mensaje", { p_reserva: sel, p_texto: txt });
     if (!error) await recargar();
   }
 
   if (contratos.length === 0) return null;
-  const titulo = sel ? "Dueño" : "Mensajes";
+  const titulo = sel ? t("Dueño") : t("Mensajes");
 
   return (
     <Burbuja abierto={abierto} setAbierto={(v) => { setAbierto(v); if (!v && contratos.length > 1) setSel(null); }} titulo={titulo} onAtras={sel && contratos.length > 1 ? () => setSel(null) : undefined}>
@@ -269,7 +272,7 @@ export function ChatWidgetInquilino({ contratos }: { contratos: { id: string; un
       ) : (
         <>
           <div className="flex-1 overflow-y-auto p-3 space-y-1.5">
-            {msgs.length === 0 ? <p className="text-xs text-slate-400 dark:text-slate-500 text-center py-4">Escribile al dueño por acá.</p> :
+            {msgs.length === 0 ? <p className="text-xs text-slate-400 dark:text-slate-500 text-center py-4">{t("Escribile al dueño por acá.")}</p> :
               msgs.map((m, i) => <div key={i} className={`flex ${m.autor === "inquilino" ? "justify-end" : "justify-start"}`}><span className={burbuja(m.autor === "inquilino")}>{m.texto}</span></div>)}
           </div>
           <CampoMensaje value={texto} onChange={setTexto} onEnviar={enviar} />
